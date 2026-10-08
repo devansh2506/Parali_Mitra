@@ -1,0 +1,6802 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-10-08T20:08:02Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "node",
+  "id": 245770450,
+  "lat": 30.5791768,
+  "lon": 74.8210744,
+  "tags": {
+    "AND_a_nosr_p": "10010011",
+    "name": "Kot Kapura",
+    "name:hi": "कोट कपूरा",
+    "name:ml": "കോട്കപുര",
+    "name:pa": "ਕੋਟ ਕਪੂਰਾ",
+    "name:ur": "کوٹ کپورہ",
+    "place": "town",
+    "population": "91979",
+    "population:date": "2011",
+    "postal_code": "151 204",
+    "source": "AND",
+    "wikipedia": "en:Kot Kapura"
+  }
+},
+{
+  "type": "node",
+  "id": 245770582,
+  "lat": 30.6729772,
+  "lon": 74.7517033,
+  "tags": {
+    "AND_a_nosr_p": "10010019",
+    "name": "Faridkot",
+    "name:ar": "فريدكوت",
+    "name:bn": "ফরিদকোট",
+    "name:en": "Faridkot",
+    "name:fa": "فريدكوت",
+    "name:he": "פרידקוט",
+    "name:hi": "फरीदकोट",
+    "name:ja": "ファリードコート",
+    "name:kn": "ಫರೀದಕೋಟ್",
+    "name:ko": "파리드콧",
+    "name:ml": "ഫരീദ്കോട്ട്",
+    "name:pa": "ਫ਼ਰੀਦਕੋਟ",
+    "name:ta": "பரித்கோட்",
+    "name:ur": "فرید کوٹ",
+    "place": "city",
+    "population": "87695",
+    "population:date": "2011",
+    "postal_code": "151200",
+    "source": "AND",
+    "wikidata": "Q1780350",
+    "wikipedia": "en:Faridkot, Punjab"
+  }
+},
+{
+  "type": "node",
+  "id": 251318144,
+  "lat": 30.8782508,
+  "lon": 73.5998771,
+  "tags": {
+    "alt_name:ur": "رِينالہ خُورد",
+    "capital": "6",
+    "name": "رینالہ خورد",
+    "name:ar": "رينالا خورد",
+    "name:de": "Renala Khurd",
+    "name:en": "Renala Khurd",
+    "name:es": "Renala Khurd",
+    "name:fa": "ریناله خورد",
+    "name:fr": "Renala Khurd",
+    "name:hi": "रेनाला खुर्द",
+    "name:ja": "レナーラ・カード",
+    "name:ml": "റേനാല ഖുർദ്",
+    "name:pnb": "رینالا خُرد",
+    "name:ur": "رینالہ خورد",
+    "place": "town",
+    "wikidata": "Q3321405"
+  }
+},
+{
+  "type": "node",
+  "id": 251318194,
+  "lat": 30.8091281,
+  "lon": 73.4493301,
+  "tags": {
+    "capital": "5",
+    "is_in": "Pakistan, Punjab, Okara District",
+    "name": "اوکاڑہ",
+    "name:ar": "أوكارا",
+    "name:de": "Okara",
+    "name:en": "Okara",
+    "name:es": "Okara",
+    "name:et": "Okāra",
+    "name:eu": "Okara",
+    "name:fa": "اوکاره",
+    "name:fr": "Okara",
+    "name:hi": "ओकरा",
+    "name:ja": "オーカーラー",
+    "name:kn": "ಓಕರಾ",
+    "name:ml": "ഒക്കാഡ",
+    "name:ru": "Окара",
+    "name:sd": "اوڪاڙا",
+    "place": "city",
+    "population": "357935",
+    "source:population": "French Wikipedia",
+    "wikidata": "Q968211"
+  }
+},
+{
+  "type": "node",
+  "id": 251318496,
+  "lat": 30.6715098,
+  "lon": 73.1110572,
+  "tags": {
+    "capital": "6",
+    "is_in": "Pakistan, Punjab, Sahiwal District",
+    "name": "ساہِيوال",
+    "name:ar": "ساهيوال",
+    "name:bn": "সাহিওয়াল",
+    "name:de": "Sahiwal",
+    "name:en": "Sahiwal",
+    "name:es": "Sahiwal",
+    "name:et": "Sāhīwāl",
+    "name:eu": "Sahiwal",
+    "name:fa": "ساهيوال",
+    "name:fr": "Sahiwal",
+    "name:hi": "सहिवाल",
+    "name:ja": "サーヒーワール",
+    "name:kn": "ಸಹಿವಾಲ್",
+    "name:ml": "സാഹിവാൽ",
+    "name:ne": "साहिवाल",
+    "name:pa": "ਸਾਹੀਵਾਲ",
+    "name:pnb": "ساہیوال",
+    "name:ps": "ساهيوال",
+    "name:ru": "Сахивал",
+    "name:sd": "ساهيوال",
+    "name:ur": "ساہیوال",
+    "place": "city",
+    "population": "389605",
+    "source:population": "French Wikipedia",
+    "wikidata": "Q523778"
+  }
+},
+{
+  "type": "node",
+  "id": 281437566,
+  "lat": 30.6691771,
+  "lon": 73.6513733,
+  "tags": {
+    "alt_name": "Dipalpur",
+    "is_in": "Okara District, Punjab, Pakistan",
+    "name": "دیپالپور",
+    "name:ar": "ديبالبور",
+    "name:en": "Depalpur",
+    "name:fa": "دیپالپور",
+    "name:hi": "दीपालपुर",
+    "name:ml": "ദീപാൽപൂർ",
+    "name:pnb": "دیپالپور",
+    "name:ru": "Дипалпур",
+    "name:ur": "دیپالپور",
+    "place": "city",
+    "population": "99858",
+    "wikidata": "Q2985681"
+  }
+},
+{
+  "type": "node",
+  "id": 282302998,
+  "lat": 30.7393828,
+  "lon": 73.8245631,
+  "tags": {
+    "is_in": "Okara District, Punjab, Pakistan",
+    "name": "حجرہ شاہ مقیم",
+    "name:ar": "حُجرة شاه مقيم",
+    "name:en": "Hujra Shah Muqeem",
+    "name:fa": "حجرہ شاہ مقیم",
+    "name:hi": "हुजरा शाह मुकीम",
+    "name:ml": "ഹുജ്റ ഷാ മുഖീം",
+    "place": "city",
+    "population": "76462"
+  }
+},
+{
+  "type": "node",
+  "id": 802009201,
+  "lat": 30.3815114,
+  "lon": 75.5490301,
+  "tags": {
+    "amenity": "school",
+    "name": "New Horizon School"
+  }
+},
+{
+  "type": "node",
+  "id": 802242439,
+  "lat": 30.3763034,
+  "lon": 75.5527856,
+  "tags": {
+    "amenity": "school",
+    "name": "Kanya High School"
+  }
+},
+{
+  "type": "node",
+  "id": 807827478,
+  "lat": 30.3708266,
+  "lon": 75.8647369,
+  "tags": {
+    "AND_a_nosr_p": "10010165",
+    "name": "Dhuri",
+    "name:hi": "धूरी",
+    "name:ml": "ധൂരി",
+    "name:pa": "ਧੂਰੀ",
+    "name:ur": "دھوری",
+    "place": "town",
+    "population": "49406",
+    "postal_code": "148024",
+    "source": "AND",
+    "wikidata": "Q1259563"
+  }
+},
+{
+  "type": "node",
+  "id": 835666922,
+  "lat": 30.3762012,
+  "lon": 75.5435927,
+  "tags": {
+    "name": "Barnala",
+    "name:ar": "برنالا",
+    "name:en": "Barnala",
+    "name:fa": "برناله",
+    "name:hi": "बरनाला",
+    "name:ja": "バルナーラー",
+    "name:ko": "바르날라",
+    "name:ml": "ബർണാല",
+    "name:pa": "ਬਰਨਾਲਾ",
+    "name:ur": "برنالہ",
+    "place": "city",
+    "population": "116449",
+    "population:date": "2011",
+    "wikidata": "Q711996",
+    "wikipedia": "en:Barnala"
+  }
+},
+{
+  "type": "node",
+  "id": 919729529,
+  "lat": 30.3725092,
+  "lon": 75.5659967,
+  "tags": {
+    "amenity": "college",
+    "name": "Dashmes Institute of managament and Technology"
+  }
+},
+{
+  "type": "node",
+  "id": 1477473072,
+  "lat": 30.2281191,
+  "lon": 75.8481374,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Jind Road, Near State Bank Of India",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "contact:phone": "0167 224 1421",
+    "healthcare": "hospital",
+    "name": "Sibia Healthcare Pvt. Ltd",
+    "source": "OpenGovernmentData"
+  }
+},
+{
+  "type": "node",
+  "id": 1477710431,
+  "lat": 30.1340040,
+  "lon": 75.8062777,
+  "tags": {
+    "name": "Sunam",
+    "name:hi": "सुनाम",
+    "name:pa": "ਸੁਨਾਮ",
+    "name:ta": "சுணம்",
+    "name:ur": "",
+    "place": "town"
+  }
+},
+{
+  "type": "node",
+  "id": 1596081362,
+  "lat": 30.2432006,
+  "lon": 75.8358123,
+  "tags": {
+    "alt_name:ur": "سنگ رور",
+    "name": "Sangrur",
+    "name:en": "Sangrur",
+    "name:fa": "سنگرور",
+    "name:hi": "संगरूर",
+    "name:ko": "상루르",
+    "name:ml": "സംഗ്രൂർ",
+    "name:pa": "ਸੰਗਰੂਰ",
+    "name:uk": "Санґрур",
+    "name:ur": "سنگرور",
+    "place": "town",
+    "population": "88043",
+    "population:date": "2011",
+    "wikidata": "Q2441398",
+    "wikipedia": "en:Sangrur"
+  }
+},
+{
+  "type": "node",
+  "id": 1667064977,
+  "lat": 30.2116510,
+  "lon": 75.8220736,
+  "tags": {
+    "name": "Upli",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 1683377991,
+  "lat": 30.2450398,
+  "lon": 75.8327253,
+  "tags": {
+    "amenity": "school",
+    "name": "BBC Academy"
+  }
+},
+{
+  "type": "node",
+  "id": 1683378021,
+  "lat": 30.2446227,
+  "lon": 75.8353646,
+  "tags": {
+    "amenity": "hospital",
+    "healthcare": "hospital"
+  }
+},
+{
+  "type": "node",
+  "id": 1683429069,
+  "lat": 30.2372493,
+  "lon": 75.8469931,
+  "tags": {
+    "amenity": "school",
+    "name": "Ranbir College"
+  }
+},
+{
+  "type": "node",
+  "id": 2409437167,
+  "lat": 30.4834552,
+  "lon": 75.0959277,
+  "tags": {
+    "name": "Bhagta Bhai Ka",
+    "name:hi": "भगता भाई का",
+    "name:pa": "ਭਗਤਾ ਭਾਈ ਕਾ",
+    "place": "town",
+    "population": "28120",
+    "population:date": "2011",
+    "wikidata": "Q17017820",
+    "wikipedia": "en:Bhagta Bhai ka"
+  }
+},
+{
+  "type": "node",
+  "id": 2472158344,
+  "lat": 30.4763027,
+  "lon": 75.3298230,
+  "tags": {
+    "description": "bhadaur is village in barnala distt. famous for bus body building such as GOBIND COACH builders .",
+    "name": "Bhadaur",
+    "name:hi": "भदौड़",
+    "name:ur": "بھدوڑ",
+    "place": "town",
+    "population": "50000",
+    "wikidata": "Q757840",
+    "wikipedia": "en:Bhadaur"
+  }
+},
+{
+  "type": "node",
+  "id": 2493393375,
+  "lat": 30.6345280,
+  "lon": 73.0761180,
+  "tags": {
+    "name": "Chak 134/9 L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2493416228,
+  "lat": 30.6437362,
+  "lon": 73.0812264,
+  "tags": {
+    "name": "Chak 135/9 L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2493416231,
+  "lat": 30.6364181,
+  "lon": 73.0549327,
+  "tags": {
+    "name": "Chak 136/9 L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2510074590,
+  "lat": 30.6009962,
+  "lon": 73.0586152,
+  "tags": {
+    "name": "Chak 102/9L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2511849455,
+  "lat": 30.7362432,
+  "lon": 73.1532060,
+  "tags": {
+    "name": "Chak 70/4 R",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2539798524,
+  "lat": 30.8258101,
+  "lon": 73.4892097,
+  "tags": {
+    "name": "56/2-L چک",
+    "name:en": "Chka 56/2-L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2540023752,
+  "lat": 30.8260943,
+  "lon": 73.4722413,
+  "tags": {
+    "name": "Chak 1/4 L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2597236956,
+  "lat": 30.3824560,
+  "lon": 75.5485390,
+  "tags": {
+    "amenity": "school",
+    "name": "Sandhu Patti School Junior"
+  }
+},
+{
+  "type": "node",
+  "id": 2615926535,
+  "lat": 30.2201424,
+  "lon": 75.8480233,
+  "tags": {
+    "name": "Ramnagar Sibian",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2643228491,
+  "lat": 30.4330569,
+  "lon": 75.5254325,
+  "tags": {
+    "name": "Thikriwal",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2643248120,
+  "lat": 30.4716743,
+  "lon": 75.5329075,
+  "tags": {
+    "name": "Chaunke Khurd",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2643249067,
+  "lat": 30.4736486,
+  "lon": 75.5498467,
+  "tags": {
+    "name": "Chaunke Kalan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2643268862,
+  "lat": 30.4470458,
+  "lon": 75.4671780,
+  "tags": {
+    "name": "Kaire",
+    "place": "village",
+    "wikidata": "Q31783783",
+    "wikipedia": "en:Kaire, Punjab"
+  }
+},
+{
+  "type": "node",
+  "id": 2643270222,
+  "lat": 30.4325498,
+  "lon": 75.4869803,
+  "tags": {
+    "name": "Naiwala",
+    "place": "village",
+    "wikidata": "Q31783833"
+  }
+},
+{
+  "type": "node",
+  "id": 2643282455,
+  "lat": 30.4759545,
+  "lon": 75.4938969,
+  "tags": {
+    "name": "Raisar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2643283340,
+  "lat": 30.5038839,
+  "lon": 75.4852172,
+  "tags": {
+    "name": "Chananwal",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2643421748,
+  "lat": 30.4736851,
+  "lon": 75.4279033,
+  "tags": {
+    "name": "Bhotna",
+    "place": "village",
+    "wikidata": "Q31783617",
+    "wikipedia": "pa:ਭੋਤਨਾ"
+  }
+},
+{
+  "type": "node",
+  "id": 2643428103,
+  "lat": 30.4555434,
+  "lon": 75.4377797,
+  "tags": {
+    "name": "Bakhatgarh",
+    "place": "village",
+    "wikidata": "Q31783603",
+    "wikipedia": "pa:ਬਖਤਗੜ੍ਹ"
+  }
+},
+{
+  "type": "node",
+  "id": 2643478723,
+  "lat": 30.5483060,
+  "lon": 75.4453294,
+  "tags": {
+    "name": "Gehal",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2647701269,
+  "lat": 30.5753922,
+  "lon": 75.3665890,
+  "tags": {
+    "name": "Bilaspur",
+    "name:hi": "बिलासपुर",
+    "name:pa": "ਬਿਲਾਸਪੁਰ",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2653349955,
+  "lat": 30.5254654,
+  "lon": 75.4252503,
+  "tags": {
+    "name": "Bihla",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2653358353,
+  "lat": 30.5570425,
+  "lon": 75.3802059,
+  "tags": {
+    "name": "Machhike",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2655991573,
+  "lat": 30.5577543,
+  "lon": 75.4284717,
+  "tags": {
+    "name": "Narengarh Sohian",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2656081041,
+  "lat": 30.6802082,
+  "lon": 75.2903773,
+  "tags": {
+    "name": "Badhni Kalan",
+    "name:hi": "बधनी कलाँ",
+    "name:pa": "ਬੱਧਨੀ ਕਲਾਂ",
+    "name:ur": "بدھنی کلاں",
+    "place": "town",
+    "population": "6786",
+    "population:date": "2011",
+    "wikidata": "Q585375",
+    "wikipedia": "en:Badhni Kalan"
+  }
+},
+{
+  "type": "node",
+  "id": 2766707304,
+  "lat": 30.5896671,
+  "lon": 75.2805144,
+  "tags": {
+    "name": "Nihal Singh Wala",
+    "name:hi": "निहाल सिंह वाला",
+    "name:pa": "ਨਿਹਾਲ ਸਿੰਘ ਵਾਲਾ",
+    "name:ur": "نہال سنگھ والا",
+    "place": "town",
+    "wikidata": "Q19894786",
+    "wikipedia": "en:Nihal Singh Wala"
+  }
+},
+{
+  "type": "node",
+  "id": 2817465469,
+  "lat": 30.3992158,
+  "lon": 75.5628226,
+  "tags": {
+    "name": "Sanghera",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 2933780428,
+  "lat": 30.7800562,
+  "lon": 74.8817217,
+  "tags": {
+    "alt_name": "Moodkee",
+    "name": "Mudki",
+    "name:hi": "मुदकी",
+    "name:ml": "മുദ്കി",
+    "place": "town",
+    "population": "10415",
+    "wikidata": "Q6907135",
+    "wikipedia": "en:Moodkee"
+  }
+},
+{
+  "type": "node",
+  "id": 3008282705,
+  "lat": 30.4960743,
+  "lon": 75.5225923,
+  "tags": {
+    "name": "Kalala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 3315115680,
+  "lat": 30.8763349,
+  "lon": 74.0549925,
+  "tags": {
+    "name": "الہ آباد",
+    "name:en": "Allahabad",
+    "name:hi": "इलाहाबाद",
+    "name:ml": "അലഹാബാദ്",
+    "place": "town",
+    "url": "https://www.tripmondo.com/pakistan/punjab/allahabad/"
+  }
+},
+{
+  "type": "node",
+  "id": 4228702769,
+  "lat": 30.5987808,
+  "lon": 75.1505432,
+  "tags": {
+    "alt_name": "Smadh Bhai",
+    "name": "Samadh Bhai",
+    "name:hi": "समाध भाई",
+    "place": "town",
+    "population": "11133",
+    "population:date": "2011"
+  }
+},
+{
+  "type": "node",
+  "id": 4300863690,
+  "lat": 30.8269671,
+  "lon": 73.4905872,
+  "tags": {
+    "amenity": "school",
+    "email": "syedtayyabi@gmail.com",
+    "name": "Hazrat karmanwala college n Islamic university",
+    "operator": "syed kamran hussain tayyabi",
+    "phone": "0442513317",
+    "website": "http://karmanwala.com"
+  }
+},
+{
+  "type": "node",
+  "id": 4354949992,
+  "lat": 30.6754704,
+  "lon": 73.0791152,
+  "tags": {
+    "addr:street": "Farid Town Road",
+    "amenity": "clinic",
+    "name": "Bhuta Laboratory"
+  }
+},
+{
+  "type": "node",
+  "id": 4367629689,
+  "lat": 30.6736381,
+  "lon": 73.0918575,
+  "tags": {
+    "addr:street": "Farid Town Road",
+    "amenity": "hospital",
+    "name": "Mid City Hospital",
+    "name:en": "Mid City Hospital"
+  }
+},
+{
+  "type": "node",
+  "id": 4506845890,
+  "lat": 30.6830769,
+  "lon": 73.0869588,
+  "tags": {
+    "amenity": "school",
+    "name": "Government Compry Hensive School",
+    "name:en": "Government Compry Hensive School"
+  }
+},
+{
+  "type": "node",
+  "id": 4506886289,
+  "lat": 30.6829304,
+  "lon": 73.1031781,
+  "tags": {
+    "amenity": "clinic",
+    "name": "Civil Hospital",
+    "name:en": "Civil Hospital"
+  }
+},
+{
+  "type": "node",
+  "id": 4727738392,
+  "lat": 30.6634842,
+  "lon": 73.0817182,
+  "tags": {
+    "amenity": "school",
+    "name": "DPS & Inter College",
+    "name:en": "DPS & Inter College"
+  }
+},
+{
+  "type": "node",
+  "id": 4827704336,
+  "lat": 30.8186403,
+  "lon": 73.4539918,
+  "tags": {
+    "addr:housenumber": "165",
+    "addr:postcode": "56300",
+    "addr:street": "Rehmat ullahTown",
+    "amenity": "school",
+    "name": "The Knowledge School IMT",
+    "name:en": "The Knowledge School IMT",
+    "opening_hours": "Mo-Sa 09:00-15:00"
+  }
+},
+{
+  "type": "node",
+  "id": 4827704526,
+  "lat": 30.8109649,
+  "lon": 73.4452524,
+  "tags": {
+    "addr:housenumber": "29",
+    "addr:postcode": "56300",
+    "addr:street": "Tehsil Road",
+    "amenity": "school",
+    "name": "The Knowledge School SMT Campus",
+    "name:en": "The Knowledge School SMT Campus",
+    "opening_hours": "Mo-Su 08:00-18:00",
+    "phone": "92442525876",
+    "website": "http://www.imt.edu.pk"
+  }
+},
+{
+  "type": "node",
+  "id": 4882822828,
+  "lat": 30.5967693,
+  "lon": 75.0726914,
+  "tags": {
+    "alt_name": "Marri Mustafa",
+    "name": "Mari Mustafa",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 4882853841,
+  "lat": 30.5977112,
+  "lon": 75.1022815,
+  "tags": {
+    "name": "Sangatpura",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 5284831326,
+  "lat": 30.1942109,
+  "lon": 75.6798604,
+  "tags": {
+    "alt_name": "Longowal",
+    "name": "Laungowal",
+    "name:hi": "लौंगोवाल",
+    "name:pa": "ਲੌਂਗੋਵਾਲ",
+    "name:ur": "لونگو وال",
+    "place": "town"
+  }
+},
+{
+  "type": "node",
+  "id": 5409415661,
+  "lat": 30.8761933,
+  "lon": 73.3200249,
+  "tags": {
+    "name": "42 GD چک",
+    "name:en": "Chak 42 GD",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 5409415662,
+  "lat": 30.8876174,
+  "lon": 73.3285647,
+  "tags": {
+    "name": "Chak 41/GD",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 5409415663,
+  "lat": 30.8545139,
+  "lon": 73.3248693,
+  "tags": {
+    "name": "43 GD چک",
+    "name:en": "Chak 43 GD",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 5409415664,
+  "lat": 30.8900887,
+  "lon": 73.3828591,
+  "tags": {
+    "name": "23A GD چک",
+    "name:en": "Chak 23A GD",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 5409415695,
+  "lat": 30.8910319,
+  "lon": 73.3787254,
+  "tags": {
+    "name": "39 GD چک",
+    "name:en": "Chak 39 GD",
+    "name:ur": "39 GD چک",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 5409487312,
+  "lat": 30.8700823,
+  "lon": 73.3472370,
+  "tags": {
+    "name": "Gashkori Mahir",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 5409487313,
+  "lat": 30.8762943,
+  "lon": 73.3550510,
+  "tags": {
+    "name": "Gashkori Raajpot",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 5409487314,
+  "lat": 30.9552785,
+  "lon": 73.3298277,
+  "tags": {
+    "name": "بنگلہ گوگیرہ",
+    "name:en": "Gogera",
+    "name:hi": "गोगेरा",
+    "name:ur": "بنگلہ گوگیرہ",
+    "place": "town",
+    "wikidata": "Q5577346"
+  }
+},
+{
+  "type": "node",
+  "id": 5417671615,
+  "lat": 30.8693052,
+  "lon": 73.2788103,
+  "tags": {
+    "name": "برج جیوے خان",
+    "name:en": "Burj Jeeway Khan",
+    "name:ur": "برج جیوے خان",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 5417819601,
+  "lat": 30.8789557,
+  "lon": 73.2870936,
+  "tags": {
+    "addr:city": "Mouza Akbar",
+    "addr:street": "Baag Rd",
+    "name": "آبادی گجراں",
+    "name:en": "Abaadi Gujjran",
+    "name:ur": "آبادی گجراں",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 5417819602,
+  "lat": 30.8923286,
+  "lon": 73.3032375,
+  "tags": {
+    "addr:city": "Mouza Akbar",
+    "addr:street": "Akbar Road",
+    "name": "آبادی کھوکھراں",
+    "name:en": "Abaadi Khokharan",
+    "name:ur": "آبادی کھوکھراں",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 5417834436,
+  "lat": 30.8773456,
+  "lon": 73.3002325,
+  "tags": {
+    "addr:city": "Mouza Akbar",
+    "addr:street": "Baag Rd",
+    "name": "کورٹ فاضل مدوکے",
+    "name:en": "Cort Fazal Madokey",
+    "name:ur": "کورٹ فاضل مدوکے",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 5417961485,
+  "lat": 30.8583675,
+  "lon": 73.3423521,
+  "tags": {
+    "name": "44 GD چک",
+    "name:en": "Chak 44 GD",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 5417961543,
+  "lat": 30.8271336,
+  "lon": 73.3766497,
+  "tags": {
+    "name": "Chak 40/3R",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 5417961544,
+  "lat": 30.8209976,
+  "lon": 73.3927430,
+  "tags": {
+    "name": "Chak 39/3R",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6000344434,
+  "lat": 30.7088550,
+  "lon": 74.4034695,
+  "tags": {
+    "name": "Guru Har Sahai",
+    "name:hi": "गुरु हर सहाय",
+    "name:pa": "ਗੁਰੂ ਹਰ ਸਹਾਏ",
+    "place": "town",
+    "wikidata": "Q1706501",
+    "wikipedia": "en:Guru Har Sahai"
+  }
+},
+{
+  "type": "node",
+  "id": 6005553736,
+  "lat": 30.6300099,
+  "lon": 75.1908159,
+  "tags": {
+    "name": "Manuke",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6005554285,
+  "lat": 30.6370259,
+  "lon": 74.9973964,
+  "tags": {
+    "alt_name": "Smalsar",
+    "name": "Samalsar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6005554729,
+  "lat": 30.6630913,
+  "lon": 75.0648593,
+  "tags": {
+    "name": "Rajiana",
+    "place": "village",
+    "wikidata": "Q7286142",
+    "wikipedia": "en:Rajiana"
+  }
+},
+{
+  "type": "node",
+  "id": 6005555312,
+  "lat": 30.6879319,
+  "lon": 75.0961232,
+  "tags": {
+    "name": "Bagha Purana",
+    "name:hi": "बाघा पुराना",
+    "name:ml": "ബാഗ പുരാണ",
+    "name:pa": "ਬਾਘਾ ਪੁਰਾਣਾ",
+    "place": "town",
+    "wikidata": "Q625714",
+    "wikipedia": "en:Bagha Purana"
+  }
+},
+{
+  "type": "node",
+  "id": 6007155468,
+  "lat": 30.7122762,
+  "lon": 74.5805240,
+  "tags": {
+    "name": "Sadiq",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6016332066,
+  "lat": 30.2996858,
+  "lon": 75.6003570,
+  "tags": {
+    "name": "Dan Singhwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6016332443,
+  "lat": 30.3585084,
+  "lon": 75.6455038,
+  "tags": {
+    "name": "Sekha",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6016332444,
+  "lat": 30.3085781,
+  "lon": 75.7726192,
+  "tags": {
+    "name": "Kanjhla",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6016332445,
+  "lat": 30.3192479,
+  "lon": 75.7247256,
+  "tags": {
+    "name": "Kila",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6016332446,
+  "lat": 30.3081520,
+  "lon": 75.6788492,
+  "tags": {
+    "name": "Balian",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6016332494,
+  "lat": 30.3345094,
+  "lon": 75.5952072,
+  "tags": {
+    "name": "Rajgarh",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6016332495,
+  "lat": 30.3373985,
+  "lon": 75.5770969,
+  "tags": {
+    "name": "Pharwai",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6016332496,
+  "lat": 30.3087263,
+  "lon": 75.6336593,
+  "tags": {
+    "name": "Kattu",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6016332497,
+  "lat": 30.3237950,
+  "lon": 75.6127918,
+  "tags": {
+    "name": "Upli",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6016332709,
+  "lat": 30.2913115,
+  "lon": 75.6322860,
+  "tags": {
+    "name": "Bhatlan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6016332736,
+  "lat": 30.2844558,
+  "lon": 75.5725479,
+  "tags": {
+    "name": "Dhanaula",
+    "name:hi": "धनौला",
+    "name:pa": "ਧਨੌਲਾ",
+    "place": "town",
+    "population": "19920",
+    "population:date": "2011",
+    "wikipedia": "en:Dhanaula"
+  }
+},
+{
+  "type": "node",
+  "id": 6023079191,
+  "lat": 30.5203468,
+  "lon": 75.3192186,
+  "tags": {
+    "name": "Talwandi",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6023079192,
+  "lat": 30.5267793,
+  "lon": 75.2863883,
+  "tags": {
+    "name": "Saidoke",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6023079224,
+  "lat": 30.5047814,
+  "lon": 75.3608036,
+  "tags": {
+    "name": "Majoke",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6023079225,
+  "lat": 30.5162061,
+  "lon": 75.3905010,
+  "tags": {
+    "name": "Ramgarh",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6023079226,
+  "lat": 30.5279622,
+  "lon": 75.3625202,
+  "tags": {
+    "name": "Himmatpura",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6023079227,
+  "lat": 30.4920981,
+  "lon": 75.4120444,
+  "tags": {
+    "name": "Tallewal",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6029525409,
+  "lat": 30.7670617,
+  "lon": 74.5992922,
+  "tags": {
+    "alt_name": "Dod",
+    "name": "Dodh",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6029525411,
+  "lat": 30.7406923,
+  "lon": 74.6047210,
+  "tags": {
+    "name": "Dhilwan Khurd",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6029525412,
+  "lat": 30.7171566,
+  "lon": 74.5981550,
+  "tags": {
+    "name": "Sadhuwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6029525705,
+  "lat": 30.7378521,
+  "lon": 74.5658826,
+  "tags": {
+    "alt_name": "Rupaian Wala",
+    "name": "Rupaianwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6029525706,
+  "lat": 30.7663980,
+  "lon": 74.5428371,
+  "tags": {
+    "addr:postcode": "151212",
+    "name": "Jhok Sarkari",
+    "place": "village",
+    "population": "1967",
+    "wikidata": "Q24950525",
+    "wikipedia": "en:Jhok Sarkari"
+  }
+},
+{
+  "type": "node",
+  "id": 6029525707,
+  "lat": 30.7588751,
+  "lon": 74.5770835,
+  "tags": {
+    "alt_name": "Sangra Hoor",
+    "name": "Sangrahur",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6029525708,
+  "lat": 30.7438276,
+  "lon": 74.5424937,
+  "tags": {
+    "name": "Koni",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6029525709,
+  "lat": 30.7403604,
+  "lon": 74.5842074,
+  "tags": {
+    "name": "Janerian",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6029525711,
+  "lat": 30.7095930,
+  "lon": 74.5313357,
+  "tags": {
+    "alt_name": "Marar",
+    "name": "Marahar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6029525713,
+  "lat": 30.6962353,
+  "lon": 74.5921897,
+  "tags": {
+    "name": "Mani Singhwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6029525715,
+  "lat": 30.6984494,
+  "lon": 74.5533942,
+  "tags": {
+    "name": "Ghuduwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6029680387,
+  "lat": 30.7624890,
+  "lon": 74.6256852,
+  "tags": {
+    "alt_name": "Simre Wala",
+    "name": "Shimrewala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6029680392,
+  "lat": 30.7623784,
+  "lon": 74.6594381,
+  "tags": {
+    "name": "Beguwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6029680418,
+  "lat": 30.7754389,
+  "lon": 74.5610922,
+  "tags": {
+    "alt_name": "Buttar",
+    "name": "Butter",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6044927540,
+  "lat": 30.2314845,
+  "lon": 75.8691787,
+  "tags": {
+    "name": "Sohian",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6044927542,
+  "lat": 30.2094943,
+  "lon": 75.8759594,
+  "tags": {
+    "name": "Kamboh Majra",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6047127899,
+  "lat": 30.7447127,
+  "lon": 74.6433448,
+  "tags": {
+    "name": "Ghugiana",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6047127900,
+  "lat": 30.7221188,
+  "lon": 74.6158361,
+  "tags": {
+    "name": "Jandwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6047127901,
+  "lat": 30.7270807,
+  "lon": 74.6431303,
+  "tags": {
+    "name": "Jhotiwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6047127902,
+  "lat": 30.7141313,
+  "lon": 74.6413278,
+  "tags": {
+    "name": "Midduman",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6047127903,
+  "lat": 30.6906998,
+  "lon": 74.6646308,
+  "tags": {
+    "name": "Machaki Kalan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6047127904,
+  "lat": 30.6979328,
+  "lon": 74.6395682,
+  "tags": {
+    "alt_name": "Mehmuana",
+    "name": "Maihmuana",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051358111,
+  "lat": 30.4584404,
+  "lon": 75.5712604,
+  "tags": {
+    "name": "Bazidka Kalan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051358112,
+  "lat": 30.4667264,
+  "lon": 75.5757236,
+  "tags": {
+    "name": "Bazidka Khurd",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051358113,
+  "lat": 30.4283976,
+  "lon": 75.5722044,
+  "tags": {
+    "name": "Amla Singh Wala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051358133,
+  "lat": 30.4138167,
+  "lon": 75.6091975,
+  "tags": {
+    "name": "Karamgarh",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051358138,
+  "lat": 30.3317685,
+  "lon": 75.6802653,
+  "tags": {
+    "name": "Kumbarwal",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051358141,
+  "lat": 30.2877540,
+  "lon": 75.7784556,
+  "tags": {
+    "name": "Lidran",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051358142,
+  "lat": 30.2855305,
+  "lon": 75.7927035,
+  "tags": {
+    "name": "Changal",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051358143,
+  "lat": 30.2910891,
+  "lon": 75.8224010,
+  "tags": {
+    "name": "Banganwali",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051358144,
+  "lat": 30.2931643,
+  "lon": 75.8115005,
+  "tags": {
+    "name": "Khilarian",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051358146,
+  "lat": 30.3137650,
+  "lon": 75.7216357,
+  "tags": {
+    "name": "Batuha",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051358147,
+  "lat": 30.3036134,
+  "lon": 75.7423209,
+  "tags": {
+    "name": "Kanjali",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051469960,
+  "lat": 30.2462778,
+  "lon": 75.7139110,
+  "tags": {
+    "name": "Kunran",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051469961,
+  "lat": 30.2464632,
+  "lon": 75.7338666,
+  "tags": {
+    "name": "Duggan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051469962,
+  "lat": 30.2427929,
+  "lon": 75.7552385,
+  "tags": {
+    "name": "Bhamandaddi",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051469963,
+  "lat": 30.2573621,
+  "lon": 75.7449388,
+  "tags": {
+    "name": "Bahadurpur",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051469969,
+  "lat": 30.2828993,
+  "lon": 75.8503818,
+  "tags": {
+    "name": "Thales",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051469970,
+  "lat": 30.2849005,
+  "lon": 75.8430862,
+  "tags": {
+    "name": "Akoi",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051469971,
+  "lat": 30.2546190,
+  "lon": 75.8712385,
+  "tags": {
+    "name": "Mangwal",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051469979,
+  "lat": 30.2808981,
+  "lon": 75.8738565,
+  "tags": {
+    "name": "Zulmgarh",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051603601,
+  "lat": 30.2601051,
+  "lon": 75.8414984,
+  "tags": {
+    "name": "Khazan Singhwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051603602,
+  "lat": 30.2449988,
+  "lon": 75.8205557,
+  "tags": {
+    "name": "Baguana",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051603603,
+  "lat": 30.2699277,
+  "lon": 75.8130026,
+  "tags": {
+    "name": "Andheri",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051603604,
+  "lat": 30.2657393,
+  "lon": 75.7749367,
+  "tags": {
+    "name": "Mastuana",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051603605,
+  "lat": 30.2520240,
+  "lon": 75.7906436,
+  "tags": {
+    "name": "Badru Khan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051604403,
+  "lat": 30.2891623,
+  "lon": 75.7254980,
+  "tags": {
+    "name": "Nat",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6051604405,
+  "lat": 30.2818988,
+  "lon": 75.6827543,
+  "tags": {
+    "name": "Bhaini Mahraj",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6175976785,
+  "lat": 30.8060366,
+  "lon": 73.4605237,
+  "tags": {
+    "addr:street": "Street #1 Sabir Colony Depalpur Chowk Okara",
+    "amenity": "clinic",
+    "name": "Punjab Clinic",
+    "opening_hours": "Sa-Th 09:00-20:00"
+  }
+},
+{
+  "type": "node",
+  "id": 6260231385,
+  "lat": 30.6931534,
+  "lon": 74.6448183,
+  "tags": {
+    "amenity": "school",
+    "name:en": "Guru Teg Bahadur Public School"
+  }
+},
+{
+  "type": "node",
+  "id": 6698433548,
+  "lat": 30.4971793,
+  "lon": 75.3780434,
+  "tags": {
+    "name": "Deepgarh",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6698488986,
+  "lat": 30.5091156,
+  "lon": 75.3189490,
+  "tags": {
+    "name": "Kharak Singh Wala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6698944384,
+  "lat": 30.2864707,
+  "lon": 75.4604475,
+  "tags": {
+    "name": "Dhaula",
+    "place": "town"
+  }
+},
+{
+  "type": "node",
+  "id": 6700261746,
+  "lat": 30.4240923,
+  "lon": 75.5681230,
+  "tags": {
+    "name": "Bhadalwad",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6702762704,
+  "lat": 30.3083552,
+  "lon": 75.5687805,
+  "tags": {
+    "name": "Pindi Manna",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6735152451,
+  "lat": 30.5613252,
+  "lon": 75.1314484,
+  "tags": {
+    "name": "Ramuwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6735362257,
+  "lat": 30.5660784,
+  "lon": 75.1504513,
+  "tags": {
+    "name": "Hakam Singh",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6735383163,
+  "lat": 30.5495109,
+  "lon": 75.1653028,
+  "tags": {
+    "name": "Koer Singh Wala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6808075986,
+  "lat": 30.8586362,
+  "lon": 73.3830945,
+  "tags": {
+    "name": "22 GD چک",
+    "name:en": "Chak 22 GD",
+    "name:ur": "22 GD چک",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6813443333,
+  "lat": 30.7881624,
+  "lon": 74.4628869,
+  "tags": {
+    "name": "Dila Ram",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6813955042,
+  "lat": 30.7639171,
+  "lon": 74.4408808,
+  "tags": {
+    "name": "Kohar Singh Wala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6814097294,
+  "lat": 30.7839665,
+  "lon": 74.4071654,
+  "tags": {
+    "name": "Guddar Dhandi",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6814109786,
+  "lat": 30.7972084,
+  "lon": 74.3863515,
+  "tags": {
+    "alt_name": "Traddian",
+    "name": "Taridda",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6815025524,
+  "lat": 30.8004241,
+  "lon": 74.3505720,
+  "tags": {
+    "alt_name": "Attu Wala",
+    "name": "Atuwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6815199548,
+  "lat": 30.7925798,
+  "lon": 74.3243301,
+  "tags": {
+    "name": "Chak Shikargarh",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6815208129,
+  "lat": 30.7772379,
+  "lon": 74.3511227,
+  "tags": {
+    "name": "Wadian",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6815263766,
+  "lat": 30.7805056,
+  "lon": 74.3366441,
+  "tags": {
+    "name": "Chak Madike",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6815269092,
+  "lat": 30.7933747,
+  "lon": 74.3376875,
+  "tags": {
+    "name": "Atuwala Hithar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6815281946,
+  "lat": 30.7861281,
+  "lon": 74.3664354,
+  "tags": {
+    "name": "Awan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6815287657,
+  "lat": 30.7834713,
+  "lon": 74.3563986,
+  "tags": {
+    "alt_name": "Madike",
+    "name": "Madi Ke",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6815395595,
+  "lat": 30.7766991,
+  "lon": 74.3784548,
+  "tags": {
+    "name": "Ahmad Dhandi",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6815410236,
+  "lat": 30.7666165,
+  "lon": 74.4031311,
+  "tags": {
+    "alt_name": "Lalchian, Chak Mobian Hardo Dhandi",
+    "name": "Lalchian",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6815435127,
+  "lat": 30.7399681,
+  "lon": 74.4320695,
+  "tags": {
+    "alt_name": "Jhawla",
+    "name": "Jaola",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6815463618,
+  "lat": 30.7681399,
+  "lon": 74.4151447,
+  "tags": {
+    "alt_name": "Chak Saumian wala",
+    "name": "Chak Somian",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6815488679,
+  "lat": 30.7452737,
+  "lon": 74.4162686,
+  "tags": {
+    "name": "Chhaparki",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6815495828,
+  "lat": 30.7424405,
+  "lon": 74.4235266,
+  "tags": {
+    "name": "Karkandi",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6815541390,
+  "lat": 30.7500500,
+  "lon": 74.4018235,
+  "tags": {
+    "name": "Mare Kalan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6815542785,
+  "lat": 30.7433834,
+  "lon": 74.3969848,
+  "tags": {
+    "name": "Mare Khurd",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6816590473,
+  "lat": 30.7223984,
+  "lon": 74.3766606,
+  "tags": {
+    "name": "Mohan Ke Uttar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6816623007,
+  "lat": 30.7600090,
+  "lon": 74.3728602,
+  "tags": {
+    "name": "Chak Megha Viran",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6816630417,
+  "lat": 30.7647108,
+  "lon": 74.3778277,
+  "tags": {
+    "name": "Chak Kande Shah",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6816679416,
+  "lat": 30.7682942,
+  "lon": 74.3451291,
+  "tags": {
+    "alt_name": "Megharai Uttarh",
+    "name": "Megha Rai",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6816704969,
+  "lat": 30.7728922,
+  "lon": 74.3292142,
+  "tags": {
+    "name": "Bahadur Ke",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6816727017,
+  "lat": 30.7631181,
+  "lon": 74.3017108,
+  "tags": {
+    "name": "Chak Chhangarae",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6816740808,
+  "lat": 30.7678981,
+  "lon": 74.2931707,
+  "tags": {
+    "name": "Chak Sarkar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6816808349,
+  "lat": 30.7574387,
+  "lon": 74.3090352,
+  "tags": {
+    "alt_name": "Chak Chhanga Rai Hithar",
+    "name": "Chhanga Rai Hithar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6816827135,
+  "lat": 30.7487210,
+  "lon": 74.3307316,
+  "tags": {
+    "name": "Chhanga Rai Uttar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6816834020,
+  "lat": 30.7525587,
+  "lon": 74.3027441,
+  "tags": {
+    "name": "Dona Bahadur",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6816854057,
+  "lat": 30.7579060,
+  "lon": 74.3509446,
+  "tags": {
+    "alt_name": "Bajeke",
+    "name": "Baje Ke",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6817021599,
+  "lat": 30.7427315,
+  "lon": 74.3713777,
+  "tags": {
+    "name": "Pindi",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6817034681,
+  "lat": 30.7478387,
+  "lon": 74.3743925,
+  "tags": {
+    "name": "Chhoti Pindi",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6817066953,
+  "lat": 30.7252835,
+  "lon": 74.3990152,
+  "tags": {
+    "name": "Basti Bohrian wali",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6817231211,
+  "lat": 30.7368218,
+  "lon": 74.3579743,
+  "tags": {
+    "name": "Wasal Mohanke",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6817325888,
+  "lat": 30.7347757,
+  "lon": 74.3462182,
+  "tags": {
+    "alt_name": "Basti Naunari Khokhar",
+    "name": "Nonari Khokhar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6817349038,
+  "lat": 30.7434842,
+  "lon": 74.3257315,
+  "tags": {
+    "alt_name": "Bala Rai Uttar",
+    "name": "Bulla Rai",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6817349039,
+  "lat": 30.7405057,
+  "lon": 74.3142945,
+  "tags": {
+    "name": "Bala Rai Hithar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6818843960,
+  "lat": 30.7318837,
+  "lon": 74.3149992,
+  "tags": {
+    "name": "Megha Panjgrain Hithar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6818970643,
+  "lat": 30.7270604,
+  "lon": 74.3018779,
+  "tags": {
+    "name": "Megha Panjgrain Uttar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6819006690,
+  "lat": 30.7220040,
+  "lon": 74.3445652,
+  "tags": {
+    "alt_name": "Mohan Ke Hithar",
+    "name": "Mohanke Hithar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6819079103,
+  "lat": 30.7181360,
+  "lon": 74.3757896,
+  "tags": {
+    "name": "Mandiwal",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6819576652,
+  "lat": 30.7219654,
+  "lon": 74.2792652,
+  "tags": {
+    "name": "Guddar Panj Grai",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6819592448,
+  "lat": 30.7266276,
+  "lon": 74.2873118,
+  "tags": {
+    "name": "Dona Bhadru",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6837764770,
+  "lat": 30.7096211,
+  "lon": 74.4458037,
+  "tags": {
+    "alt_name": "Baguwala",
+    "name": "Bagu Wala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6837790260,
+  "lat": 30.7193338,
+  "lon": 74.4592362,
+  "tags": {
+    "name": "Chugha",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6842576600,
+  "lat": 30.7285924,
+  "lon": 74.4428080,
+  "tags": {
+    "alt_name": "Basti Nijhar",
+    "name": "Nijjar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6842576628,
+  "lat": 30.7241793,
+  "lon": 74.4322401,
+  "tags": {
+    "alt_name": "Kesar Singh Wala",
+    "name": "Kesarsingh",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6842591802,
+  "lat": 30.7427098,
+  "lon": 74.4521917,
+  "tags": {
+    "name": "Basti Gobindgarh",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6842605667,
+  "lat": 30.7565589,
+  "lon": 74.4677794,
+  "tags": {
+    "alt_name": "Chak Deep Singh Wala",
+    "name": "Deep Singh wala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6842715672,
+  "lat": 30.7834051,
+  "lon": 74.5009835,
+  "tags": {
+    "name": "Chak Haraj",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6842747713,
+  "lat": 30.7845237,
+  "lon": 74.4911981,
+  "tags": {
+    "alt_name": "Burj Makhansingh Wala",
+    "name": "Burj Makhan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6842760320,
+  "lat": 30.7798781,
+  "lon": 74.4862789,
+  "tags": {
+    "alt_name": "Lohara Nawab Sahib",
+    "name": "Lohara Nawab",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6987193070,
+  "lat": 30.7345777,
+  "lon": 74.7351341,
+  "tags": {
+    "name": "Pipli",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 6987275478,
+  "lat": 30.7257876,
+  "lon": 74.7046065,
+  "tags": {
+    "name": "Arianwala Kalan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7005506093,
+  "lat": 30.7282076,
+  "lon": 74.6721855,
+  "tags": {
+    "name": "Burj Masta",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7005575385,
+  "lat": 30.7633310,
+  "lon": 74.5149091,
+  "tags": {
+    "alt_name": "Saide Ke",
+    "name": "Saideke",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7005590826,
+  "lat": 30.7365803,
+  "lon": 74.5410413,
+  "tags": {
+    "alt_name": "JNV Kauni",
+    "amenity": "school",
+    "name": "Jawahar Navodiya Vidyalaya Faridkot"
+  }
+},
+{
+  "type": "node",
+  "id": 7006277413,
+  "lat": 30.7063047,
+  "lon": 74.6739009,
+  "tags": {
+    "name": "Machaki Khurd",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7007462207,
+  "lat": 30.7143069,
+  "lon": 74.5459660,
+  "tags": {
+    "name": "Sangatpura",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7007490593,
+  "lat": 30.7118280,
+  "lon": 74.5040658,
+  "tags": {
+    "name": "Ahel",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7007610477,
+  "lat": 30.7429784,
+  "lon": 74.4814199,
+  "tags": {
+    "name": "Deep Singh Wala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7010921793,
+  "lat": 30.7326467,
+  "lon": 74.7765326,
+  "tags": {
+    "name": "Bholuwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7010960934,
+  "lat": 30.7227671,
+  "lon": 74.7675096,
+  "tags": {
+    "name": "Bir Bholuwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7011163750,
+  "lat": 30.6804427,
+  "lon": 74.7715122,
+  "tags": {
+    "amenity": "college",
+    "name": "Dasmesh Institute Of Research And Dental Sciences"
+  }
+},
+{
+  "type": "node",
+  "id": 7011198916,
+  "lat": 30.6787437,
+  "lon": 74.7666172,
+  "tags": {
+    "amenity": "school",
+    "name": "Dasmesh Public School, Faridkot"
+  }
+},
+{
+  "type": "node",
+  "id": 7011283303,
+  "lat": 30.6699313,
+  "lon": 74.7663154,
+  "tags": {
+    "amenity": "college",
+    "name": "Government Brijindra College Faridkot"
+  }
+},
+{
+  "type": "node",
+  "id": 7033134991,
+  "lat": 30.7077379,
+  "lon": 74.8071073,
+  "tags": {
+    "alt_name": "Pacca",
+    "name": "Pakka",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7033271188,
+  "lat": 30.7149535,
+  "lon": 74.8312687,
+  "tags": {
+    "name": "Kaler",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7033643431,
+  "lat": 30.6839576,
+  "lon": 74.8799429,
+  "tags": {
+    "alt_name": "Kotsukhia",
+    "name": "Kot Sukhia",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7035730394,
+  "lat": 30.6959507,
+  "lon": 74.8531953,
+  "tags": {
+    "name": "Dhudi",
+    "place": "village",
+    "wikidata": "Q31788667",
+    "wikipedia": "en:Dhudi"
+  }
+},
+{
+  "type": "node",
+  "id": 7035730570,
+  "lat": 30.7104361,
+  "lon": 74.8506902,
+  "tags": {
+    "name": "Chak Dhudi",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7035846412,
+  "lat": 30.6709761,
+  "lon": 74.8489077,
+  "tags": {
+    "name": "Chambeli",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7035846469,
+  "lat": 30.6636303,
+  "lon": 74.8570643,
+  "tags": {
+    "name": "Nangal",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7035847874,
+  "lat": 30.6785773,
+  "lon": 74.8304407,
+  "tags": {
+    "name": "Bhana",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7039037322,
+  "lat": 30.6437225,
+  "lon": 74.8770627,
+  "tags": {
+    "name": "Sirsari",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7039130591,
+  "lat": 30.6910856,
+  "lon": 74.7981224,
+  "tags": {
+    "name": "Tehna",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7039198727,
+  "lat": 30.6711149,
+  "lon": 74.7967156,
+  "tags": {
+    "name": "Chahal",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7041556348,
+  "lat": 30.6559044,
+  "lon": 74.8146551,
+  "tags": {
+    "name": "Bir Chahal",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7041573377,
+  "lat": 30.6388019,
+  "lon": 74.8288494,
+  "tags": {
+    "alt_name": "Sikhanwala",
+    "name": "Sikhan Wala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7043277412,
+  "lat": 30.6436378,
+  "lon": 74.8461042,
+  "tags": {
+    "name": "Nathewala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7043351981,
+  "lat": 30.6230653,
+  "lon": 74.8724676,
+  "tags": {
+    "name": "Deviwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7051201970,
+  "lat": 30.6875548,
+  "lon": 74.7522953,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Bhan Singh Colony",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Madhu Nursig Home",
+    "source": "OpenGovernmentData"
+  }
+},
+{
+  "type": "node",
+  "id": 7051201981,
+  "lat": 30.6781984,
+  "lon": 74.7638574,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Battinwala Chowk Kotkapura",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Preet Hospital, Faridkot",
+    "source": "OpenGovernmentData"
+  }
+},
+{
+  "type": "node",
+  "id": 7053752791,
+  "lat": 30.2592420,
+  "lon": 75.8347954,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Near Baba Himmat Singh Dharamsala ,Guru Nanak Colony",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Grewalz Health Care Clinic",
+    "source": "OpenGovernmentData"
+  }
+},
+{
+  "type": "node",
+  "id": 7058986056,
+  "lat": 30.6756587,
+  "lon": 74.7578728,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Main Bazar",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Garg Hospital, Faridkot",
+    "source": "OpenGovernmentData"
+  }
+},
+{
+  "type": "node",
+  "id": 7062914037,
+  "lat": 30.6336204,
+  "lon": 74.9385079,
+  "tags": {
+    "name": "Ghaniewala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7062973282,
+  "lat": 30.6566593,
+  "lon": 74.9396580,
+  "tags": {
+    "name": "Jeon Wala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7063433055,
+  "lat": 30.6721795,
+  "lon": 74.8899654,
+  "tags": {
+    "name": "Bageana",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7066144339,
+  "lat": 30.6484589,
+  "lon": 74.9141282,
+  "tags": {
+    "name": "Aulakh",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7074322918,
+  "lat": 30.3819738,
+  "lon": 75.5467001,
+  "tags": {
+    "addr:district": "Barnala",
+    "addr:full": "kacha Collage Road",
+    "addr:postcode": "148101",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "contact:phone": "098140 55985",
+    "name": "Dr Naresh Hospital And Heart Centre",
+    "source": "OpenGovernmentData"
+  }
+},
+{
+  "type": "node",
+  "id": 7103675544,
+  "lat": 30.2496641,
+  "lon": 75.8399843,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Opp Bus Stand Sangur, Bus Stand Rd, Guru Nanak Colony",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "contact:phone": "0167 222 2777",
+    "healthcare": "clinic",
+    "name": "Jindal Nursing Home, Sangrur",
+    "source": "OpenGovernmentData"
+  }
+},
+{
+  "type": "node",
+  "id": 7103717751,
+  "lat": 30.2573619,
+  "lon": 75.8363119,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Bypass to Patiala, Punia Colony",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Dr. Parveen Goyal Orthopaedic Centre",
+    "source": "OpenGovernmentData"
+  }
+},
+{
+  "type": "node",
+  "id": 7103759055,
+  "lat": 30.2535383,
+  "lon": 75.8362524,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "78, Street No. 2, Mubarak Mahal Colony",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "contact:phone": "0167 223 0774",
+    "healthcare": "hospital",
+    "name": "Yash Ent Hospital",
+    "source": "OpenGovernmentData"
+  }
+},
+{
+  "type": "node",
+  "id": 7103822738,
+  "lat": 30.2542226,
+  "lon": 75.8361421,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Gali Number 2 & 3, Behind Gurudwara, Mehal Mubarak Colony, Dhuri Road",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "contact:phone": "098140 40042",
+    "healthcare": "hospital",
+    "name": "Singla Surgical Hospital, Sangrur",
+    "source": "OpenGovernmentData"
+  }
+},
+{
+  "type": "node",
+  "id": 7103964122,
+  "lat": 30.2570556,
+  "lon": 75.8398763,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Haripura Rd, Punia Colony",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "contact:phone": "0167 225 1601",
+    "healthcare": "hospital",
+    "name": "Bansal Hospital and Heart Centre",
+    "source": "OpenGovernmentData"
+  }
+},
+{
+  "type": "node",
+  "id": 7106002451,
+  "lat": 30.2570887,
+  "lon": 75.8391167,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Punia Colony",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "contact:phone": "0167 222 3580",
+    "healthcare": "hospital",
+    "name": "Sangrur Surgical and Laparoscopic Centre",
+    "source": "OpenGovernmentData"
+  }
+},
+{
+  "type": "node",
+  "id": 7174456600,
+  "lat": 30.6840022,
+  "lon": 74.9778501,
+  "tags": {
+    "name": "Demru Kalan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7174482621,
+  "lat": 30.6634714,
+  "lon": 74.9823481,
+  "tags": {
+    "name": "Lande",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7174879550,
+  "lat": 30.6119055,
+  "lon": 74.9599374,
+  "tags": {
+    "name": "Panjgrain Khurd",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7176774123,
+  "lat": 30.5918788,
+  "lon": 75.0076827,
+  "tags": {
+    "alt_name": "Sekhan Kalan",
+    "name": "Sekha Kalan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7176789791,
+  "lat": 30.6229831,
+  "lon": 75.0511309,
+  "tags": {
+    "name": "Vairoke",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7178543912,
+  "lat": 30.5779141,
+  "lon": 75.0809527,
+  "tags": {
+    "alt_name": "Jita Singh wala",
+    "name": "Jeeta Singh wala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7178557413,
+  "lat": 30.5764147,
+  "lon": 75.1272697,
+  "tags": {
+    "name": "Gulab Singh Wala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7178558563,
+  "lat": 30.5852487,
+  "lon": 75.1055477,
+  "tags": {
+    "name": "Kotla Rai Ka",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7178628337,
+  "lat": 30.6025092,
+  "lon": 75.1536396,
+  "tags": {
+    "amenity": "school",
+    "name": "Govt. Sr. Sec. School, Samadh Bhai"
+  }
+},
+{
+  "type": "node",
+  "id": 7178816044,
+  "lat": 30.6208330,
+  "lon": 75.0832488,
+  "tags": {
+    "name": "Ladhaike",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7178862631,
+  "lat": 30.6451116,
+  "lon": 75.0715432,
+  "tags": {
+    "name": "Kotla Mehar Singh Wala",
+    "name:pa": "ਕੋਟਲਾ ਮੇਹਰ ਸਿੰਘ ਵਾਲਾ",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7178905679,
+  "lat": 30.6333837,
+  "lon": 75.1089183,
+  "tags": {
+    "name": "Channu Wala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7180622496,
+  "lat": 30.6516178,
+  "lon": 75.0300608,
+  "tags": {
+    "amenity": "college",
+    "name": "Government Polytechnic College, GTB Garh"
+  }
+},
+{
+  "type": "node",
+  "id": 7184090285,
+  "lat": 30.6123090,
+  "lon": 75.2303779,
+  "tags": {
+    "alt_name": "Khota",
+    "name": "Khote",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7184092102,
+  "lat": 30.6031302,
+  "lon": 75.2158828,
+  "tags": {
+    "name": "Barewala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7184151296,
+  "lat": 30.5945125,
+  "lon": 75.2094280,
+  "tags": {
+    "alt_name": "Didar Singh Wala",
+    "alt_name_1": "Patto Didar Singh",
+    "name": "Didare Wala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7184250597,
+  "lat": 30.5619403,
+  "lon": 75.1895417,
+  "tags": {
+    "name": "Raunta",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7187074604,
+  "lat": 30.5597145,
+  "lon": 75.2259739,
+  "tags": {
+    "name": "Khai",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7187113271,
+  "lat": 30.5549952,
+  "lon": 75.2306487,
+  "tags": {
+    "amenity": "school",
+    "name": "GHS Khai"
+  }
+},
+{
+  "type": "node",
+  "id": 7187113272,
+  "lat": 30.5928683,
+  "lon": 75.2395573,
+  "tags": {
+    "name": "Patto Hira Singh",
+    "name:pa": "ਪੱਤੋ ਹੀਰਾ ਸਿੰਘ",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7187121423,
+  "lat": 30.6145173,
+  "lon": 75.2449119,
+  "tags": {
+    "name": "Patto Jawahar Singh Wala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7187296633,
+  "lat": 30.6042859,
+  "lon": 75.2936009,
+  "tags": {
+    "name": "Ransih Kalan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7187296634,
+  "lat": 30.5942670,
+  "lon": 75.2995340,
+  "tags": {
+    "name": "Dhurkot Ransih",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7189924616,
+  "lat": 30.5607479,
+  "lon": 75.2775631,
+  "tags": {
+    "name": "Madoke",
+    "name:pa": "ਮੱਦੋਕੇ",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7190036831,
+  "lat": 30.5449304,
+  "lon": 75.2522682,
+  "tags": {
+    "name": "Gajiana",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7190037364,
+  "lat": 30.5328551,
+  "lon": 75.2486302,
+  "tags": {
+    "name": "Burj Hamira",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7190151493,
+  "lat": 30.5568927,
+  "lon": 75.3438552,
+  "tags": {
+    "amenity": "school",
+    "name": "Shaheed Sepoy Sher Singh Sen. Sec School Bhagike"
+  }
+},
+{
+  "type": "node",
+  "id": 7190181167,
+  "lat": 30.5525919,
+  "lon": 75.3381910,
+  "tags": {
+    "name": "Bhagike",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7191036376,
+  "lat": 30.5820864,
+  "lon": 75.3304429,
+  "tags": {
+    "name": "Takhtupura",
+    "name:pa": "ਤਖਤੂਪੁਰਾ",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 7397665261,
+  "lat": 30.8115584,
+  "lon": 73.4452824,
+  "tags": {
+    "amenity": "school"
+  }
+},
+{
+  "type": "node",
+  "id": 7397665262,
+  "lat": 30.8120007,
+  "lon": 73.4449767,
+  "tags": {
+    "amenity": "school"
+  }
+},
+{
+  "type": "node",
+  "id": 7397668526,
+  "lat": 30.8095266,
+  "lon": 73.4410311,
+  "tags": {
+    "amenity": "school"
+  }
+},
+{
+  "type": "node",
+  "id": 7397668527,
+  "lat": 30.8099044,
+  "lon": 73.4421550,
+  "tags": {
+    "amenity": "school"
+  }
+},
+{
+  "type": "node",
+  "id": 7397668528,
+  "lat": 30.8099597,
+  "lon": 73.4412082,
+  "tags": {
+    "amenity": "school"
+  }
+},
+{
+  "type": "node",
+  "id": 7397674625,
+  "lat": 30.8113166,
+  "lon": 73.4435041,
+  "tags": {
+    "amenity": "hospital"
+  }
+},
+{
+  "type": "node",
+  "id": 7397674628,
+  "lat": 30.8131065,
+  "lon": 73.4430535,
+  "tags": {
+    "amenity": "hospital",
+    "name": "DHQ Hospital Okara"
+  }
+},
+{
+  "type": "node",
+  "id": 7397674629,
+  "lat": 30.8111668,
+  "lon": 73.4430589,
+  "tags": {
+    "amenity": "hospital"
+  }
+},
+{
+  "type": "node",
+  "id": 7857166693,
+  "lat": 30.4330370,
+  "lon": 75.5263849,
+  "tags": {
+    "addr:district": "Barnala",
+    "addr:full": "Thikriwala",
+    "addr:postcode": "148103",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Satgur Clinic",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7857166700,
+  "lat": 30.5055555,
+  "lon": 75.4871835,
+  "tags": {
+    "addr:district": "Barnala",
+    "addr:full": "Raisar",
+    "addr:postcode": "148104",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Malerkotla Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7857166702,
+  "lat": 30.2782989,
+  "lon": 75.6817075,
+  "tags": {
+    "addr:district": "Barnala",
+    "addr:full": "Bhaini Mehraj",
+    "addr:postcode": "148106",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Government Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7857166740,
+  "lat": 30.4297242,
+  "lon": 75.5275608,
+  "tags": {
+    "addr:district": "Barnala",
+    "addr:full": "Thikriwala",
+    "addr:postcode": "148101",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Khan Clinic",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7858649677,
+  "lat": 30.5890237,
+  "lon": 75.2834084,
+  "tags": {
+    "addr:district": "Moga",
+    "addr:full": "Guru Gobind Colony",
+    "addr:postcode": "142055",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Deep Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7858649699,
+  "lat": 30.5850340,
+  "lon": 75.2889150,
+  "tags": {
+    "addr:district": "Moga",
+    "addr:postcode": "142055",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Darshana Memorial Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7858649706,
+  "lat": 30.5854440,
+  "lon": 75.2887910,
+  "tags": {
+    "addr:district": "Moga",
+    "addr:postcode": "142055",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Sidhu Multispeciality Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7858649734,
+  "lat": 30.5533690,
+  "lon": 75.3807125,
+  "tags": {
+    "addr:district": "Moga",
+    "addr:full": "Machhike",
+    "addr:postcode": "142039",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Government Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877366,
+  "lat": 30.2575010,
+  "lon": 75.8354320,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Prem Surgery and ENT Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877367,
+  "lat": 30.2573060,
+  "lon": 75.8361370,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Sangrur Petvet Care",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877368,
+  "lat": 30.2516490,
+  "lon": 75.8426570,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Dr. Ashok Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877369,
+  "lat": 30.2509000,
+  "lon": 75.8602360,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "ECHS Polyclinic",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877371,
+  "lat": 30.2569590,
+  "lon": 75.8380690,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Chandigarh Heart Centre",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877372,
+  "lat": 30.2508010,
+  "lon": 75.8392727,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Jindal Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877373,
+  "lat": 30.2542610,
+  "lon": 75.8515470,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Jain Clinic",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877374,
+  "lat": 30.2544886,
+  "lon": 75.8360425,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Sukhmani Healthcare",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877377,
+  "lat": 30.2576680,
+  "lon": 75.8362210,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Punia Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Bhalla Nursing Home",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877378,
+  "lat": 30.2605232,
+  "lon": 75.8440077,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Mittal Healthcare and Dailysis Centre",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877379,
+  "lat": 30.2516120,
+  "lon": 75.8426130,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Madanjeet Eye Care",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877380,
+  "lat": 30.2545023,
+  "lon": 75.8342337,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Ahuja Children & Women Clinic",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877381,
+  "lat": 30.2436640,
+  "lon": 75.8413770,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Metro Hospital & Skincare Centre",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877382,
+  "lat": 30.2546350,
+  "lon": 75.8342910,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "G E Super Speciality Clinic",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877383,
+  "lat": 30.2366600,
+  "lon": 75.8454100,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Dr. Kiran Clinic",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877384,
+  "lat": 30.2573785,
+  "lon": 75.8377893,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Punia Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Dr. Nirpaul Singh Lilly Nursing Home",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877385,
+  "lat": 30.2446240,
+  "lon": 75.8630280,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangru",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Umeed Multi-Speciality Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877386,
+  "lat": 30.2613640,
+  "lon": 75.8365700,
+  "tags": {
+    "addr:city": "Sangrur",
+    "addr:district": "Sangrur",
+    "addr:full": "Punia Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "addr:street": "Lane No. 1, Dhuri Road, Punia Colony",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "healthcare:speciality": "ophthalmology;gynaecology",
+    "name": "Punia Eye & Gynae Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877390,
+  "lat": 30.2517770,
+  "lon": 75.8421900,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Dr. Paul Child Clinic",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877391,
+  "lat": 30.2517650,
+  "lon": 75.8419420,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Dr. Goyals Skin Joint &Trauma Centre",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877392,
+  "lat": 30.2458140,
+  "lon": 75.8421694,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Partap Nagar, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Ooat Clinic",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877393,
+  "lat": 30.2447966,
+  "lon": 75.8629419,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Karuna Neuro Psychiatry Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877395,
+  "lat": 30.2447086,
+  "lon": 75.8407637,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Pal Homeopathic",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877396,
+  "lat": 30.2449090,
+  "lon": 75.8324600,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Gobind Pura Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Sodhi Nursing Home",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877399,
+  "lat": 30.2508220,
+  "lon": 75.8351190,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Guru Nanak Sarai, Mahavir Chowk",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Dr. Jain Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877400,
+  "lat": 30.2553170,
+  "lon": 75.8529720,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Kishanpura, Manshahia Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Best Eye Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877402,
+  "lat": 30.2566770,
+  "lon": 75.8350320,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Singla ENT and Surgery Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877403,
+  "lat": 30.2437230,
+  "lon": 75.8341740,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Partap Nagar, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Singla Healthcare",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877405,
+  "lat": 30.2457834,
+  "lon": 75.8422065,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Partap Nagar, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Kiran Nursing Home",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877406,
+  "lat": 30.2425970,
+  "lon": 75.8344480,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Chirinjeev Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877407,
+  "lat": 30.2526990,
+  "lon": 75.8430540,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Shardul Shinde Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877408,
+  "lat": 30.2528216,
+  "lon": 75.8388969,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Rana Health Care",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877409,
+  "lat": 30.2517205,
+  "lon": 75.8423767,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Dr. D P Singla Child Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877410,
+  "lat": 30.2333550,
+  "lon": 75.8457700,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Kiran Health Care",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877411,
+  "lat": 30.2568850,
+  "lon": 75.8404600,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Haripura, Punia Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Garcha Orthopaedic and Dental Care Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877413,
+  "lat": 30.2472910,
+  "lon": 75.8370850,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Partap Nagar, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Dr. Rana Physiotherapy Clinic",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877414,
+  "lat": 30.2377970,
+  "lon": 75.8373240,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Mittal Eye Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877415,
+  "lat": 30.2505410,
+  "lon": 75.8373580,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Guru Nanak Charitable Eye Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877416,
+  "lat": 30.2453330,
+  "lon": 75.8316050,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Gobind Pura Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Raikhy Nursing Home",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877417,
+  "lat": 30.2516163,
+  "lon": 75.8422840,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Dharmpal Child Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877418,
+  "lat": 30.2427339,
+  "lon": 75.8417692,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Haripura Colony",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Dr. L.D Chhabra Medical Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877419,
+  "lat": 30.2546520,
+  "lon": 75.8426550,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Dr. Prabhat Clinic",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877421,
+  "lat": 30.2488990,
+  "lon": 75.8378290,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Partap Nagar, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Dr. Inderjeet Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877422,
+  "lat": 30.2387000,
+  "lon": 75.8573180,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Homi Baba Cancer Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877423,
+  "lat": 30.2537980,
+  "lon": 75.8342870,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Shishu Care Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877424,
+  "lat": 30.2592740,
+  "lon": 75.8348450,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Punia Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Manesh Healthcare and Research Private Limited",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877425,
+  "lat": 30.2520181,
+  "lon": 75.8360599,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Civil Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877426,
+  "lat": 30.2535251,
+  "lon": 75.8422145,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Guru Nanak Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Mehta Child Care Centre",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877427,
+  "lat": 30.2419380,
+  "lon": 75.8404120,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Deepak Physiotherapy Clinic",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877428,
+  "lat": 30.2529940,
+  "lon": 75.8343320,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Columbia Asia Clinic",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877429,
+  "lat": 30.2543330,
+  "lon": 75.8347120,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Kansal Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877430,
+  "lat": 30.2522680,
+  "lon": 75.8355440,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Mubarik Mehal Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Civil Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877431,
+  "lat": 30.2488499,
+  "lon": 75.8377791,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Partap Nagar, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Dr. Harbans Singh Memorial Hospital & Nursing Home",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877433,
+  "lat": 30.2560070,
+  "lon": 75.8395750,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Punia Colony, Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "healthcare": "hospital",
+    "name": "Aggarwal Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877435,
+  "lat": 30.2518260,
+  "lon": 75.8318170,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Nursing Home",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865877436,
+  "lat": 30.2535824,
+  "lon": 75.8342926,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "healthcare": "clinic",
+    "name": "Mata Kaushalya Memorial Centre",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865940010,
+  "lat": 30.7070529,
+  "lon": 74.5883244,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Sadiq",
+    "addr:postcode": "151212",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Aulakh Ayurvedic Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865940022,
+  "lat": 30.7120470,
+  "lon": 74.5794030,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Sadiq",
+    "addr:postcode": "151212",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Surjeet Nursing Home",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865940025,
+  "lat": 30.7076204,
+  "lon": 74.5863503,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Sadiq",
+    "addr:postcode": "151212",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Thind Clinic",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865940029,
+  "lat": 30.7411357,
+  "lon": 74.4837554,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:postcode": "151212",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Government Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865940031,
+  "lat": 30.7437380,
+  "lon": 74.4804050,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Deep Singh Wala",
+    "addr:postcode": "151212",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Guru Nanak Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865940036,
+  "lat": 30.7069750,
+  "lon": 74.5837240,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Sadiq",
+    "addr:postcode": "151212",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Sandhu Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865940052,
+  "lat": 30.7075950,
+  "lon": 74.5819775,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Sadiq",
+    "addr:postcode": "151212",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Gulzar Madina Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865940053,
+  "lat": 30.7058799,
+  "lon": 74.5859550,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Sadiq",
+    "addr:postcode": "151212",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Hari Nursing Home",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865940066,
+  "lat": 30.7064170,
+  "lon": 74.5861570,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:postcode": "151212",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Sadiq Physiotherapy Clinic",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7865940070,
+  "lat": 30.7082181,
+  "lon": 74.5831910,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Sadiq",
+    "addr:postcode": "151212",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "VM General and Child Care Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866263677,
+  "lat": 30.2587960,
+  "lon": 75.7417660,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Sangrur, Bahadurpur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Dental Care Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866263712,
+  "lat": 30.2661702,
+  "lon": 75.7751277,
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Government Health Centre",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448308,
+  "lat": 30.6770796,
+  "lon": 74.7591244,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Ajit Nagar",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Boor Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448309,
+  "lat": 30.6735330,
+  "lon": 74.7538990,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Bhupindra Maternity Home",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448313,
+  "lat": 30.6765660,
+  "lon": 74.7572860,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Ajit Nagar",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "City Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448314,
+  "lat": 30.6737558,
+  "lon": 74.7505066,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Nahikhana",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Radiant Laser and Aesthetic Centre",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448315,
+  "lat": 30.6845099,
+  "lon": 74.7539522,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Goyal Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448321,
+  "lat": 30.6876016,
+  "lon": 74.7523917,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Bhan Singh Colony",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Chandigarh Eye Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448322,
+  "lat": 30.6772530,
+  "lon": 74.7593900,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Baba Ayurvedic Dawakhana",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448328,
+  "lat": 30.6767420,
+  "lon": 74.7577630,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Ajit Nagar",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Garg Multi Speciality Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448336,
+  "lat": 30.6756784,
+  "lon": 74.7553119,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Ajit Nagar",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Rahat Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448338,
+  "lat": 30.6759620,
+  "lon": 74.7545320,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Ajit Nagar",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Sethi Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448341,
+  "lat": 30.6789820,
+  "lon": 74.7604050,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Garden Colony",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Civil Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448347,
+  "lat": 30.6872726,
+  "lon": 74.7514678,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Gill Eye Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448348,
+  "lat": 30.6770270,
+  "lon": 74.7610100,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Balbir Basti",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Khosa Physiotherapy",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448355,
+  "lat": 30.6770830,
+  "lon": 74.7540890,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Ajit Nagar",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Ludhiana Nursing Home",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448363,
+  "lat": 30.6827550,
+  "lon": 74.7438900,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Narain Nagar, Guru Nanak Colony",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Bikram Joint and Trauma Centre",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448366,
+  "lat": 30.6738930,
+  "lon": 74.7550260,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Ajit Nagar",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "clinic",
+    "name": "Mehma Nursing Home",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448373,
+  "lat": 30.6748303,
+  "lon": 74.7548530,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Arogya Hospital and Medical Centre",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448374,
+  "lat": 30.6853270,
+  "lon": 74.7533640,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Nulife Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448382,
+  "lat": 30.6745250,
+  "lon": 74.7505920,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Ajit Nagar",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Sachdeva Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448383,
+  "lat": 30.6707480,
+  "lon": 74.7564830,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Ajit Nagar",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Mittal Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 7866448390,
+  "lat": 30.6721916,
+  "lon": 74.7601282,
+  "tags": {
+    "addr:district": "Faridkot",
+    "addr:full": "Circular Road, Ajit Nagar",
+    "addr:postcode": "151203",
+    "addr:state": "Punjab",
+    "amenity": "hospital",
+    "name": "Balbir Hospital",
+    "source": "Local Knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 8828293586,
+  "lat": 30.7133477,
+  "lon": 73.7364355,
+  "tags": {
+    "name": "سلووال",
+    "name:en": "Salowal",
+    "name:ur": "سلووال",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 8828293587,
+  "lat": 30.7604349,
+  "lon": 73.8056996,
+  "tags": {
+    "name": "کوٹ شوکت",
+    "name:en": "Kot Shaukat",
+    "name:hi": "कोट शौकत",
+    "name:ur": "کوٹ شوکت",
+    "place": "town"
+  }
+},
+{
+  "type": "node",
+  "id": 8828293594,
+  "lat": 30.7710769,
+  "lon": 73.8392696,
+  "tags": {
+    "name": "شمسّکے",
+    "name:en": "Shamske",
+    "name:ur": "شمسّکے",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 8828293595,
+  "lat": 30.7883773,
+  "lon": 73.8444506,
+  "tags": {
+    "alt_name": "قلعہ سوبھا سنگھ",
+    "alt_name:en": "Qila Sobha Singh",
+    "name": "قلعہ احمد آباد",
+    "name:en": "Qila Ahmad Abad",
+    "name:hi": "किला अहमदाबाद",
+    "name:ur": "قلعہ احمد آباد",
+    "place": "town"
+  }
+},
+{
+  "type": "node",
+  "id": 8828300519,
+  "lat": 30.7893006,
+  "lon": 73.8525328,
+  "tags": {
+    "name": "نقی نگر",
+    "name:en": "Naqinagar",
+    "name:ur": "نقی نگر",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 8828480971,
+  "lat": 30.8163728,
+  "lon": 73.9145491,
+  "tags": {
+    "name": "راجوال",
+    "name:en": "Rajowal",
+    "name:hi": "राजोवाल",
+    "name:ml": "രാജോവാൽ",
+    "name:ur": "راجوال",
+    "place": "town"
+  }
+},
+{
+  "type": "node",
+  "id": 8828499990,
+  "lat": 30.7691590,
+  "lon": 74.1249286,
+  "tags": {
+    "name": "کنگن پور",
+    "name:en": "Kanganpur",
+    "name:hi": "कंगनपुर",
+    "name:ml": "കംഗൻപൂർ",
+    "name:ur": "کنگن پور",
+    "place": "town",
+    "population": "28184",
+    "wikidata": "Q6362466"
+  }
+},
+{
+  "type": "node",
+  "id": 8830760311,
+  "lat": 30.6534934,
+  "lon": 74.0298874,
+  "tags": {
+    "name": "منڈی احمد آباد",
+    "name:en": "Mandi Ahmedabad",
+    "name:hi": "मंडी अहमदाबाद",
+    "name:ml": "മണ്ഡി അഹമ്മദാബാദ്",
+    "place": "town",
+    "population": "54467"
+  }
+},
+{
+  "type": "node",
+  "id": 9244372140,
+  "lat": 30.9163857,
+  "lon": 73.5135377,
+  "tags": {
+    "name": "ستگهره‎",
+    "name:en": "Satghara",
+    "name:hi": "सतघरा",
+    "name:ur": "ستگهره‎",
+    "place": "town",
+    "population": "4922"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417054,
+  "lat": 30.8545923,
+  "lon": 73.5096447,
+  "tags": {
+    "name": "26/2-R چک",
+    "name:en": "Chak 26/2-R",
+    "place": "village",
+    "population": "2844"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417055,
+  "lat": 30.8382308,
+  "lon": 73.4924662,
+  "tags": {
+    "name": "27/2-R چک",
+    "name:en": "Chak 27/2-R",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417056,
+  "lat": 30.8617785,
+  "lon": 73.4785552,
+  "tags": {
+    "name": "28/2-R چک",
+    "name:en": "Chak 28/2-R",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417064,
+  "lat": 30.8507170,
+  "lon": 73.4659547,
+  "tags": {
+    "name": "34/2-R چک",
+    "name:en": "Chak 34/2-R",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417065,
+  "lat": 30.8520754,
+  "lon": 73.4493745,
+  "tags": {
+    "name": "33/2-R چک",
+    "name:en": "Chak 33/2-R",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417066,
+  "lat": 30.8551341,
+  "lon": 73.4393552,
+  "tags": {
+    "name": "38/2-R چک",
+    "name:en": "Chak 38/2-R",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417083,
+  "lat": 30.8245291,
+  "lon": 73.5046304,
+  "tags": {
+    "name": "26/2-L چک",
+    "name:en": "Chak 26/2-L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417084,
+  "lat": 30.8165765,
+  "lon": 73.4811406,
+  "tags": {
+    "name": "55/2-L چک",
+    "name:en": "Chak 55/2-L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417085,
+  "lat": 30.8110182,
+  "lon": 73.5092379,
+  "tags": {
+    "name": "27/2-L چک",
+    "name:en": "Chak 27/2-L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417086,
+  "lat": 30.7924083,
+  "lon": 73.5213908,
+  "tags": {
+    "name": "28/2-L چک",
+    "name:en": "Chak 28/2-L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417087,
+  "lat": 30.7747128,
+  "lon": 73.5138605,
+  "tags": {
+    "name": "49/2-L چک",
+    "name:en": "Chak 49/2-L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417088,
+  "lat": 30.7824193,
+  "lon": 73.4986259,
+  "tags": {
+    "name": "51/2-L چک",
+    "name:en": "Chak 51/2-L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417089,
+  "lat": 30.7813443,
+  "lon": 73.4701868,
+  "tags": {
+    "name": "52/2-L چک",
+    "name:en": "Chak 52/2-L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417090,
+  "lat": 30.7675154,
+  "lon": 73.4814243,
+  "tags": {
+    "name": "50/2-L چک",
+    "name:en": "Chak 50/2-L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417092,
+  "lat": 30.7602729,
+  "lon": 73.5092391,
+  "tags": {
+    "name": "49/2-L چک",
+    "name:en": "Chak 49/2-L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417094,
+  "lat": 30.7625522,
+  "lon": 73.5300959,
+  "tags": {
+    "name": "48/2-L چک",
+    "name:en": "Chak 48/2-L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417095,
+  "lat": 30.7537985,
+  "lon": 73.5264247,
+  "tags": {
+    "name": "47/2-L چک",
+    "name:en": "Chak 48/2-L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417107,
+  "lat": 30.7484171,
+  "lon": 73.5525792,
+  "tags": {
+    "name": "31/2-L چک",
+    "name:en": "Chak 31/2-L",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417153,
+  "lat": 30.7373200,
+  "lon": 73.5737632,
+  "tags": {
+    "name": "40/D چک",
+    "name:en": "Chak 40/D",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417192,
+  "lat": 30.7244861,
+  "lon": 73.6450341,
+  "tags": {
+    "alt_name": "Chak Jawahar Singh",
+    "name": "اسلام پورہ",
+    "name:en": "Islampura",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417194,
+  "lat": 30.7437725,
+  "lon": 73.6437529,
+  "tags": {
+    "name": "قلعہ جوند سنگھ",
+    "name:en": "Qila Jawind Singh",
+    "name:ur": "قلعہ جوند سنگھ",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417222,
+  "lat": 30.7680866,
+  "lon": 73.6633019,
+  "tags": {
+    "name": "29/D چک",
+    "name:en": "Chak 29/D",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417223,
+  "lat": 30.7401167,
+  "lon": 73.6729777,
+  "tags": {
+    "name": "31/D چک",
+    "name:en": "Chak 31/D",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417224,
+  "lat": 30.7507758,
+  "lon": 73.6819859,
+  "tags": {
+    "name": "30/D چک",
+    "name:en": "Chak 30/D",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417244,
+  "lat": 30.7627402,
+  "lon": 73.6899016,
+  "tags": {
+    "name": "سبزپورہ",
+    "name:en": "Sabzpura",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417269,
+  "lat": 30.7762122,
+  "lon": 73.6980434,
+  "tags": {
+    "name": "مصطفی آباد",
+    "name:en": "Mustafabad",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417276,
+  "lat": 30.7869020,
+  "lon": 73.7192016,
+  "tags": {
+    "name": "24/D چک",
+    "name:en": "Chak 24/D",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417277,
+  "lat": 30.7855960,
+  "lon": 73.6902444,
+  "tags": {
+    "name": "27/D چک",
+    "name:en": "Chak 27/D",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417300,
+  "lat": 30.7971127,
+  "lon": 73.7617114,
+  "tags": {
+    "name": "19/D چک",
+    "name:en": "Chak 19/D",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9244417324,
+  "lat": 30.7940476,
+  "lon": 73.7835003,
+  "tags": {
+    "name": "18/D چک",
+    "name:en": "Chak 18/D",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247046100,
+  "lat": 30.8999298,
+  "lon": 73.4114974,
+  "tags": {
+    "name": "24 GD چک",
+    "name:en": "Chak 24 GD",
+    "name:ur": "24 GD چک",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247046102,
+  "lat": 30.8849702,
+  "lon": 73.4023907,
+  "tags": {
+    "name": "20 GD چک",
+    "name:en": "Chak 20 GD",
+    "name:ur": "20 GD چک",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247046103,
+  "lat": 30.8655415,
+  "lon": 73.4038001,
+  "tags": {
+    "name": "21 GD چک",
+    "name:en": "Chak 21 GD",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215704,
+  "lat": 30.8115840,
+  "lon": 74.2379779,
+  "tags": {
+    "name": "نجابت",
+    "name:en": "Najabat",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215705,
+  "lat": 30.8115048,
+  "lon": 74.2500547,
+  "tags": {
+    "name": "Kot Bhatianwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215709,
+  "lat": 30.8022109,
+  "lon": 74.2269261,
+  "tags": {
+    "name": "ھستی والا",
+    "name:en": "Hastiwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215710,
+  "lat": 30.8006317,
+  "lon": 74.2139323,
+  "tags": {
+    "name": "ڈھنگیاں والی",
+    "name:en": "Dhangianwali",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215711,
+  "lat": 30.7897525,
+  "lon": 74.2292665,
+  "tags": {
+    "name": "کوٹ سندر سنگھـ",
+    "name:en": "Kot Sundar Singh",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215712,
+  "lat": 30.7890759,
+  "lon": 74.2380798,
+  "tags": {
+    "name": "شیرے والا",
+    "name:en": "Sherewala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215713,
+  "lat": 30.8019959,
+  "lon": 74.2538842,
+  "tags": {
+    "name": "Basti Kamal Din",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215714,
+  "lat": 30.7895879,
+  "lon": 74.1999809,
+  "tags": {
+    "name": "ڈھوں والی",
+    "name:en": "Dhonwali",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215715,
+  "lat": 30.7874125,
+  "lon": 74.2100146,
+  "tags": {
+    "name": "شامیوالی",
+    "name:en": "Shamewali",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215716,
+  "lat": 30.7825083,
+  "lon": 74.1880688,
+  "tags": {
+    "name": "موکل",
+    "name:en": "Mokal",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215717,
+  "lat": 30.7658803,
+  "lon": 74.1825623,
+  "tags": {
+    "name": "قائم شاہ والا",
+    "name:en": "Qaim Shah Wala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215718,
+  "lat": 30.7713378,
+  "lon": 74.1713470,
+  "tags": {
+    "name": "چاھل نو",
+    "name:en": "Chahal Nau",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215719,
+  "lat": 30.7592179,
+  "lon": 74.2080254,
+  "tags": {
+    "name": "شمیانوالی",
+    "name:en": "Chimianwali",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215720,
+  "lat": 30.7518911,
+  "lon": 74.2112869,
+  "tags": {
+    "name": "کلی شاھو",
+    "name:en": "Killi Shahu",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215721,
+  "lat": 30.7515715,
+  "lon": 74.2026180,
+  "tags": {
+    "name": "لوھلی جٹاں",
+    "name:en": "Lohli Jattan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215722,
+  "lat": 30.7503429,
+  "lon": 74.1739044,
+  "tags": {
+    "name": "ہرچوکے ہٹھاڈ",
+    "name:en": "Harchuke Hithar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215723,
+  "lat": 30.7501007,
+  "lon": 74.1556477,
+  "tags": {
+    "name": "منوڑیاں",
+    "name:en": "Manurian",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215724,
+  "lat": 30.7645969,
+  "lon": 74.1544768,
+  "tags": {
+    "name": "محمود کھوکھر",
+    "name:en": "Mahmud Khokhar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215725,
+  "lat": 30.7582621,
+  "lon": 74.1415974,
+  "tags": {
+    "name": "قاضی والا",
+    "name:en": "Qaziwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215726,
+  "lat": 30.7497381,
+  "lon": 74.1254820,
+  "tags": {
+    "name": "Mirewala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215727,
+  "lat": 30.7726966,
+  "lon": 74.1646955,
+  "tags": {
+    "name": "کونا",
+    "name:en": "Kona",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215728,
+  "lat": 30.7807037,
+  "lon": 74.1624826,
+  "tags": {
+    "name": "مہر چاند والا",
+    "name:en": "Mehr Chandwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215729,
+  "lat": 30.7748190,
+  "lon": 74.1494565,
+  "tags": {
+    "name": "کالس گاماں",
+    "name:en": "Kals Gaman",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215730,
+  "lat": 30.7852862,
+  "lon": 74.1500446,
+  "tags": {
+    "name": "کالس نو",
+    "name:en": "Kals Nau",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215731,
+  "lat": 30.7930986,
+  "lon": 74.1637884,
+  "tags": {
+    "name": "بستی قطب شاہ",
+    "name:en": "Basti Qatb Shah",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215732,
+  "lat": 30.8016409,
+  "lon": 74.1849797,
+  "tags": {
+    "name": "ٹانگریاں",
+    "name:en": "Tangrian",
+    "place": "village",
+    "wikidata": "Q15983002",
+    "wikipedia": "en:Tangrian"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215733,
+  "lat": 30.7838732,
+  "lon": 74.1307555,
+  "tags": {
+    "name": "مانک دیکی",
+    "name:en": "Manak Deki",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215754,
+  "lat": 30.8025737,
+  "lon": 74.1418315,
+  "tags": {
+    "name": "شام کوٹ کہنا",
+    "name:en": "Sham Kot Kohna",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215755,
+  "lat": 30.8147697,
+  "lon": 74.1664602,
+  "tags": {
+    "name": "کوٹھا",
+    "name:en": "Kotha",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215759,
+  "lat": 30.7634417,
+  "lon": 74.1017326,
+  "tags": {
+    "name": "کوٹ محمد حسن",
+    "name:en": "Kot Muhammad Hasan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215760,
+  "lat": 30.7746496,
+  "lon": 74.0967485,
+  "tags": {
+    "name": "کوٹ چنگیاں والا",
+    "name:en": "Kot Changianwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9247215761,
+  "lat": 30.7535800,
+  "lon": 74.0804309,
+  "tags": {
+    "name": "لنڈے والا",
+    "name:en": "Landewala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9362926968,
+  "lat": 30.8206823,
+  "lon": 74.1060124,
+  "tags": {
+    "name": "شام کوٹ نو",
+    "name:en": "Shamkot Nau",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9362926970,
+  "lat": 30.8221006,
+  "lon": 74.0901947,
+  "tags": {
+    "name": "ہسنا",
+    "name:en": "Hasna",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9362926986,
+  "lat": 30.8151716,
+  "lon": 74.0588364,
+  "tags": {
+    "name": "دھت",
+    "name:en": "Dhutte",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9362926987,
+  "lat": 30.8168493,
+  "lon": 74.0512544,
+  "tags": {
+    "name": "اکیکے",
+    "name:en": "Akike",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9362926988,
+  "lat": 30.8143204,
+  "lon": 74.0478494,
+  "tags": {
+    "name": "Poleki",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9362926996,
+  "lat": 30.8031662,
+  "lon": 74.0728459,
+  "tags": {
+    "name": "لس پورہ",
+    "name:en": "Luspura",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9362926997,
+  "lat": 30.7926476,
+  "lon": 74.1015694,
+  "tags": {
+    "name": "فتوکے",
+    "name:en": "Fattuke",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9362926998,
+  "lat": 30.7825692,
+  "lon": 74.1011589,
+  "tags": {
+    "name": "نیا فتوکے",
+    "name:en": "Naya Fattuke",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9362926999,
+  "lat": 30.7798488,
+  "lon": 74.0716356,
+  "tags": {
+    "name": "اکیکے",
+    "name:en": "Akike",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9362927000,
+  "lat": 30.7725020,
+  "lon": 74.0706906,
+  "tags": {
+    "name": "اٹاری اکیکے",
+    "name:en": "Attari Akike",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 9362927006,
+  "lat": 30.7816002,
+  "lon": 74.0494970,
+  "tags": {
+    "name": "ڈھڈیاں",
+    "name:en": "Dhuddian",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 10608662887,
+  "lat": 30.7398348,
+  "lon": 73.0934179,
+  "tags": {
+    "alt_name": "چک 56 گی ڈی;چک 56 جی ڈی",
+    "alt_name:en": "Chak 56 GD Modan;Chak 56 GD Modaan;Modan;Modaan",
+    "name": "مودان",
+    "name:en": "Chak 56 GD",
+    "name:pnb": "مودان",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 10780748935,
+  "lat": 30.7336865,
+  "lon": 74.1612717,
+  "tags": {
+    "name": "چھبّر",
+    "name:en": "Chabbar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 10780800372,
+  "lat": 30.7055902,
+  "lon": 73.9195307,
+  "tags": {
+    "name": "جیٹھ پور",
+    "name:en": "Jaith Pur",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 10780800373,
+  "lat": 30.7128665,
+  "lon": 73.9528869,
+  "tags": {
+    "name": "Qadir Abad",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 10780800379,
+  "lat": 30.7142367,
+  "lon": 73.9710619,
+  "tags": {
+    "name": "Pir Hayat",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 10780800388,
+  "lat": 30.6790069,
+  "lon": 73.9782696,
+  "tags": {
+    "name": "Dogray",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 10780800389,
+  "lat": 30.6821728,
+  "lon": 74.0134018,
+  "tags": {
+    "name": "لکھو ملکانہ",
+    "name:en": "Lakho Malkana",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 10780800491,
+  "lat": 30.7104249,
+  "lon": 74.0611410,
+  "tags": {
+    "name": "بھیلا گلاب سنگھ",
+    "name:en": "Bheela Gulab Singh",
+    "place": "village",
+    "wikidata": "Q4901670",
+    "wikipedia": "en:Bhela Gulab Singh"
+  }
+},
+{
+  "type": "node",
+  "id": 10780800507,
+  "lat": 30.7206581,
+  "lon": 74.0444426,
+  "tags": {
+    "name": "Maujoke",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 10780807942,
+  "lat": 30.7432302,
+  "lon": 74.1158354,
+  "tags": {
+    "name": "کھبے بقاپور",
+    "name:en": "Khabay Baqapur",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 10809734402,
+  "lat": 30.7356009,
+  "lon": 74.0716817,
+  "tags": {
+    "name": "مکھنے والا",
+    "name:en": "Makhne Wala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 10809734418,
+  "lat": 30.7003803,
+  "lon": 74.0408970,
+  "tags": {
+    "name": "Jallan Wali",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 10809792941,
+  "lat": 30.7989343,
+  "lon": 74.2476645,
+  "tags": {
+    "name": "Gojaranwali",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11004212900,
+  "lat": 30.8122944,
+  "lon": 73.4739420,
+  "tags": {
+    "name": "Jawad Avenue",
+    "place": "town"
+  }
+},
+{
+  "type": "node",
+  "id": 11090575476,
+  "lat": 30.7386315,
+  "lon": 73.8483469,
+  "tags": {
+    "name": "Bhattian",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090575477,
+  "lat": 30.7381889,
+  "lon": 73.8702623,
+  "tags": {
+    "name": "Kot Shah Mushtaq",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090575478,
+  "lat": 30.7391971,
+  "lon": 73.8853971,
+  "tags": {
+    "name": "Thatha",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090575479,
+  "lat": 30.7404267,
+  "lon": 73.8966409,
+  "tags": {
+    "name": "Kot Muhammad Hussain",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090575480,
+  "lat": 30.7333690,
+  "lon": 73.9145509,
+  "tags": {
+    "name": "Kot Salamat",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090575483,
+  "lat": 30.7212935,
+  "lon": 73.9008752,
+  "tags": {
+    "name": "Phularwan Wazirke",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090575484,
+  "lat": 30.7221790,
+  "lon": 73.8678876,
+  "tags": {
+    "name": "Bhukan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090575485,
+  "lat": 30.7152429,
+  "lon": 73.8851682,
+  "tags": {
+    "name": "Hanifnagar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090575486,
+  "lat": 30.7515408,
+  "lon": 73.8594190,
+  "tags": {
+    "name": "Dhul Ghela",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090575487,
+  "lat": 30.7576629,
+  "lon": 73.8678018,
+  "tags": {
+    "name": "Jhojh Khurd",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090575488,
+  "lat": 30.7563598,
+  "lon": 73.8918058,
+  "tags": {
+    "name": "Jhojh Kalan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090575489,
+  "lat": 30.7543191,
+  "lon": 73.9078847,
+  "tags": {
+    "name": "Kot Mohan Singh",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090575500,
+  "lat": 30.7607661,
+  "lon": 73.9274610,
+  "tags": {
+    "name": "Ram Parshad",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090575501,
+  "lat": 30.7772121,
+  "lon": 73.9367879,
+  "tags": {
+    "name": "Kharal Kalan",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090575504,
+  "lat": 30.7629296,
+  "lon": 73.9466012,
+  "tags": {
+    "name": "Rohela Metla",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090587082,
+  "lat": 30.8045951,
+  "lon": 73.8077769,
+  "tags": {
+    "name": "Rasaldar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090587083,
+  "lat": 30.7959201,
+  "lon": 73.8270888,
+  "tags": {
+    "name": "Nazimpura",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090587084,
+  "lat": 30.7891384,
+  "lon": 73.8149482,
+  "tags": {
+    "name": "Rajgarh",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090587085,
+  "lat": 30.7816158,
+  "lon": 73.8243423,
+  "tags": {
+    "name": "Sehti",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090587086,
+  "lat": 30.7923319,
+  "lon": 73.8529525,
+  "tags": {
+    "name": "Naqinagar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090587087,
+  "lat": 30.8075439,
+  "lon": 73.8524947,
+  "tags": {
+    "name": "Amanwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090587088,
+  "lat": 30.7958955,
+  "lon": 73.8680587,
+  "tags": {
+    "name": "Basti Nur Elahi",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090608905,
+  "lat": 30.7639375,
+  "lon": 73.9549268,
+  "tags": {
+    "name": "Sardar Khanke",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090608908,
+  "lat": 30.7688513,
+  "lon": 73.8610561,
+  "tags": {
+    "name": "Faizpura",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090608909,
+  "lat": 30.7727057,
+  "lon": 73.8599716,
+  "tags": {
+    "name": "Bhai Ke Lal Chand",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090608910,
+  "lat": 30.7796942,
+  "lon": 73.8513118,
+  "tags": {
+    "name": "Hashainabad",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090608911,
+  "lat": 30.7665216,
+  "lon": 73.8336800,
+  "tags": {
+    "name": "Tibbe",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090608912,
+  "lat": 30.7657732,
+  "lon": 73.8174942,
+  "tags": {
+    "name": "Shori Sia",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090608913,
+  "lat": 30.7656603,
+  "lon": 73.8403351,
+  "tags": {
+    "name": "Basti Araian",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090608914,
+  "lat": 30.7541238,
+  "lon": 73.8353232,
+  "tags": {
+    "name": "Rakkar",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090608915,
+  "lat": 30.7526410,
+  "lon": 73.8288489,
+  "tags": {
+    "name": "Abadi Malul",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090608916,
+  "lat": 30.7502686,
+  "lon": 73.8167876,
+  "tags": {
+    "name": "Kot Amin Shah",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090608917,
+  "lat": 30.7533471,
+  "lon": 73.8123509,
+  "tags": {
+    "name": "Ahmadabad",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090608918,
+  "lat": 30.7520338,
+  "lon": 73.8047428,
+  "tags": {
+    "name": "Ghauspur Gujran",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090608919,
+  "lat": 30.7560019,
+  "lon": 73.7959515,
+  "tags": {
+    "name": "Abadi Araian",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090608920,
+  "lat": 30.7407358,
+  "lon": 73.7821484,
+  "tags": {
+    "name": "Dhiroke Khara",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090608921,
+  "lat": 30.7531212,
+  "lon": 73.7815569,
+  "tags": {
+    "name": "Hans Hitharwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090617420,
+  "lat": 30.7791587,
+  "lon": 73.7899828,
+  "tags": {
+    "name": "Bhagowala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090617421,
+  "lat": 30.7828178,
+  "lon": 73.7941671,
+  "tags": {
+    "name": "4/D چک",
+    "name:en": "Chak 4/D",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090617422,
+  "lat": 30.7686515,
+  "lon": 73.7847524,
+  "tags": {
+    "name": "Dhola Dhupi",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090617423,
+  "lat": 30.7680095,
+  "lon": 73.7739678,
+  "tags": {
+    "name": "Dhupai",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090617424,
+  "lat": 30.7598126,
+  "lon": 73.7768071,
+  "tags": {
+    "name": "Khu Bhattianwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090617429,
+  "lat": 30.7574368,
+  "lon": 73.7845282,
+  "tags": {
+    "name": "Mahtam",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090617430,
+  "lat": 30.7518290,
+  "lon": 73.7591981,
+  "tags": {
+    "name": "Wanaik",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090617431,
+  "lat": 30.7436735,
+  "lon": 73.7541919,
+  "tags": {
+    "name": "Sahniwala",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090617432,
+  "lat": 30.7480831,
+  "lon": 73.7705058,
+  "tags": {
+    "name": "Singoke",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090617433,
+  "lat": 30.7442566,
+  "lon": 73.7414347,
+  "tags": {
+    "name": "Rangilpura",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090617434,
+  "lat": 30.7286760,
+  "lon": 73.7311137,
+  "tags": {
+    "name": "Salihowal",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090617435,
+  "lat": 30.7378830,
+  "lon": 73.7045956,
+  "tags": {
+    "name": "Sham Din",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090617436,
+  "lat": 30.7327764,
+  "lon": 73.6981775,
+  "tags": {
+    "name": "Wahghara",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11090617437,
+  "lat": 30.7162771,
+  "lon": 73.6896202,
+  "tags": {
+    "name": "Basti Saidan Sain",
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11676342515,
+  "lat": 30.7568244,
+  "lon": 73.9891806,
+  "tags": {
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11676342522,
+  "lat": 30.7402504,
+  "lon": 73.9952469,
+  "tags": {
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11676360423,
+  "lat": 30.6362307,
+  "lon": 73.0018128,
+  "tags": {
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11676360698,
+  "lat": 30.8306087,
+  "lon": 73.3971214,
+  "tags": {
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11676360701,
+  "lat": 30.5793009,
+  "lon": 73.0295020,
+  "tags": {
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11676360702,
+  "lat": 30.5682716,
+  "lon": 73.0126362,
+  "tags": {
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11676360703,
+  "lat": 30.5600681,
+  "lon": 73.0049973,
+  "tags": {
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11676407073,
+  "lat": 30.6584840,
+  "lon": 73.0186286,
+  "tags": {
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 11676407074,
+  "lat": 30.6500132,
+  "lon": 73.0020708,
+  "tags": {
+    "place": "village"
+  }
+},
+{
+  "type": "node",
+  "id": 12242550011,
+  "lat": 30.8126702,
+  "lon": 73.4423736,
+  "tags": {
+    "amenity": "hospital",
+    "name": "DHQ Hospital Okara"
+  }
+},
+{
+  "type": "node",
+  "id": 12242550012,
+  "lat": 30.8120378,
+  "lon": 73.4427187,
+  "tags": {
+    "amenity": "hospital",
+    "name": "DHQ Hospital Okara"
+  }
+},
+{
+  "type": "node",
+  "id": 12505501667,
+  "lat": 30.7920851,
+  "lon": 73.8186488,
+  "tags": {
+    "place": "village"
+  }
+},
+{
+  "type": "way",
+  "id": 165067725,
+  "center": {
+    "lat": 30.2521986,
+    "lon": 75.8365280
+  },
+  "tags": {
+    "addr:district": "Sangrur",
+    "addr:full": "Barnala kenchia, Dhuri Malerkotla road",
+    "addr:postcode": "148001",
+    "addr:state": "Punjab",
+    "addr:subdistrict": "Sangrur",
+    "amenity": "hospital",
+    "contact:phone": "1672232075",
+    "description": "Civil Hospital",
+    "emergency": "yes",
+    "name": "Civil Hospital, Sangrur",
+    "source": "OpenGovernmentData"
+  }
+},
+{
+  "type": "way",
+  "id": 187897317,
+  "center": {
+    "lat": 30.2462173,
+    "lon": 75.8641628
+  },
+  "tags": {
+    "addr:postcode": "148001",
+    "addr:street": "Sangrur Bypass",
+    "amenity": "school",
+    "name": "General Gurnam Singh Public School"
+  }
+},
+{
+  "type": "way",
+  "id": 368021562,
+  "center": {
+    "lat": 30.6672314,
+    "lon": 73.0794795
+  },
+  "tags": {
+    "amenity": "college",
+    "name": "Medical College"
+  }
+},
+{
+  "type": "way",
+  "id": 548042474,
+  "center": {
+    "lat": 30.8551190,
+    "lon": 73.3279578
+  },
+  "tags": {
+    "addr:city": "Chak No 43 G/D",
+    "addr:postcode": "56300",
+    "amenity": "school",
+    "name": "Government School"
+  }
+},
+{
+  "type": "way",
+  "id": 749127809,
+  "center": {
+    "lat": 30.7364270,
+    "lon": 74.5411123
+  },
+  "tags": {
+    "amenity": "school",
+    "name": "JNV Faridkot"
+  }
+},
+{
+  "type": "way",
+  "id": 749330313,
+  "center": {
+    "lat": 30.6945230,
+    "lon": 74.6514120
+  },
+  "tags": {
+    "amenity": "college",
+    "name": "AIET Faridkot"
+  }
+},
+{
+  "type": "way",
+  "id": 749767728,
+  "center": {
+    "lat": 30.6800493,
+    "lon": 74.7721895
+  },
+  "tags": {
+    "amenity": "college"
+  }
+},
+{
+  "type": "way",
+  "id": 749770781,
+  "center": {
+    "lat": 30.6789622,
+    "lon": 74.7677370
+  },
+  "tags": {
+    "amenity": "school",
+    "name": "Dashmesh School"
+  }
+},
+{
+  "type": "way",
+  "id": 749782432,
+  "center": {
+    "lat": 30.6698915,
+    "lon": 74.7673306
+  },
+  "tags": {
+    "amenity": "college",
+    "name": "Brijindra College"
+  }
+},
+{
+  "type": "way",
+  "id": 769008207,
+  "center": {
+    "lat": 30.6027040,
+    "lon": 75.1536142
+  },
+  "tags": {
+    "amenity": "school"
+  }
+},
+{
+  "type": "way",
+  "id": 769643249,
+  "center": {
+    "lat": 30.5610851,
+    "lon": 75.1946453
+  },
+  "tags": {
+    "amenity": "school",
+    "name": "GSSS Raunta"
+  }
+},
+{
+  "type": "way",
+  "id": 770225484,
+  "center": {
+    "lat": 30.5565972,
+    "lon": 75.2785571
+  },
+  "tags": {
+    "amenity": "school",
+    "name": "Govt High School Madheke"
+  }
+},
+{
+  "type": "way",
+  "id": 770241899,
+  "center": {
+    "lat": 30.5504931,
+    "lon": 75.3514149
+  },
+  "tags": {
+    "amenity": "school",
+    "name": "M.G Convent Senior Secondary School, Himmatpura"
+  }
+},
+{
+  "type": "way",
+  "id": 770245023,
+  "center": {
+    "lat": 30.5565717,
+    "lon": 75.3436695
+  },
+  "tags": {
+    "amenity": "school"
+  }
+},
+{
+  "type": "way",
+  "id": 953861343,
+  "center": {
+    "lat": 30.7442641,
+    "lon": 73.8271259
+  },
+  "tags": {
+    "amenity": "school",
+    "name": "Government Girls School"
+  }
+},
+{
+  "type": "way",
+  "id": 953861635,
+  "center": {
+    "lat": 30.7455177,
+    "lon": 73.8217333
+  },
+  "tags": {
+    "amenity": "college",
+    "name": "Girls Degree College"
+  }
+},
+{
+  "type": "way",
+  "id": 953861637,
+  "center": {
+    "lat": 30.7401152,
+    "lon": 73.8196895
+  },
+  "tags": {
+    "amenity": "school",
+    "name": "Govt High School For Boys"
+  }
+},
+{
+  "type": "way",
+  "id": 1234010242,
+  "center": {
+    "lat": 30.2398588,
+    "lon": 75.8511989
+  },
+  "tags": {
+    "addr:city": "sangrur",
+    "addr:postcode": "148001",
+    "addr:street": "College Road, J P Colony, Patiala Gate",
+    "amenity": "clinic",
+    "building": "yes",
+    "healthcare": "clinic",
+    "name": "Aam Aadmi Clinic",
+    "operator": "Punjab Government",
+    "operator:type": "government"
+  }
+},
+{
+  "type": "way",
+  "id": 1323034990,
+  "center": {
+    "lat": 30.8173442,
+    "lon": 73.4542690
+  },
+  "tags": {
+    "amenity": "school",
+    "building": "yes",
+    "name": "New Campus Cricket Ground"
+  }
+},
+{
+  "type": "way",
+  "id": 1323034992,
+  "center": {
+    "lat": 30.8161597,
+    "lon": 73.4544659
+  },
+  "tags": {
+    "amenity": "school",
+    "name": "New Islamia High School Football Ground"
+  }
+},
+{
+  "type": "way",
+  "id": 1552514512,
+  "center": {
+    "lat": 30.2471093,
+    "lon": 75.8749921
+  },
+  "tags": {
+    "amenity": "school",
+    "education": "school",
+    "fixme": "School name missing"
+  }
+}
+
+  ]
+}

@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  Parali Mitra, Feature 6 (Smoke Path Map). GET /smoke returns the likely smoke
+  path from a field as GeoJSON, using Open-Meteo wind forecasts, OpenStreetMap
+  places and NASA FIRMS fires. A simple wind model, not a dispersion model.
+
+Parameters:
+  FirmsMapKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Free NASA FIRMS MAP_KEY (https://firms.modaps.eosdis.nasa.gov/api/map_key/). Leave empty to skip fires.
+  WindLevel:
+    Type: String
+    Default: 120m
+    AllowedValues: [10m, 80m, 120m, 180m]
+    Description: Forecast wind height used for the smoke path.
+  OverpassUrl:
+    Type: String
+    Default: https://overpass-api.de/api/interpreter
+    Description: Overpass API endpoint for places. Change only if the main server is down.
+
+Resources:
+  SmokeApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      Description: Parali Mitra smoke path API
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowMethods:
+          - GET
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+        MaxAge: 600
+      DefaultRouteSettings:
+        # Protects the free upstream APIs (and your FIRMS key quota) from floods.
+        ThrottlingBurstLimit: 20
+        ThrottlingRateLimit: 5
+
+  SmokePathFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Likely smoke path from a burning field (Parali Mitra feature 6)
+      CodeUri: src/
+      Handler: smoke_path.app.lambda_handler
+      Runtime: python3.12
+      Architectures:
+        - arm64
+      Timeout: 29
+      MemorySize: 256
+      Environment:
+        Variables:
+          # API key consumed by smoke_path/fires.py (NASA FIRMS). Comes from the NoEcho parameter.
+          FIRMS_MAP_KEY: !Ref FirmsMapKey
+          WIND_LEVEL: !Ref WindLevel
+          OVERPASS_URL: !Ref OverpassUrl
+      Events:
+        GetSmoke:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SmokeApi
+            Path: /smoke
+            Method: GET
+
+Outputs:
+  SmokeApiUrl:
+    Description: The smoke path endpoint. Open the map with map.html?api=<this URL>
+    Value: !Sub "https://${SmokeApi}.execute-api.${AWS::Region}.amazonaws.com/smoke"
+  SampleUrl:
+    Description: Saved demo response (no external calls)
+    Value: !Sub "https://${SmokeApi}.execute-api.${AWS::Region}.amazonaws.com/smoke?sample=true"
+  FunctionName:
+    Description: Lambda function name (for logs in CloudWatch)
+    Value: !Ref SmokePathFunction

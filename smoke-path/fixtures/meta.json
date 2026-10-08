@@ -1,0 +1,11 @@
+{
+  "lat": 30.245,
+  "lon": 75.844,
+  "start": "2026-10-10T14:00+05:30",
+  "hours": 24,
+  "wind_level": "120m",
+  "saved_at": "2026-10-09T01:40:10+05:30",
+  "live_notes": [
+    "Fires unavailable: no NASA FIRMS key is set (FIRMS_MAP_KEY)."
+  ]
+}

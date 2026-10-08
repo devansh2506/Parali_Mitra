@@ -1,0 +1,10 @@
+# SAM build output and local settings
+.aws-sam/
+samconfig.toml
+
+# Output of scripts/try_live.py
+smoke.geojson
+
+# Python
+__pycache__/
+*.pyc
