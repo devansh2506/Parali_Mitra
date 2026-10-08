@@ -134,7 +134,7 @@ sam deploy --guided --region ap-south-1
 | Confirm changes before deploy | `y` |
 | Allow SAM CLI IAM role creation | `y` |
 | Disable rollback | `n` |
-| SmokePathFunction has no authentication. Is this okay? | `y` (it is a public, read-only demo API) |
+| SmokePathFunction may not have authorization defined, Is this okay? | `y` (it is a public, read-only demo API) |
 | Save arguments to configuration file | `y` |
 | SAM configuration file / environment | press Enter for both |
 
