@@ -190,17 +190,12 @@ class MapPageTests(unittest.TestCase):
         self.assertIn("openstreetmap.org/copyright", MAP)
 
     def test_label_controls_and_escaping(self):
-        self.assertIn("Likely smoke direction", MAP)
-        self.assertIn('type="datetime-local"', MAP)
-        self.assertIn('<option value="24">', MAP)
-        self.assertIn('<option value="48">', MAP)
-        self.assertIn("Show smoke path", MAP)
-        self.assertIn("Hours after burning", MAP)
+        for text in ("Fires", "Air quality", "Now: measured at stations", "Forecast: next 48 hours",
+                     "What was burning", "Toxicity", "Smoke path", "Sample data"):
+            self.assertIn(text, MAP)
+        for endpoint in ("/fires?hours=24", "/stations", "/forecast", "/air?lat="):
+            self.assertIn(endpoint, MAP)
         self.assertIn("function esc(", MAP)
-        self.assertIn("Sample data", MAP)
-        for tab in ("Overview", "Fires", "Air quality", "Check my village", "What if I burn?", "How it works"):
-            self.assertIn(tab, MAP)
-        self.assertIn("Is smoke coming to my village or school?", MAP)
         self.assertIn('id="fire-watch-sample"', MAP)
         # OSM names only reach HTML through esc(); textContent and input values are safe as they are.
         for m in re.finditer(r"p\.name(_local)?\b", MAP):

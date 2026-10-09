@@ -82,10 +82,8 @@ class FakeApi:
         fires_key=True,
         places_delay=0.0,
         aq=None,
-        met=None,
         stations=None,
         fail_air=False,
-        fail_met=False,
         fail_stations=False,
     ):
         self.wind = wind or const_series(5, 270)
@@ -100,13 +98,11 @@ class FakeApi:
         self.fires_key = fires_key
         self.places_delay = places_delay
         self.aq = dict(AQ_DEFAULT, **(aq or {}))
-        self.met_values = dict(MET_DEFAULT, **(met or {}))
         self._stations = stations
         self.fail_air = fail_air
-        self.fail_met = fail_met
         self.fail_stations = fail_stations
         self.calls = []
-        air.clear_cache()  # the module keeps CAMS for an hour; every test starts clean
+        air.clear_cache()  # the module keeps CAMS and the wind grid for hours; every test starts clean
 
     def forecast(self, points, days, level, past_days=0, timeout=None):
         self.calls.append(("forecast", list(points)))
@@ -164,12 +160,6 @@ class FakeApi:
             raise ApiError("Open-Meteo air quality answered HTTP 500")
         return const_grid(spec, self.aq)
 
-    def met(self, spec, past_days, forecast_days):
-        self.calls.append(("met", dict(spec)))
-        if self.fail_met:
-            raise ApiError("Open-Meteo weather answered HTTP 500")
-        return const_grid(spec, self.met_values)
-
     def stations_available(self):
         return self._stations is not None
 
@@ -181,7 +171,6 @@ class FakeApi:
 
 
 AQ_DEFAULT = {"pm2_5": 60.0, "pm10": 100.0, "co": 1000.0, "no2": 20.0, "so2": 10.0, "o3": 40.0}
-MET_DEFAULT = {"mix": 500.0, "wind10": 3.0, "sun": 0.0, "cloud": 0.0}
 GRID_T0 = DAY0 - timedelta(days=3)
 GRID_HOURS = 6 * 24
 

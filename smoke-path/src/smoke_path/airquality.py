@@ -1,8 +1,7 @@
 """Air quality: the CAMS forecast (via Open-Meteo) and India's AQI (CPCB National AQI).
 
 CAMS is the Copernicus Atmosphere Monitoring Service global forecast run by ECMWF
-(0.4 degree, ~45 km). It includes regional smoke, dust and city pollution, but its cells
-are too coarse to see one village downwind of one field; plume.py adds that part.
+(0.4 degree, ~45 km): regional smoke, dust and city pollution, hourly, 5 days ahead.
 
 The AQI follows CPCB's National Air Quality Index: a sub-index per pollutant from its
 breakpoints, using the 24-hour average for PM2.5, PM10, NO2 and SO2 and the highest
@@ -20,8 +19,6 @@ from .wind import TIMEZONE, _coord
 
 AQ_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 AQ_TIMEOUT_S = 20
-CAMS_STEP = 0.4  # CAMS global grid spacing (degrees)
-MAX_AQ_POINTS = 400
 CHUNK_POINTS = 190  # points per request (3 requests for fire watch's 550 CAMS points), fetched in parallel
 MAX_PAST_DAYS = 3
 MAX_FORECAST_DAYS = 5
@@ -136,12 +133,6 @@ def aqi(averaged, min_pollutants=3):
     return {"aqi": value, "category": key, "label": label, "dominant": dominant, "sub": sub}
 
 
-def driver_text(a):
-    """What drives an `air` dict's AQI, in words: 'mostly PM10, largely desert dust'."""
-    name = NAMES.get(a["dominant"], a["dominant"])
-    if a["dominant"] == "pm10" and a.get("dust") and a.get("pm10") and a["dust"] >= 0.5 * a["pm10"]:
-        return "mostly PM10, largely desert dust"
-    return f"mostly {name}"
 
 
 def cigarettes(pm25_24h):
@@ -235,15 +226,8 @@ class FieldGrid:
         return a + (x - k) * (b - a)
 
 
-def grid_to_json(grid):
-    """A FieldGrid as plain JSON (saved fixtures)."""
-    return {"south": grid.south, "west": grid.west, "step": grid.step, "rows": grid.rows, "cols": grid.cols,
-            "t0": grid.t0.isoformat(), "values": grid.values}
 
 
-def grid_from_json(doc):
-    return FieldGrid(doc["south"], doc["west"], doc["step"], doc["rows"], doc["cols"],
-                     datetime.fromisoformat(doc["t0"]), doc["values"])
 
 
 def _fill(values):
@@ -324,18 +308,6 @@ def fetch_aq_raw(points, past_days, forecast_days, timeout=AQ_TIMEOUT_S):
     return request_open_meteo(aq_url(points, past_days, forecast_days), timeout, name="Open-Meteo air quality")
 
 
-def grid_spec(latlons, pad=0.2, step=CAMS_STEP, max_points=MAX_AQ_POINTS):
-    """A CAMS-aligned grid covering the given points: dict(south, west, step, rows, cols)."""
-    lats = [p[0] for p in latlons]
-    lons = [p[1] for p in latlons]
-    while True:
-        south = math.floor((min(lats) - pad) / step) * step
-        west = math.floor((min(lons) - pad) / step) * step
-        rows = max(2, math.ceil((max(lats) + pad - south) / step) + 1)
-        cols = max(2, math.ceil((max(lons) + pad - west) / step) + 1)
-        if rows * cols <= max_points:
-            return {"south": round(south, 4), "west": round(west, 4), "step": round(step, 4), "rows": rows, "cols": cols}
-        step *= 2  # still aligned with the CAMS grid
 
 
 def decode_grid(raw_chunks, spec):
@@ -356,46 +328,28 @@ def chunks(points, size=CHUNK_POINTS):
     return [points[i: i + size] for i in range(0, len(points), size)]
 
 
-# ---- what a place gets ---------------------------------------------------------------------
+# ---- what a spot gets ----------------------------------------------------------------------
 
 
-def _window_extra(extra, a, b):
-    return sum(v for k, v in extra.items() if a <= k <= b) if extra else 0.0
-
-
-def air_at(grid, lat, lon, h, extra=None, corr=None):
-    """Air at hour index h at (lat, lon): CAMS (times the station correction) plus extra smoke.
-
-    extra: {pollutant: {hour index: µg/m³}} added by tracked fires; corr: {pollutant: factor}.
-    Returns the `air` dict sent to the map, or None when the AQI cannot be formed.
-    """
-    extra, corr = extra or {}, corr or {}
+def air_at(grid, lat, lon, h):
+    """CAMS air at hour index h at (lat, lon) with CPCB averaging, or None when no AQI can be formed."""
     avg, now = {}, {}
     for p in POLLUTANTS:
         if p not in grid.values:
             continue
-        f, ex = corr.get(p, 1.0), extra.get(p) or {}
         if WINDOW_H[p] == 24:
-            a = max(h - 23, 0)
-            avg[p] = grid.mean(p, lat, lon, a, h) * f + _window_extra(ex, a, h) / (h - a + 1)
+            avg[p] = grid.mean(p, lat, lon, max(h - 23, 0), h)
         else:
-            best = None
-            for s in range(max(h - 23, 0), max(h - 6, 1)):
-                e = min(s + 7, h)
-                m = grid.mean(p, lat, lon, s, e) * f + _window_extra(ex, s, e) / (e - s + 1)
-                best = m if best is None else max(best, m)
-            avg[p] = best
-        now[p] = grid.value(p, lat, lon, h) * f + ex.get(h, 0.0)
+            avg[p] = max(grid.mean(p, lat, lon, s, min(s + 7, h)) for s in range(max(h - 23, 0), max(h - 6, 1)))
+        now[p] = grid.value(p, lat, lon, h)
     result = aqi(avg)
     if result is None:
         return None
-    fires_now = (extra.get("pm2_5") or {}).get(h, 0.0)
     return {
         "aqi": result["aqi"],
         "category": result["category"],
         "dominant": result["dominant"],
         "pm2_5": round(now["pm2_5"], 1),
-        "pm2_5_fires": round(fires_now, 1),
         "pm2_5_24h": round(avg["pm2_5"], 1),
         "pm10": round(now["pm10"], 1) if "pm10" in now else None,
         "co": round(now["co"] / 1000, 2) if "co" in now else None,  # mg/m³ like CPCB
@@ -405,44 +359,3 @@ def air_at(grid, lat, lon, h, extra=None, corr=None):
         "dust": round(grid.value("dust", lat, lon, h), 1) if "dust" in grid.values else None,
         "cigarettes": cigarettes(avg["pm2_5"]),
     }
-
-
-# ---- weather that spreads smoke (Open-Meteo forecast API) -----------------------------------
-
-MET_URL = "https://api.open-meteo.com/v1/forecast"
-MET_VARIABLES = {
-    "boundary_layer_height": "mix",
-    "wind_speed_10m": "wind10",
-    "shortwave_radiation": "sun",
-    "cloud_cover": "cloud",
-}
-
-
-def met_url(points, past_days, forecast_days):
-    params = {
-        "latitude": ",".join(_coord(lat) for lat, _ in points),
-        "longitude": ",".join(_coord(lon) for _, lon in points),
-        "hourly": ",".join(MET_VARIABLES),
-        "wind_speed_unit": "ms",
-        "timezone": TIMEZONE,
-        "past_days": max(0, min(past_days, MAX_PAST_DAYS)),
-        "forecast_days": max(1, min(forecast_days, 16)),
-    }
-    return MET_URL + "?" + urllib.parse.urlencode(params, safe=",/")
-
-
-def fetch_met_raw(points, past_days, forecast_days, timeout=AQ_TIMEOUT_S):
-    return request_open_meteo(met_url(points, past_days, forecast_days), timeout, name="Open-Meteo weather")
-
-
-def decode_met(raw_chunks, spec):
-    t0, merged = None, {short: [] for short in MET_VARIABLES.values()}
-    for raw in raw_chunks:
-        t, part = parse_hourly_points(parse_json(raw, "Open-Meteo weather"), MET_VARIABLES, "weather forecast")
-        if t0 is None:
-            t0 = t
-        elif t != t0:
-            raise ApiError("The weather forecast parts start at different hours")
-        for short, nodes in part.items():
-            merged[short].extend(nodes)
-    return FieldGrid(spec["south"], spec["west"], spec["step"], spec["rows"], spec["cols"], t0, merged)

@@ -172,9 +172,8 @@ class FireWatchRunTests(unittest.TestCase):
             ],
         )
         self.assertTrue(self.doc["summary"][1].startswith("What was burning: "))
-        self.assertTrue(self.doc["summary"][-1].startswith("Worst air on a smoke path: "))
+        self.assertTrue(self.doc["summary"][2].startswith("While burning, these fires give off about "))
         self.assertEqual(self.doc["notes"], [])
-        self.assertEqual((self.doc["air"]["stations"], self.doc["air"]["corrected"]), (0, False))
         self.assertTrue(self.result.cacheable)
         json.dumps(self.doc)
 

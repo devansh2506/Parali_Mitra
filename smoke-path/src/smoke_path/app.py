@@ -1,14 +1,15 @@
 """AWS Lambda handler for GET /smoke, /fires and /air (API Gateway HTTP API, payload v2).
 
 GET /fires?hours=24   Fire watch: every fire NASA saw in and around Punjab and Haryana,
-                      what was burning, its smoke path, the villages, schools and hospitals
-                      it reaches, and the air quality (India AQI) there.
+                      what was burning, what it gives off and how toxic, its smoke path and
+                      the villages, schools and hospitals it reaches.
 
 GET /smoke?lat=30.245&lon=75.844&start=2026-10-10T14:00&hours=24&uncertainty=cone&acres=5
 GET /smoke?lat=30.605&lon=74.999&start=2026-10-09T12:37&origin=fire&frp=6.2&fire_type=farm
 
-GET /air?lat=30.9&lon=75.85   48-hour AQI outlook at one spot, with the smoke from the
-                              fires in the latest fire watch (JSON, not GeoJSON).
+GET /air?lat=30.9&lon=75.85   48-hour CAMS forecast at one spot, as India's AQI (JSON)
+GET /forecast                 CAMS AQI on the region grid every 3 hours (JSON, map layer)
+GET /stations                 measured air at monitoring stations (CPCB live feed, JSON)
 
 Returns a GeoJSON FeatureCollection. 400 for bad input or a start time
 outside the forecast, 502 only if the wind forecast itself fails.
@@ -271,6 +272,8 @@ def handle(event, api=None, cache=None, now=None, sample_path=SAMPLE_PATH, fire_
         return handle_air(params, api, cache, now, gz)
     if _path(event).endswith("/stations"):
         return handle_stations(cache, now, gz)
+    if _path(event).endswith("/forecast"):
+        return handle_forecast(api, cache, now, gz)
 
     if _flag(params.get("sample")):
         try:
@@ -356,83 +359,47 @@ def handle_stations(cache, now, gz=False, live=None):
 
 
 def handle_air(params, api, cache, now, gz=False):
-    """GET /air: the 48 hour AQI outlook at one spot, with smoke from the latest fire watch."""
+    """GET /air?lat&lon: the CAMS forecast at one spot, hourly for 48 hours, as India's AQI."""
     try:
         lat = _number(params, "lat", -90, 90)
         lon = _number(params, "lon", -180, 180)
-        hours = parse_hours(params.get("hours"))
     except BadRequest as err:
         return _error(400, str(err))
-    level = wind_level()
-    key = ("air", round(lat, 2), round(lon, 2), hours, level)
+    key = ("air", round(lat, 2), round(lon, 2))
     cached = cache.get(key)
     if cached is not None:
         return _response(200, cached, gz)
     now = (now or datetime.now(IST)).astimezone(IST)
-    api = api or LiveApi.from_env()
-    notes = []
-    known = firewatch.remembered(hours, level)
-    if known is None:
-        # No recent fire watch in this Lambda: build one (it is cached for /fires too).
-        try:
-            result = firewatch.run(firewatch.FireWatchRequest(hours=hours), api, level=level, now=now)
-            if result.cacheable:
-                cache.put(("fires", hours, level), _dump(result.report))
-            known = firewatch.remembered(hours, level)
-        except Exception as err:  # noqa: BLE001 - fall back to the forecast without fire plumes
-            log.warning("fire watch for /air failed: %r", err)
-            notes.append("Smoke from today's fires could not be added (the fire watch is unavailable).")
-    if known is not None:
-        ctx, sources, generated = known
-    else:
-        try:
-            ctx = air.prepare(api, now, firewatch.AIR_GRID, firewatch.MET_GRID)
-        except air.AirUnavailable as err:
-            return _error(502, f"Air quality forecast unavailable: {err}")
-        sources, generated = [], now
-    ctx.now = now
     try:
-        doc = air_outlook(ctx, sources, lat, lon, generated, notes)
-    except Exception:  # noqa: BLE001 - log it, never leak internals
-        log.exception("air outlook failed")
-        return _error(500, "Something went wrong while predicting the air quality.")
+        grid = air.forecast_grid(api or LiveApi.from_env(), now)
+    except air.AirUnavailable as err:
+        return _error(502, f"Air quality forecast unavailable: {err}")
+    outlook = air.outlook(grid, lat, lon, now)
+    doc = {"lat": round(lat, 5), "lon": round(lon, 5), "source": "CAMS global forecast (ECMWF), via Open-Meteo",
+           "generated_at": now.isoformat(timespec="minutes"), "now": outlook[0] if outlook else None,
+           "worst": max(outlook, key=lambda a: a["aqi"]) if outlook else None, "outlook": outlook,
+           "inside_region": grid.south <= lat <= grid.south + (grid.rows - 1) * grid.step
+           and grid.west <= lon <= grid.west + (grid.cols - 1) * grid.step}
     body = _dump(doc)
     cache.put(key, body)
     return _response(200, body, gz)
 
 
-def air_outlook(ctx, sources, lat, lon, generated, notes):
-    fires = []
-    total = {}
-    for src in sources:
-        extra = ctx.extra(lat, lon, [src])
-        pm = extra.get("pm2_5") or {}
-        if not pm or max(pm.values()) < 0.5:
-            continue
-        h = max(pm, key=pm.get)
-        fires.append({"id": src.id, "pm2_5_peak": round(pm[h], 1),
-                      "at": (ctx.aq.t0 + timedelta(hours=h)).isoformat(timespec="minutes")})
-        for p, by_hour in extra.items():
-            for k, v in by_hour.items():
-                total.setdefault(p, {})[k] = total.get(p, {}).get(k, 0.0) + v
-    fires.sort(key=lambda f: -f["pm2_5_peak"])
-    outlook = ctx.outlook(lat, lon, total)
-    return {
-        "lat": round(lat, 5),
-        "lon": round(lon, 5),
-        "generated_at": now_iso(ctx.now),
-        "fire_watch_at": now_iso(generated),
-        "now": outlook[0] if outlook else None,
-        "worst": max(outlook, key=lambda a: a["aqi"]) if outlook else None,
-        "outlook": outlook,
-        "fires": fires[:10],
-        "air": ctx.info(),
-        "notes": notes + ctx.notes,
-    }
-
-
-def now_iso(t):
-    return t.astimezone(IST).isoformat(timespec="minutes")
+def handle_forecast(api, cache, now, gz=False):
+    """GET /forecast: CAMS AQI on the region grid, every 3 hours for 48 hours (the map layer)."""
+    cached = cache.get(("forecast",))
+    if cached is not None:
+        return _response(200, cached, gz)
+    now = (now or datetime.now(IST)).astimezone(IST)
+    try:
+        grid = air.forecast_grid(api or LiveApi.from_env(), now)
+    except air.AirUnavailable as err:
+        return _error(502, f"Air quality forecast unavailable: {err}")
+    doc = dict(air.overlay(grid, now), source="CAMS global forecast (ECMWF), via Open-Meteo",
+               generated_at=now.isoformat(timespec="minutes"))
+    body = _dump(doc)
+    cache.put(("forecast",), body)
+    return _response(200, body, gz)
 
 
 def lambda_handler(event, context=None):

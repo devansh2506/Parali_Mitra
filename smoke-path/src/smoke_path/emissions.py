@@ -16,7 +16,9 @@ The pollutant with the biggest share is the most harmful one in that smoke.
 Total particles (TPM) are shown but not scored, because PM2.5 is part of them.
 """
 
-from . import plume
+COMBUSTION_KG_PER_MJ = 0.368  # Wooster et al. 2005, J. Geophys. Res. 110, D24311
+STRAW_T_PER_HA = 6.3  # Punjab: ~20 Mt of paddy straw from ~3.2 Mha of paddy a year
+BURNED_FRACTION = 0.8  # share of a field's straw that burns (assumed)
 
 # g per kg dry matter (GFED4.1). NOx is given as NO.
 _FACTORS = {
@@ -54,6 +56,10 @@ LIMIT_SOURCE = {"formaldehyde": "WHO"}
 LEVELS = ((0.5, "low"), (2.0, "moderate"), (5.0, "high"), (float("inf"), "very high"))
 
 
+def burned_tonnes(acres):
+    return acres * 0.404686 * STRAW_T_PER_HA * BURNED_FRACTION
+
+
 def modelled(category):
     return category in TABLE_FOR
 
@@ -86,7 +92,7 @@ def from_frp(frp_mw, category):
     """What a fire gives off per hour while burning, or None (no FRP, or not a vegetation fire)."""
     if not frp_mw or frp_mw <= 0 or not modelled(category):
         return None
-    burned = plume.COMBUSTION_KG_PER_MJ * frp_mw * 3600
+    burned = COMBUSTION_KG_PER_MJ * frp_mw * 3600
     kg = per_hour_from_burned(burned, category)
     return {"per": "hour", "burned_kg": round(burned), "table": TABLE_FOR[category],
             "kg": {k: _round(kg[k]) for k in ORDER if k in kg}, "toxicity": toxicity(kg)}
@@ -94,7 +100,7 @@ def from_frp(frp_mw, category):
 
 def from_field(acres, category="farm"):
     """What burning a whole field gives off (all of it, not per hour)."""
-    burned = plume.burned_tonnes(acres) * 1000
+    burned = burned_tonnes(acres) * 1000
     kg = per_hour_from_burned(burned, category)
     return {"per": "field", "burned_kg": round(burned), "table": TABLE_FOR[category],
             "kg": {k: _round(kg[k]) for k in ORDER if k in kg}, "toxicity": toxicity(kg)}

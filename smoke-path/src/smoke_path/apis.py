@@ -54,9 +54,6 @@ class LiveApi:
     def air_quality_raw(self, points, past_days, forecast_days):
         return airquality.fetch_aq_raw(points, past_days, forecast_days)
 
-    def met_raw(self, points, past_days, forecast_days):
-        return airquality.fetch_met_raw(points, past_days, forecast_days)
-
     def stations_available(self):
         return bool(self.openaq_key)
 
@@ -92,13 +89,6 @@ class LiveApi:
             raws = list(pool.map(lambda c: self.air_quality_raw(c, past_days, forecast_days), chunks))
         return airquality.decode_grid(raws, spec)
 
-    def met(self, spec, past_days, forecast_days):
-        """Mixing height, 10 m wind, sunshine and cloud on the same grid, as a FieldGrid."""
-        chunks = airquality.chunks(airquality.FieldGrid.points(**spec))
-        with ThreadPoolExecutor(max_workers=min(8, len(chunks))) as pool:
-            raws = list(pool.map(lambda c: self.met_raw(c, past_days, forecast_days), chunks))
-        return airquality.decode_met(raws, spec)
-
     def fires_box(self, source, box, days):
         """Every detection from one satellite source in a region box (fire watch)."""
         text = self.fires_box_raw(source, box, days)
@@ -114,8 +104,6 @@ ENSEMBLE = "ensemble.json"
 OVERPASS = "overpass.json"
 META = "meta.json"
 SAMPLE = "sample_response.json"
-AIR_QUALITY = "air_quality.json"  # CAMS on the grid around the burn sample's path (decoded grid)
-MET = "met.json"  # mixing height etc. on the same grid (decoded grid)
 
 
 def firms_file(source):
@@ -123,7 +111,7 @@ def firms_file(source):
 
 
 def raw_fixture_names():
-    return [FORECAST_FIELD, FORECAST_MULTI, ENSEMBLE, OVERPASS, AIR_QUALITY, MET] + [firms_file(s) for s in FIRE_SOURCES]
+    return [FORECAST_FIELD, FORECAST_MULTI, ENSEMBLE, OVERPASS] + [firms_file(s) for s in FIRE_SOURCES]
 
 
 def _forecast_file(points):
@@ -164,16 +152,6 @@ class RecordingApi(LiveApi):
         self._save(firms_file(source), text)
         return text
 
-    def air_quality(self, spec, past_days, forecast_days):
-        grid = super().air_quality(spec, past_days, forecast_days)  # several requests: save the merged grid
-        self._save(AIR_QUALITY, json.dumps(airquality.grid_to_json(grid), separators=(",", ":")))
-        return grid
-
-    def met(self, spec, past_days, forecast_days):
-        grid = super().met(spec, past_days, forecast_days)
-        self._save(MET, json.dumps(airquality.grid_to_json(grid), separators=(",", ":")))
-        return grid
-
     def stations_available(self):
         return False  # station readings are not saved with the fixtures
 
@@ -205,12 +183,6 @@ class FixtureApi(LiveApi):
 
     def fires_available(self):
         return any((self.folder / firms_file(s)).exists() for s in FIRE_SOURCES)
-
-    def air_quality(self, spec, past_days, forecast_days):
-        return airquality.grid_from_json(json.loads(self._load(AIR_QUALITY)))
-
-    def met(self, spec, past_days, forecast_days):
-        return airquality.grid_from_json(json.loads(self._load(MET)))
 
     def stations_available(self):
         return False

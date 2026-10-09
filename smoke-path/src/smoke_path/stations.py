@@ -1,15 +1,8 @@
 """Measured air quality from monitoring stations (OpenAQ v3: CPCB and other reference monitors).
 
-Used twice:
-1. The map shows each station's latest PM2.5 / PM10 reading.
-2. The CAMS forecast is corrected near stations: where a station measures twice what
-   CAMS says for that hour, nearby CAMS values are doubled (factor clamped to 0.2-5),
-   fading back to no correction at CORRECTION_KM. The same factor is kept for the
-   forecast hours (persistence of the bias).
-
-Readings are compared with CAMS at the hour they were measured, so a reading from
-yesterday still tells us how far off CAMS is. That matters because OpenAQ's copy of
-India's CPCB network often arrives about 2 days late; readings up to MAX_AGE_H old are used.
+Used as the fallback source of the "Live air" tabs when CPCB's own feed (cpcb.py) is not
+available. OpenAQ often receives CPCB readings about 2 days late; readings up to MAX_AGE_H
+old are used and their age is shown.
 
 Needs a free OpenAQ API key (OPENAQ_API_KEY). Without it everything still works,
 with no correction and no station dots.
@@ -35,8 +28,6 @@ MAX_AGE_H = 72  # readings older than this are not used (CAMS grid keeps 3 past 
 MAX_STATIONS = 40  # keeps us far below OpenAQ's 60 requests a minute
 CELL_DEG = 0.25  # one station per cell (Delhi alone has ~40)
 WORKERS = 8
-CORRECTION_KM = 75.0
-FACTOR_RANGE = (0.2, 5.0)  # measured 9 Oct 2026: CAMS/station ratios 0.09-7.5 (CAMS dust overestimates PM10)
 
 
 def api_key():
@@ -135,55 +126,3 @@ def fetch_stations(bbox, key, now):
 
     with ThreadPoolExecutor(max_workers=WORKERS) as pool:
         return [s for s in pool.map(one, locations) if s]
-
-
-# ---- correcting CAMS -----------------------------------------------------------------------
-
-
-def factors(stations, aq_grid):
-    """Per station: measured / CAMS for PM2.5 and PM10 at the reading's hour (clamped)."""
-    lo, hi = FACTOR_RANGE
-    out = []
-    for s in stations:
-        row = {"lat": s["lat"], "lon": s["lon"]}
-        for p in ("pm2_5", "pm10"):
-            if s.get(p) is None:
-                continue
-            model = aq_grid.at(p, s["time"], s["lat"], s["lon"])
-            if model and model > 1:
-                row[p] = min(hi, max(lo, s[p] / model))
-        if len(row) > 2:
-            out.append(row)
-    return out
-
-
-def correction_at(lat, lon, station_factors, pollutant, max_km=CORRECTION_KM):
-    """Factor to multiply CAMS by at (lat, lon): inverse-distance blend, fading to 1 at max_km."""
-    num = den = 0.0
-    nearest = math.inf
-    coslat = math.cos(math.radians(lat))
-    for f in station_factors:
-        if pollutant not in f:
-            continue
-        d = math.hypot((f["lat"] - lat) * KM_PER_DEG, (f["lon"] - lon) * KM_PER_DEG * coslat)
-        if d >= max_km:
-            continue
-        w = 1.0 / max(d, 1.0) ** 2
-        num += w * f[pollutant]
-        den += w
-        nearest = min(nearest, d)
-    if not den:
-        return 1.0
-    blended = num / den
-    return 1.0 + (blended - 1.0) * (1.0 - nearest / max_km)
-
-
-def station_feature_props(s, aqi_info=None, now=None):
-    props = {"kind": "station", "name": s["name"], "provider": s["provider"],
-             "time": s["time"].isoformat(timespec="minutes"),
-             "age_h": round((now - s["time"]).total_seconds() / 3600, 1) if now else None,
-             "pm2_5": None if s.get("pm2_5") is None else round(s["pm2_5"], 1),
-             "pm10": None if s.get("pm10") is None else round(s["pm10"], 1)}
-    if aqi_info:
-        props.update(aqi_info)
-    return props

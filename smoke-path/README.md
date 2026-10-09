@@ -1,44 +1,28 @@
-# Smoke Path Map (Parali Mitra, Feature 6)
+# Parali Mitra: fires and air quality (Feature 6)
 
-Farmers who burn do not report it, so the main screen starts from what NASA satellites see.
+The website has two tabs.
 
-**Fire watch (first tab).** Every fire NASA satellites saw in and around Punjab and Haryana in the
-last day, where each fire's smoke is likely going, and which villages, towns, schools and hospitals
-it will reach, and roughly when:
+**1. Fires.** Every fire NASA satellites saw in and around Punjab and Haryana in the last day:
 
-* the region summary: how many fires, **what was burning** (farm, industrial / brick kiln, built-up
-  area, forest, grassland), how many villages, schools and hospitals get smoke, and the most affected
-  places ("Shared Village: smoke from 2 fires, from about 3:30 pm");
-* **air quality where the smoke goes**: India's AQI (CPCB) with PM2.5, PM10, CO, NO2, SO2 and ozone
-  at every place on a smoke path, how much of the PM2.5 comes from the fires, a "worst air" list,
-  an AQI map layer (now, +6, +12, +24, +48 hours) and live monitoring stations;
-* **"Is smoke coming to my village or school?"**: type a place, or tap any spot on the map. It also
-  shows the AQI there and a 48 hour AQI outlook;
-* tap a fire for every satellite detail, what was on the ground there, and "Show this fire's smoke in detail".
+* **what was burning:** farm, industrial / brick kiln, landfill, built-up area, forest or grass;
+* **its toxicity:** what it gives off per hour while burning (PM2.5, total particles, black carbon,
+  CO, NOx, SO2, ammonia, benzene, toluene, formaldehyde, methane, CO2) and a toxicity score;
+* **its smoke path:** where the forecast wind takes its smoke in the next 24 hours, and the
+  villages, towns, schools and hospitals on that path with arrival times.
 
-**What if I burn? (second tab).** A farmer picks his field and a time he might burn the paddy
-straw. The app shows where the smoke would **likely** travel over the next 24 or 48 hours,
-using real wind forecasts:
+All paths are drawn, coloured by toxicity; dots are coloured by what was burning and sized by
+toxicity; the table lists every fire, most toxic first.
 
-1. a dashed **path** from the field that follows the forecast wind,
-2. a soft **band** around the path that gets wider with time (uncertainty),
-3. the **villages, towns, schools and hospitals** the smoke would pass, and roughly when,
-   for example: *"If you burn on 10 Oct at 2:00 pm, smoke will likely reach: Badrukhan (village) by about 4:15 pm"*,
-4. today's **farm fires** nearby, seen by NASA satellites. Tap a fire to see all its details
-   (time seen, satellite, confidence, fire strength, brightness, pixel size, day/night) and press
-   **"Show where this fire's smoke goes"** to run the same smoke path from that fire, starting at
-   the time the satellite saw it.
+**2. Air quality**, straight from the APIs (nothing added by us):
 
-The farmer also enters the **field size (acres)**: the app estimates how much straw burns and how
-much PM2.5 it releases, and shows the AQI expected at each place on the path.
+* **Now, measured:** the latest readings at monitoring stations (CPCB's live feed on data.gov.in;
+  OpenAQ as a fallback), each station's AQI, rankings (most polluted, cleanest, Punjab / Haryana /
+  Delhi) and a city table.
+* **Forecast, next 48 hours:** the CAMS air-quality forecast (ECMWF, via Open-Meteo) as an AQI map
+  with a time slider; tap the map for a spot's hourly AQI and pollutants.
 
-The path is always labelled **"Likely smoke direction"**: it follows the wind. The air-quality numbers
-come from the CAMS forecast plus a simple Gaussian plume per fire (see "Air quality" below); they are
-estimates, not measurements.
-
-Built with **AWS Lambda (Python 3.12) + Amazon API Gateway HTTP API**, deployed with **AWS SAM**
-(an AWS open-source tool), region **ap-south-1 (Mumbai)**. The backend uses only the Python
-standard library. The frontend is one HTML file with Leaflet and OpenStreetMap tiles.
+The backend is AWS Lambda (Python 3.12, standard library only) + API Gateway HTTP API via AWS SAM,
+region ap-south-1. The frontend is one HTML file with Leaflet and OpenStreetMap tiles.
 
 ---
 
@@ -59,9 +43,10 @@ smoke-path/
     fires.py        NASA FIRMS fetch + CSV parsing
     landuse.py      what was burning: land cover, mapped industry, all-year heat sources
     airquality.py   CAMS forecast (Open-Meteo) on a grid, CPCB AQI, weather for spreading smoke
-    plume.py        smoke one fire adds at a place (FRP -> emissions -> Gaussian plume)
-    stations.py     OpenAQ monitoring stations: latest readings and the CAMS correction
-    air.py          puts CAMS, weather, stations and plumes together for places and spots
+    stations.py     OpenAQ monitoring stations: latest readings (fallback for cpcb.py)
+    emissions.py    what a fire gives off per hour and its toxicity score
+    air.py          the CAMS forecast grid, a spot's 48 h outlook and the AQI map layer
+    cpcb.py         live station readings (CPCB via data.gov.in, OpenAQ fallback), cities, rankings
     data/landcover.bin.gz        ESA WorldCover 2021, ~100 m cells (build_landcover.py)
     data/industry.json.gz        OSM factories, kilns, power plants, landfills (build_industry.py)
     data/static_sources.json.gz  spots burning all year, from NASA's archive (build_static_sources.py)
@@ -161,8 +146,7 @@ For every vegetation fire (`emissions` on each fire; `emission.pollutants` in `/
 
 * **Burn rate:** the fire's total power in one satellite pass (FRP, MW, all its pixels) × 0.368 kg/MJ
   (Wooster et al. 2005) × 3600 = kg of vegetation burned **per hour** while it burns that hard.
-  How long a fire burns is not known, so amounts are per hour. For "What if I burn?" the field size
-  gives the whole amount (acres × 6.3 t straw/ha × 80% burned).
+  How long a fire burns is not known, so amounts are per hour.
 * **Pollutants:** kg per hour = burned × the GFED4.1 emission factor (van der Werf et al. 2017,
   mostly Akagi et al. 2011): crop residue for farm fires and fires in built-up areas, savanna/grass
   for grassland, temperate forest for forest. PM2.5, total particles (incl. PM10), black carbon,
@@ -177,54 +161,22 @@ For every vegetation fire (`emissions` on each fire; `emission.pollutants` in `/
 Example: a 5 MW farm fire burns ~6.6 t of straw an hour and gives off ~41 kg PM2.5, ~680 kg CO,
 ~32 kg NOx (as NO2), ~1 kg benzene: about 1.8 km³ of air poisoned per hour (moderate).
 
-### Air quality (PM2.5 and AQI)
+### Air quality
 
-The AQI at a place = **the CAMS forecast** (corrected by **monitoring stations** when available)
-**+ the smoke each tracked fire adds** (a plume model), turned into India's AQI.
+**Forecast (CAMS).** Open-Meteo serves the CAMS global forecast free and without a key: PM2.5, PM10,
+CO, NO2, SO2, ozone and dust, hourly, 0.4° (~45 km). We fetch it for a 22 × 25 grid (lat 26-34.4,
+lon 70.4-80) from one day back to three days ahead, in 3 parallel requests, and reuse it for 3 hours.
+Nothing is added or corrected: the values are CAMS's own.
 
-1. **CAMS** (Copernicus Atmosphere Monitoring Service, run by ECMWF) is the global air-quality forecast
-   model: PM2.5, PM10, CO, NO2, SO2, ozone and dust, 0.4° (~45 km), hourly, 5 days. Open-Meteo serves it
-   free with no key. Fire watch fetches it on a fixed 22 × 25 grid (lat 26-34.4, lon 70.4-80) in
-   6 parallel requests while NASA's data loads, and keeps it for an hour (CAMS updates twice a day).
-2. **Stations** (optional, needs a free OpenAQ key): the latest PM2.5/PM10 of CPCB and other reference
-   monitors. Where a station measures twice what CAMS says for that hour, nearby CAMS values are doubled
-   (factor kept within 0.2-5, fading to none at 75 km), and the factor is kept for the forecast hours.
-   Station dots on the map show the measured values. Readings are compared with CAMS at the hour they
-   were measured, so older readings still work: OpenAQ's copy of India's CPCB network was about
-   48 hours late when tested (9 Oct 2026), so readings up to 72 hours old are used and the map shows
-   their age. On that day the stations measured a median 0.7× CAMS's PM2.5 and PM10 (0.1-7.5×), mostly
-   lower where CAMS forecast desert dust.
-3. **Plume per fire.** CAMS cells are too coarse to see one village downwind of one field, so each fire
-   adds its own smoke along its traced path:
-   * burning rate = FRP (MW) × 0.368 kg/MJ (Wooster et al. 2005), for 1 hour (assumed burn time);
-   * grams per kg burned (GFED4.1 table, mostly Akagi et al. 2011): crop residue PM2.5 6.26, CO 102,
-     NOx 3.11 (as NO, counted fully as NO2), SO2 0.40; grassland and forest have their own values;
-     industrial fires are not modelled (biomass factors do not apply to kilns or factories);
-   * a Gaussian plume: sideways spread from the Briggs open-country curves for the Pasquill stability
-     class (from 10 m wind, sunshine and cloud) plus the path's own uncertainty (half the band radius);
-     upward spread capped by the **mixing height** (boundary layer). Low night-time mixing heights trap
-     smoke near the ground, which is why winter nights are worst.
-   * "What if I burn?" uses the field size instead of FRP: acres × 6.3 t straw/ha (Punjab: ~20 Mt from
-     ~3.2 Mha of paddy) × 0.8 burned.
-   * Mixing height, 10 m wind, sunshine and cloud come from the Open-Meteo forecast on a 0.8° grid.
-4. **AQI** (CPCB National AQI): a sub-index per pollutant from CPCB's breakpoints, using 24 hour means
-   for PM2.5, PM10, NO2 and SO2 and the highest 8 hour mean of the last 24 hours for CO and ozone. The AQI
-   is the highest sub-index (at least 3 pollutants including PM2.5 or PM10). The page shows CPCB's
-   category, colour and health advice, the main pollutant, and a cigarette equivalent
-   (22 µg/m³ PM2.5 for a day ≈ 1 cigarette, Berkeley Earth).
+**Measured (stations).** CPCB's real-time feed on data.gov.in (about 500 stations, hourly, all
+pollutants, each with CPCB's own averages). Without a data.gov.in key, or when it is down, OpenAQ is
+used instead: PM2.5/PM10 only and often ~2 days late, so the AQI is marked indicative and every
+reading shows its age.
 
-When CAMS's PM10 is mostly desert dust, the page and summary say so ("mostly PM10, largely desert
-dust"), so dust episodes are not blamed on the fires.
-
-**Why no machine-learning model.** We looked for ready-made air-quality models with published weights
-that cover India. AFNO-PM2.5 (IIT Delhi AISEHack) only takes 2016 WRF-Chem simulation fields, so it cannot
-run on live data. The FLAME Weather4Cast 2025 India model has no released weights. Microsoft Aurora's
-air-pollution model (Nature 2025) is the strongest, but it needs global CAMS analysis fields from the
-Copernicus ADS (13 pressure levels, ~400 MB a run) and a large GPU, cannot run on AWS Lambda, and its
-output is the same ~45 km grid as CAMS, which Aurora was trained to emulate. Using CAMS directly, plus a
-plume model for village-scale smoke and station correction, is live, cheap and explainable.
-
----
+**India's AQI (CPCB).** Each pollutant gets a sub-index from CPCB's breakpoints (24 hour averages for
+PM2.5, PM10, NO2, SO2 and ammonia; the highest 8 hour average of the last 24 hours for CO and ozone);
+the AQI is the highest sub-index (at least 3 pollutants incl. PM2.5 or PM10), with CPCB's category,
+colour and health advice. A city's AQI is the average of its stations'.
 
 ## Run the tests (no network needed)
 
@@ -245,7 +197,13 @@ OPENAQ_API_KEY=<YOUR_OPENAQ_API_KEY>
 ```
 
 The OpenAQ key is free: sign up at https://explore.openaq.org/register, then copy the key from your
-account settings. Without it everything works, with no station correction and no station dots.
+account settings. It is the fallback for the measured air tab when data.gov.in is unavailable.
+
+```
+DATA_GOV_IN_API_KEY=<YOUR_DATA_GOV_IN_KEY>
+```
+
+The data.gov.in key (free: data.gov.in → My Account → Generate API Key) gives CPCB's live station feed.
 
 ## Try it with real data
 
@@ -321,8 +279,6 @@ python3.12 scripts/save_fire_watch_sample.py
 
 Saves a real fire watch reply (`fixtures/fire_watch_sample.json`, the Lambda copy, and the map),
 used by `/fires?sample=true` and by the map when it has no `?api=`.
-`python3.12 scripts/save_fixtures.py --air-only` refreshes only the air-quality data of the
-"What if I burn?" sample.
 
 ## Run locally (no Docker)
 
@@ -352,7 +308,8 @@ sam deploy --guided --region ap-south-1
 | Stack Name | `parali-mitra-smoke-path` |
 | AWS Region | `ap-south-1` |
 | Parameter FirmsMapKey | paste your FIRMS MAP_KEY (it is hidden; leave empty to skip fires) |
-| Parameter OpenAqApiKey | paste your OpenAQ key (hidden; leave empty for no station correction) |
+| Parameter DataGovInApiKey | paste your data.gov.in key (hidden) |
+| Parameter OpenAqApiKey | paste your OpenAQ key (hidden; fallback for measured air) |
 | Parameter WindLevel | press Enter (`120m`) |
 | Parameter OverpassUrl | press Enter (main Overpass server) |
 | Confirm changes before deploy | `y` |
@@ -379,25 +336,25 @@ FeatureCollection with `kind` = `fire` (one per merged fire: `id`, `seen_at`, `s
 `detections`, `frp_max`, `strength`, `satellites`, `confidence`, `near`, `places_reached`, `traced`,
 `details` with every detection, `frp_mw`, and what was burning: `fire_type`
 (`farm|industrial|waste|settlement|forest|grassland|unknown`), `fire_type_label`, `fire_type_detail`,
-`fire_type_confidence`, `fire_type_reason`, `land_cover` (% by class), `smoke_rate` (g/s, null when
-not modelled)), `fire_path` (hourly line with `times` and `km`), `reached`
+`fire_type_confidence`, `fire_type_reason`, `land_cover` (% by class), `emissions` (kg per hour of each
+pollutant and `toxicity`; null when not estimated)), `fire_path` (hourly line with `times` and `km`), `reached`
 (`name`, `name_local`, `place_type`, `near_town` (nearest town within 25 km, to tell apart villages with
-the same name), `fires`, `first_arrival`, `arrivals` = up to 5 `[fire id, time]`, and `air`),
-`aq_grid` (AQI on the CAMS grid: `south`, `west`, `step`, `rows`, `cols`, `times`, `aqi[time][node]`)
-and `station` (`name`, `provider`, `time`, `pm2_5`, `pm10`).
-`air` = `{t, aqi, category, dominant, pm2_5, pm2_5_fires, pm2_5_24h, pm10, co (mg/m³), no2, so2, o3, dust,
-cigarettes}` (µg/m³ unless noted) at the hour the fires' smoke is strongest there.
-Top level: `summary`, `stats` (incl. `fire_types`), `air` (what the numbers are based on: `stations`,
-`corrected`, `fire_plumes`, forecast range), `notes`, `generated_at`, `region`.
+the same name), `fires`, `first_arrival`, `arrivals` = up to 5 `[fire id, time]`),
+Top level: `summary`, `stats` (incl. `fire_types`), `notes`, `generated_at`, `region`.
 Errors: 503 without a FIRMS key, 502 if NASA FIRMS or the wind forecast fails.
 Replies over 50 KB are gzipped when the client sends `Accept-Encoding: gzip` (browsers always do);
 a busy day's fire watch is 1-2 MB raw and about 0.2 MB gzipped.
 
-### `GET /air?lat=30.9&lon=75.85` (one spot)
+### `GET /air?lat=30.9&lon=75.85` (forecast at one spot)
 
-The 48 hour AQI outlook at a spot (CAMS, station-corrected, plus the smoke of the fires in the latest
-fire watch, which it builds if needed). JSON: `now`, `worst`, `outlook` (hourly `air` dicts with `t`),
-`fires` (which fires add smoke here and how much), `air`, `notes`. Cached 30 minutes per ~1 km.
+The CAMS forecast at a spot, hourly for 48 hours, as India's AQI. JSON: `now`, `worst`, `outlook`
+(each `{t, aqi, category, dominant, pm2_5, pm2_5_24h, pm10, co (mg/m³), no2, so2, o3, dust, cigarettes}`),
+`inside_region`. Cached 30 minutes per ~1 km.
+
+### `GET /forecast` (forecast map)
+
+AQI on the CAMS grid every 3 hours for 48 hours: `south`, `west`, `step`, `rows`, `cols`, `times`,
+`aqi[time][node]`. Cached 30 minutes.
 
 ### `GET /stations` (live air at monitoring stations)
 
@@ -446,19 +403,13 @@ Settings (Lambda environment variables): `FIRMS_MAP_KEY` (from the `FirmsMapKey`
 
 ## Limits of the model (please read)
 
-* The path only **follows the wind**. The smoke amounts come from a simple Gaussian plume on top of
-  that path; it does not model plume rise above the mixing layer, chemistry (NO is counted as NO2),
-  rain washout or terrain. It is not a dispersion model like HYSPLIT.
-* Fire smoke amounts rest on assumptions: each detected fire burns for 1 hour at the power the
-  satellite measured (fires between satellite passes are missed or under-counted), and a field has
-  6.3 t of straw per hectare, 80% of which burns.
-* CAMS already includes fire emissions at ~45 km, so adding our plumes can count a little of the same
-  smoke twice; CAMS is known to under-predict stubble smoke in Punjab, so we accept that.
-* CAMS sometimes forecasts strong desert dust over Punjab, Haryana and Rajasthan, giving very high PM10
-  and "Severe" AQI. The page labels this as dust. Station correction (OpenAQ key) pulls it towards
-  measured values near stations; far from stations the CAMS value is used as it is.
-* The AQI shown is CPCB's method on forecast hourly values; the official AQI comes from measured
-  averages at monitoring stations.
+* The path only **follows the wind** at one height (120 m). It does not model how smoke spreads,
+  settles or reacts, and it does not say how much smoke arrives. It is not a dispersion model.
+* What a fire gives off is per hour at the power the satellite saw; how long it burns is not known.
+  Industrial fires are not estimated (the factors are for burning vegetation).
+* The forecast is CAMS's (~45 km cells, so it cannot see one village next to one field). CAMS
+  sometimes forecasts strong desert dust over Punjab, Haryana and Rajasthan; the page says so.
+* Measured values come from CPCB stations; through OpenAQ they are often ~2 days late (shown).
 * Fire type: land cover is from 2021 and judged within 400 m; OpenStreetMap misses many brick kilns;
   a field next to a kiln can be labelled either way (the confidence says so).
 * It uses one height (120 m). Real smoke spreads across many heights with different winds.

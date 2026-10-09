@@ -20,7 +20,7 @@ Parameters:
     Type: String
     NoEcho: true
     Default: ""
-    Description: Free OpenAQ v3 API key (https://explore.openaq.org/register). Leave empty for no station correction.
+    Description: Free OpenAQ v3 API key (https://explore.openaq.org/register). Leave empty for no fallback when data.gov.in is down.
   WindLevel:
     Type: String
     Default: 120m
@@ -65,7 +65,7 @@ Resources:
         Variables:
           # API key consumed by smoke_path/fires.py (NASA FIRMS). Comes from the NoEcho parameter.
           FIRMS_MAP_KEY: !Ref FirmsMapKey
-          # API key consumed by smoke_path/stations.py (OpenAQ). Comes from the NoEcho parameter.
+          # API key consumed by smoke_path/stations.py (OpenAQ, fallback for live air). From the NoEcho parameter.
           OPENAQ_API_KEY: !Ref OpenAqApiKey
           # API key consumed by smoke_path/cpcb.py (CPCB live feed on data.gov.in).
           DATA_GOV_IN_API_KEY: !Ref DataGovInApiKey
@@ -89,6 +89,12 @@ Resources:
           Properties:
             ApiId: !Ref SmokeApi
             Path: /stations
+            Method: GET
+        GetForecast:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SmokeApi
+            Path: /forecast
             Method: GET
         GetAir:
           Type: HttpApi

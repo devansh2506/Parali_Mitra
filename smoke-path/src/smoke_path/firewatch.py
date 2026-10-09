@@ -10,9 +10,8 @@ is likely going, and which villages, schools and hospitals it will reach.
 5. Saved OpenStreetMap places (snapshot.py) near each path are checked: a place is reached
    if it is inside the cone band (1 km + 0.25 km per km travelled) where the smoke is closest.
 6. Each fire is labelled by what was burning (landuse.py: satellite land cover, mapped
-   industry, all-year heat sources).
-7. Air quality at each reached place (air.py): the CAMS forecast, corrected by monitoring
-   stations, plus the smoke each fire adds (plume.py), as India's AQI.
+   industry, all-year heat sources) and gets what it gives off per hour and a toxicity
+   score (emissions.py).
 """
 
 import logging
@@ -22,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from . import DISCLAIMER, IST, LABEL, air, emissions, landuse, plume, snapshot
+from . import DISCLAIMER, IST, LABEL, air, emissions, landuse, snapshot
 from .apis import FIRE_SOURCES
 from .net import ApiError
 from .pipeline import WindUnavailable
@@ -46,10 +45,6 @@ NEAR_TOWN_KM = 25  # to tell apart villages with the same name ("Rampura, near B
 BUDGET_S = 25
 GRID_TIMEOUT_S = 15  # the 289-point wind reply is ~650 KB, so it gets longer than the usual 8 s
 WIND_TTL_S = 3 * 3600  # reuse the wind grid between fire watch refreshes
-# Air quality: CAMS on its own 0.4 degree grid (550 points, lat 26-34.4, lon 70.4-80) and the
-# weather that spreads smoke on a 0.8 degree grid, both fetched while NASA's data loads.
-AIR_GRID = {"south": 26.0, "west": 70.4, "step": 0.4, "rows": 22, "cols": 25}
-MET_GRID = {"south": 26.0, "west": 70.4, "step": 0.8, "rows": 11, "cols": 13}
 SHIPPED = object()  # "use the places snapshot shipped with the app"
 
 CONFIDENCE_RANK = {"low": 0, "nominal": 1, "high": 2}
@@ -192,10 +187,7 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
     if not api.fires_available():
         raise NoFiresKey("Fire watch needs a NASA FIRMS key (FIRMS_MAP_KEY).")
 
-    # 1. Detections from every satellite, in parallel (and the air-quality data meanwhile).
-    air_pool = ThreadPoolExecutor(max_workers=1)
-    air_future = air_pool.submit(air.prepare, api, now, AIR_GRID, MET_GRID, clock)
-    air_pool.shutdown(wait=False)
+    # 1. Detections from every satellite, in parallel.
     pool = ThreadPoolExecutor(max_workers=len(FIRE_SOURCES))
     try:
         futures = {s: pool.submit(api.fires_box, s, FIRE_BOX, FIRMS_DAYS) for s in FIRE_SOURCES}
@@ -239,8 +231,6 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
             fire_type_reason=label["reason"],
             land_cover=label["cover"],
         )
-        rates = plume.rates_from_frp(fire["frp_mw"], fire["fire_type"])
-        fire["_rates"] = rates
         fire["emissions"] = emissions.from_frp(fire["frp_mw"], fire["fire_type"])
     reached = {}
     geometry = {}  # place idx -> {fire id: (distance km, segment, fraction)}
@@ -294,59 +284,8 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
             notes.append("Some smoke paths leave the saved area; places there are not checked here.")
             places_checked = False
 
-    # 7. Air quality where the smoke goes.
-    ctx, air_by_place = None, {}
-    traced = [f for f in fires if f.get("path")]
-    try:
-        ctx = air_future.result(timeout=max(0.1, deadline - clock()))
-    except Exception as err:  # noqa: BLE001 - AirUnavailable, or took too long
-        log.warning("air quality unavailable: %r", err)
-        notes.append("Air quality could not be predicted right now (the CAMS forecast did not load).")
-        cacheable = False
-    if ctx is not None:
-        notes.extend(ctx.notes)
-        sources = {f["id"]: air.Source(f["id"], f["path"], f["_rates"], datetime.fromisoformat(f["seen_at"]))
-                   for f in traced if f.get("_rates")}
-        for idx, arrivals in reached.items():
-            place = snap.place(idx)
-            near = geometry.get(idx, {})
-            srcs = [sources[fid] for fid in near if fid in sources]
-            extra = ctx.extra(place["lat"], place["lon"], srcs, near) if srcs else {}
-            pm = extra.get("pm2_5") or {}
-            if pm:
-                h = max(pm, key=pm.get)
-                t = ctx.aq.t0 + timedelta(hours=h)
-            else:
-                t = min(a[0] for a in arrivals)
-            a = ctx.at(place["lat"], place["lon"], t, extra)
-            if a:
-                a["t"] = iso(t)
-                air_by_place[idx] = a
-    for fire in fires:
-        fire.pop("_rates", None)
-    _remember(req, level, ctx, fires, now)
-    doc = build(fires, reached, snap, req, now, notes, level, places_checked, len(detections), air_by_place, ctx)
+    doc = build(fires, reached, snap, req, now, notes, level, places_checked, len(detections))
     return Result(report=doc, cacheable=cacheable)
-
-
-# ---- the last run, for GET /air (one spot) -----------------------------------------------------
-
-CONTEXT_TTL_S = 1800
-_last = {}
-
-
-def _remember(req, level, ctx, fires, now, clock=time.monotonic):
-    sources = [air.Source(f["id"], f["path"], plume.rates_from_frp(f["frp_mw"], f["fire_type"]),
-                          datetime.fromisoformat(f["seen_at"])) for f in fires if f.get("path")]
-    _last[(req.hours, level)] = (clock() + CONTEXT_TTL_S, ctx, sources, now)
-
-
-def remembered(hours, level, clock=time.monotonic):
-    """(AirContext, sources, generated_at) of a recent run, or None."""
-    hit = _last.get((hours, level))
-    if hit and hit[0] > clock() and hit[1] is not None:
-        return hit[1:]
-    return None
 
 
 def _as_sent(path):
@@ -365,8 +304,7 @@ def _feature(geometry, props):
     return {"type": "Feature", "geometry": geometry, "properties": props}
 
 
-def build(fires, reached, snap, req, now, notes, level, places_checked, n_detections, air_by_place=None, ctx=None):
-    air_by_place = air_by_place or {}
+def build(fires, reached, snap, req, now, notes, level, places_checked, n_detections):
     features = []
     for fire in fires:
         path = fire.get("path")
@@ -395,7 +333,6 @@ def build(fires, reached, snap, req, now, notes, level, places_checked, n_detect
             town = snap.nearest(place["lat"], place["lon"], types=("town", "city"), max_km=NEAR_TOWN_KM)
         place.update(
             fires=len(arrivals),
-            air=air_by_place.get(idx),
             first=arrivals[0][0],
             arrivals=[(t, fid) for t, _, fid in arrivals[:MAX_ARRIVALS_PER_PLACE]],
             near_town=town["name"] if town else "",
@@ -417,30 +354,13 @@ def build(fires, reached, snap, req, now, notes, level, places_checked, n_detect
                     "fires": p["fires"],
                     "first_arrival": iso(p["first"]),
                     "arrivals": [[fid, iso(t)] for t, fid in p["arrivals"]],
-                    "air": p["air"],
                 },
             )
         )
 
-    overlay = None
-    if ctx is not None:
-        overlay = ctx.overlay()
-        g = overlay
-        n, e = g["south"] + (g["rows"] - 1) * g["step"], g["west"] + (g["cols"] - 1) * g["step"]
-        ring = [[g["west"], g["south"]], [e, g["south"]], [e, n], [g["west"], n], [g["west"], g["south"]]]
-        features.append(_feature({"type": "Polygon", "coordinates": [ring]}, dict(kind="aq_grid", **overlay)))
-        for s in ctx.station_features():
-            features.append(_feature(_point(s["lat"], s["lon"]), s["props"]))
-
     types = {}
     for fire in fires:
         types[fire["fire_type"]] = types.get(fire["fire_type"], 0) + 1
-    with_air = [p for p in places if p["air"]]
-    worst = max(with_air, key=lambda p: p["air"]["aqi"], default=None)
-    smokiest = max(with_air, key=lambda p: p["air"]["pm2_5_fires"], default=None)
-    if smokiest is not None and smokiest["air"]["pm2_5_fires"] < 1:
-        smokiest = None
-
     return {
         "type": "FeatureCollection",
         "view": "fires",
@@ -449,9 +369,8 @@ def build(fires, reached, snap, req, now, notes, level, places_checked, n_detect
         "region": REGION,
         "fire_box": list(FIRE_BOX),
         "hours": req.hours,
-        "summary": summary(fires, places, counts, places_checked, n_detections, now, types, worst, smokiest),
+        "summary": summary(fires, places, counts, places_checked, n_detections, now, types),
         "stats": {"fires": len(fires), "detections": n_detections, "reached": counts, "fire_types": types},
-        "air": ctx.info() if ctx else None,
         "notes": notes,
         "wind_level": level,
         "generated_at": iso(now),
@@ -477,12 +396,7 @@ def type_line(types):
     return "What was burning: " + ", ".join(parts) + "."
 
 
-def _at_text(t, now):
-    t = datetime.fromisoformat(t)
-    return fmt_time(round_5min(t)) + ("" if t.astimezone(IST).date() == now.date() else f" ({fmt_day(t)})")
-
-
-def summary(fires, places, counts, places_checked, n_detections, now, types=None, worst=None, smokiest=None):
+def summary(fires, places, counts, places_checked, n_detections, now, types=None):
     if not fires:
         return [f"No fires were seen by NASA satellites {REGION} in the last day."]
     lines = [
@@ -519,13 +433,4 @@ def summary(fires, places, counts, places_checked, n_detections, now, types=None
     lines.append(f"Their smoke will likely reach {joined}.")
     for p in places[:TOP_PLACES]:
         lines.append(f"{_place_label(p)}: smoke from {_plural(p['fires'], 'fire')}, {when_text(p['first'], now)}.")
-    if smokiest is not None:
-        a = smokiest["air"]
-        lines.append(f"Most smoke from these fires: {_place_label(smokiest)}, about +{a['pm2_5_fires']:.0f} µg/m³ "
-                     f"of PM2.5 around {_at_text(a['t'], now)}.")
-    if worst is not None:
-        a = worst["air"]
-        label = air.airquality.category(a["aqi"])[1]
-        lines.append(f"Worst air on a smoke path: {_place_label(worst)}, AQI {a['aqi']} ({label}, {air.airquality.driver_text(a)}) "
-                     f"around {_at_text(a['t'], now)}.")
     return lines
