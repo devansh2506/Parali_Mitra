@@ -126,6 +126,7 @@
       <h2>Fires seen by NASA satellites</h2>
       <p class="disclaimer" id="watchInfo">In and around Punjab and Haryana, last day. Likely smoke direction from a simple wind model, not a smoke dispersion model.</p>
       <div id="watchSummary" class="summary"></div>
+      <p class="hint">Tap a fire on the map to see where its smoke goes and which places it reaches.</p>
 
       <div class="check">
         <label for="placeSearch">Is smoke coming to my village or school?</label>
@@ -144,10 +145,10 @@
 
       <div class="legend">
         <span><i class="key" style="background:#b91c1c"></i>Fire seen by satellite (tap it)</span>
-        <span><i class="key solid"></i>Likely smoke path</span>
-        <span><i class="key" style="background:#f87171"></i>Smoke from 1 fire</span>
-        <span><i class="key" style="background:#dc2626"></i>Smoke from 2-4 fires</span>
-        <span><i class="key" style="background:#7f1d1d"></i>Smoke from 5+ fires</span>
+        <span><i class="key solid"></i>Smoke path of the fire you tapped</span>
+        <span><i class="key" style="background:#f87171"></i>Place: smoke from 1 fire</span>
+        <span><i class="key" style="background:#dc2626"></i>Place: smoke from 2-4 fires</span>
+        <span><i class="key" style="background:#7f1d1d"></i>Place: smoke from 5+ fires</span>
         <span><i class="key ring"></i>School or hospital</span>
       </div>
     </section>
@@ -315,7 +316,10 @@
   var mode = "watch";            // "watch" | "detail" (one fire) | "burn"
   var watchDoc = null;           // current fire watch response
   var watchBounds = null;        // map area that shows all of it
-  var watchPaths = [];           // [{ id, layer, coords, times, km }]
+  var watchPaths = [];           // [{ id, coords, times, km }] (drawn only when asked)
+  var reachedFeatures = [];      // places reached by any fire (drawn only when asked)
+  var selectionLayer = null;     // what the user picked: one fire, or one place or spot
+  var watchNow = Date.now();
   var watchFires = {};           // fire id -> properties
   var reachedByLabel = {};       // "Name (type)" -> reached feature
   var spotMarker = null;
@@ -419,40 +423,29 @@
   function drawWatch(doc) {
     watchDoc = doc;
     watchLayer.clearLayers();
+    selectionLayer = L.layerGroup().addTo(watchLayer);
     watchPaths = [];
     watchFires = {};
     reachedByLabel = {};
     spotMarker = null;
     var nowMs = Date.parse(doc.generated_at) || Date.now();
+    watchNow = nowMs;
     var bounds = L.latLngBounds([]);
 
     byKind(doc, "fire").forEach(function (f) { watchFires[f.properties.id] = f.properties; });
-
-    // Smoke paths at the bottom.
     byKind(doc, "fire_path").forEach(function (f) {
       var p = f.properties;
-      var layer = L.polyline(f.geometry.coordinates.map(latlng), {
-        color: "#ea580c", weight: 2, opacity: 0.55, interactive: false
-      }).addTo(watchLayer);
-      watchPaths.push({ id: p.fire_id, layer: layer, coords: f.geometry.coordinates, times: p.times, km: p.km });
-      bounds.extend(layer.getBounds());
+      watchPaths.push({ id: p.fire_id, coords: f.geometry.coordinates, times: p.times, km: p.km });
     });
 
-    // Places reached, darker when smoke comes from more fires; schools and hospitals get a blue ring.
-    var reached = byKind(doc, "reached");
+    // Places are not drawn until asked for; they feed the search box and the lists.
+    reachedFeatures = byKind(doc, "reached");
+    var reached = reachedFeatures;
     var labelCount = {};
     reached.forEach(function (f) { var b = baseLabel(f.properties); labelCount[b] = (labelCount[b] || 0) + 1; });
-    reached.slice().reverse().forEach(function (f) {
-      var p = f.properties;
-      var sensitive = !!SENSITIVE[p.place_type];
-      L.circleMarker(latlng(f.geometry.coordinates), {
-        radius: sensitive ? 6 : 4.5, color: sensitive ? "#1d4ed8" : "#ffffff", weight: sensitive ? 2.5 : 1,
-        fillColor: reachedColor(p.fires), fillOpacity: 0.95
-      }).addTo(watchLayer).bindPopup(reachedPopup(p, nowMs), { maxWidth: 300 }).bindTooltip(esc(p.name));
-      reachedByLabel[searchLabel(p, labelCount)] = f;
-    });
+    reached.slice().reverse().forEach(function (f) { reachedByLabel[searchLabel(f.properties, labelCount)] = f; });
 
-    // Fires on top.
+    // Only the fires are on the map at first.
     byKind(doc, "fire").forEach(function (f) {
       var p = f.properties;
       var ll = latlng(f.geometry.coordinates);
@@ -461,7 +454,7 @@
       L.circleMarker(ll, {
         radius: strengthRadius(p.strength), color: "#ffffff", weight: 2, fillColor: "#b91c1c", fillOpacity: 1
       }).addTo(watchLayer).bindPopup(watchFirePopup(p, ll, key), { maxWidth: 300 })
-        .on("click", function () { highlightPath(p.id); });
+        .on("click", function () { showFire(p.id); });
       bounds.extend(ll);
     });
 
@@ -509,10 +502,34 @@
     return p.name + " (" + p.place_type + ", near " + p.near_town + ")";
   }
 
-  function highlightPath(id) {
-    watchPaths.forEach(function (p) {
-      p.layer.setStyle(p.id === id ? { weight: 5, opacity: 0.95 } : { weight: 2, opacity: 0.55 });
+  function reachedDot(f) {
+    var p = f.properties;
+    var sensitive = !!SENSITIVE[p.place_type];
+    return L.circleMarker(latlng(f.geometry.coordinates), {
+      radius: sensitive ? 6 : 4.5, color: sensitive ? "#1d4ed8" : "#ffffff", weight: sensitive ? 2.5 : 1,
+      fillColor: reachedColor(p.fires), fillOpacity: 0.95
+    }).bindPopup(reachedPopup(p, watchNow), { maxWidth: 300 }).bindTooltip(esc(p.name));
+  }
+
+  function pathLine(path, weight) {
+    return L.polyline(path.coords.map(latlng), { color: "#ea580c", weight: weight, opacity: 0.9, interactive: false });
+  }
+
+  // A tapped fire: its smoke path and the places it reaches (same rule as the server).
+  function showFire(id) {
+    selectionLayer.clearLayers();
+    spotMarker = null;
+    var path = watchPaths.filter(function (p) { return p.id === id; })[0];
+    if (!path) return 0;
+    pathLine(path, 4).addTo(selectionLayer);
+    var count = 0;
+    reachedFeatures.forEach(function (f) {
+      var ll = latlng(f.geometry.coordinates);
+      if (!reaches(path, ll[0], ll[1], REACH_KM[f.properties.place_type] || SPOT_KM)) return;
+      reachedDot(f).addTo(selectionLayer);
+      count++;
     });
+    return count;
   }
 
   // Same rule as the server: the path must pass within maxKm AND the place must be inside the
@@ -542,11 +559,15 @@
 
   function showCheck(lat, lon, label, maxKm) {
     var hits = smokeAt(lat, lon, maxKm);
-    var nowMs = (watchDoc && Date.parse(watchDoc.generated_at)) || Date.now();
-    if (spotMarker) watchLayer.removeLayer(spotMarker);
+    var nowMs = watchNow;
+    selectionLayer.clearLayers();
+    hits.forEach(function (h) {
+      var path = watchPaths.filter(function (p) { return p.id === h.id; })[0];
+      if (path) pathLine(path, 3).addTo(selectionLayer);
+    });
     spotMarker = L.circleMarker([lat, lon], {
       radius: 9, color: "#1d4ed8", weight: 3, fillColor: "#ffffff", fillOpacity: 0.6, interactive: false
-    }).addTo(watchLayer);
+    }).addTo(selectionLayer);
     var box = $("checkResult");
     box.textContent = "";
     var head = document.createElement("p");
@@ -569,7 +590,6 @@
       ul.appendChild(li);
     });
     box.appendChild(ul);
-    highlightPath(hits[0].id);
     return hits;
   }
 
