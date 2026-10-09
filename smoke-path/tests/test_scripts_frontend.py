@@ -190,7 +190,7 @@ class MapPageTests(unittest.TestCase):
         self.assertIn("openstreetmap.org/copyright", MAP)
 
     def test_label_controls_and_escaping(self):
-        for text in ("Fires", "Air quality", "Now: measured at stations", "Forecast: next 48 hours",
+        for text in ("Fires", "Air quality", "Now · measured", "Forecast · 48 h",
                      "What was burning", "Toxicity", "Smoke path", "Sample data"):
             self.assertIn(text, MAP)
         for endpoint in ("/fires?hours=24", "/stations", "/forecast", "/air?lat="):
