@@ -8,7 +8,7 @@
     python3.12 scripts/save_fixtures.py --offline
         No network: only rebuild the sample from replies already in fixtures/.
 
-Set FIRMS_MAP_KEY in your shell first so the sample includes real fires.
+Fires use FIRMS_MAP_KEY from smoke-path/.env (or your shell).
 
 A new capture never makes the sample worse: if OpenStreetMap is busy and the
 new list of places is incomplete, the previous wind + places are kept (they
@@ -37,6 +37,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+
+from _env import load_env  # noqa: E402
 
 from smoke_path import IST  # noqa: E402
 from smoke_path.apis import (  # noqa: E402
@@ -276,6 +278,7 @@ def main():
     parser.add_argument("--places-retries", type=int, default=2, help="extra tries if OpenStreetMap is busy (default 2)")
     args = parser.parse_args()
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
+    load_env()  # FIRMS_MAP_KEY etc. from smoke-path/.env (shell variables win)
 
     if args.fires_only:
         if not (FIXTURES / META).exists():

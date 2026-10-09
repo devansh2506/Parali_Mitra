@@ -78,11 +78,18 @@ python3.12 -m unittest discover -s tests -v
 
 ---
 
+## Your FIRMS key (for fires)
+
+Put it in `smoke-path/.env` (copy `.env.example`); the scripts read it automatically and git ignores it:
+
+```
+FIRMS_MAP_KEY=<YOUR_FIRMS_MAP_KEY>
+```
+
 ## Try it with real data
 
 ```bash
 cd smoke-path
-export FIRMS_MAP_KEY=<YOUR_FIRMS_MAP_KEY>       # optional, for fires
 python3.12 scripts/try_live.py 30.245 75.844                     # next full hour, 24 h
 python3.12 scripts/try_live.py 30.245 75.844 2026-10-10T14:00 48 --ensemble
 ```

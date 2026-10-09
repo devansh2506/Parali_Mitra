@@ -11,3 +11,6 @@ smoke.geojson
 # Python
 __pycache__/
 *.pyc
+
+# Local secrets (never commit)
+.env

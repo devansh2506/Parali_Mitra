@@ -7,7 +7,7 @@
     python3.12 scripts/try_live.py 30.245 75.844 2026-10-10T14:00 48 --ensemble
 
 START is India time (YYYY-MM-DDTHH:MM); default is the next full hour.
-Set FIRMS_MAP_KEY in your shell to include satellite fires.
+Fires use FIRMS_MAP_KEY from smoke-path/.env (or your shell).
 """
 
 import argparse
@@ -19,6 +19,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+
+from _env import load_env  # noqa: E402
 
 from smoke_path.apis import LiveApi  # noqa: E402
 from smoke_path.app import BadRequest, parse_request  # noqa: E402
@@ -36,6 +38,7 @@ def main():
     parser.add_argument("--out", default="smoke.geojson", help="output file (default: smoke.geojson)")
     args = parser.parse_args()
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
+    load_env()  # FIRMS_MAP_KEY etc. from smoke-path/.env (shell variables win)
 
     params = {
         "lat": args.lat,

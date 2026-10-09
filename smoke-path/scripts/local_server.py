@@ -7,11 +7,12 @@ GET /smoke?...   -> turned into an API Gateway (HTTP API v2) event for the handl
 GET /map.html    -> frontend/map.html (sample data when there is no ?api=)
 GET /            -> redirects to /map.html?api=/smoke (live, through this server)
 
-Set FIRMS_MAP_KEY in your shell first if you want fires on the map.
+Fires use FIRMS_MAP_KEY from smoke-path/.env (or your shell).
 """
 
 import argparse
 import logging
+import os
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -19,6 +20,8 @@ from urllib.parse import parse_qsl, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+
+from _env import load_env  # noqa: E402
 
 from smoke_path.app import lambda_handler  # noqa: E402
 
@@ -92,11 +95,13 @@ def main():
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    load_env()  # FIRMS_MAP_KEY etc. from smoke-path/.env (shell variables win)
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     base = f"http://{args.host}:{args.port}"
     print(f"Live map:    {base}/            (calls the real APIs through this server)")
     print(f"Sample map:  {base}/map.html    (saved sample data, no API calls)")
     print(f"API:         {base}/smoke?lat=30.245&lon=75.844&hours=24")
+    print(f"FIRMS key:   {'set' if os.environ.get('FIRMS_MAP_KEY') else 'NOT set (fires will be skipped)'}")
     print("Press Ctrl+C to stop.")
     try:
         server.serve_forever()

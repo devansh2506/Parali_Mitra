@@ -11,6 +11,7 @@ from helpers import ROOT
 
 sys.path.insert(0, str(ROOT / "scripts"))
 
+import _env  # noqa: E402
 import local_server  # noqa: E402
 import save_fixtures  # noqa: E402
 
@@ -122,6 +123,25 @@ class AdoptCaptureTests(unittest.TestCase):
         self.assertEqual(save_fixtures.adopt(self.new, self.fix, self.meta), "all")
         self.assertEqual((self.fix / "forecast_field.json").read_text(), "new")
         self.assertFalse(save_fixtures.places_complete(self.fix))
+
+
+class EnvFileTests(unittest.TestCase):
+    def test_reads_values_and_never_overrides_the_shell(self):
+        import os
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as tmp:
+            env = Path(tmp) / ".env"
+            env.write_text('# comment\nFIRMS_MAP_KEY="abc123"\nexport WIND_LEVEL=80m  # note\nOVERPASS_URL=from-file\nbad line\n')
+            with mock.patch.dict(os.environ, {"OVERPASS_URL": "from-shell"}, clear=False):
+                os.environ.pop("FIRMS_MAP_KEY", None)
+                os.environ.pop("WIND_LEVEL", None)
+                loaded = _env.load_env(env)
+                self.assertEqual(sorted(loaded), ["FIRMS_MAP_KEY", "WIND_LEVEL"])
+                self.assertEqual(os.environ["FIRMS_MAP_KEY"], "abc123")
+                self.assertEqual(os.environ["WIND_LEVEL"], "80m")
+                self.assertEqual(os.environ["OVERPASS_URL"], "from-shell")
+            self.assertEqual(_env.load_env(Path(tmp) / "missing.env"), [])
 
 
 class MapPageTests(unittest.TestCase):
