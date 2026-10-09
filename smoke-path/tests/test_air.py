@@ -455,3 +455,57 @@ class EmissionTests(unittest.TestCase):
         f = emissions.from_field(5)
         self.assertEqual(f["per"], "field")
         self.assertAlmostEqual(f["kg"]["pm2_5"], round(plume.burned_tonnes(5) * 6.26, 1))
+
+
+class CpcbTests(unittest.TestCase):
+    NOW = datetime(2026, 10, 10, 9, 30, tzinfo=IST)
+
+    def records(self):
+        rec = lambda station, city, pid, avg, lat="30.90", lon="75.85", key="avg_value": {  # noqa: E731
+            "country": "India", "state": "Punjab", "city": city, "station": station, "last_update": "10-10-2026 09:00:00",
+            "latitude": lat, "longitude": lon, "pollutant_id": pid, "min_value": "10", "max_value": "300", key: avg}
+        return [rec("Punjab Agri Univ, Ludhiana - PPCB", "Ludhiana", "PM2.5", "95"),
+                rec("Punjab Agri Univ, Ludhiana - PPCB", "Ludhiana", "PM10", "150"),
+                rec("Punjab Agri Univ, Ludhiana - PPCB", "Ludhiana", "CO", "1.5"),
+                rec("Punjab Agri Univ, Ludhiana - PPCB", "Ludhiana", "OZONE", "NA"),
+                rec("Model Town, Ludhiana - PPCB", "Ludhiana", "PM2.5", "30", "30.89", "75.83", "pollutant_avg"),
+                rec("Model Town, Ludhiana - PPCB", "Ludhiana", "NO2", "20", "30.89", "75.83", "pollutant_avg"),
+                rec("Model Town, Ludhiana - PPCB", "Ludhiana", "NH3", "10", "30.89", "75.83", "pollutant_avg")]
+
+    def test_parse_and_aqi(self):
+        from smoke_path import cpcb
+
+        found = cpcb.parse_records(self.records())
+        self.assertEqual(len(found), 2)
+        pau = [s for s in found if s["name"].startswith("Punjab Agri")][0]
+        self.assertEqual(set(pau["pollutants"]), {"pm2_5", "pm10", "co"})  # "NA" ozone skipped
+        self.assertEqual(pau["updated"], datetime(2026, 10, 10, 9, 0, tzinfo=IST))
+        doc = cpcb.summarise(found, self.NOW, "test")
+        by = {s["name"]: s for s in doc["stations"]}
+        self.assertEqual(by["Punjab Agri Univ, Ludhiana - PPCB"]["aqi"], 217)  # PM2.5 95 -> 217
+        self.assertEqual(by["Punjab Agri Univ, Ludhiana - PPCB"]["pollutants"]["co"]["sub"], 75)  # 1.5 mg/m³ is halfway from 1.0 (50) to 2.0 (100)
+        self.assertEqual(by["Model Town, Ludhiana - PPCB"]["aqi"], 50)
+        self.assertEqual(doc["cities"][0]["city"], "Ludhiana")
+        self.assertEqual(doc["cities"][0]["aqi"], round((217 + 50) / 2))
+        self.assertEqual(doc["rankings"]["focus_most_polluted"][0], "Punjab Agri Univ, Ludhiana - PPCB")
+        self.assertEqual(by["Punjab Agri Univ, Ludhiana - PPCB"]["age_h"], 0.5)
+
+    def test_city_from_openaq_name(self):
+        from smoke_path import cpcb
+
+        self.assertEqual(cpcb.city_from_name("Vikas Sadan, Gurugram - HSPCB"), "Gurugram")
+        self.assertEqual(cpcb.city_from_name("New Delhi"), "New Delhi")
+
+    def test_endpoint_caches(self):
+        from smoke_path import cpcb
+
+        calls = []
+
+        def live(now):
+            calls.append(1)
+            return cpcb.summarise(cpcb.parse_records(self.records()), self.NOW, "test"), True
+
+        cache = ResponseCache()
+        r1 = app.handle_stations(cache, self.NOW, live=live)
+        r2 = app.handle_stations(cache, self.NOW, live=live)
+        self.assertEqual((r1["statusCode"], r2["body"] == r1["body"], len(calls)), (200, True, 1))

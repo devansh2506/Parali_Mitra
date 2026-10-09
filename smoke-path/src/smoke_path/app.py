@@ -24,8 +24,9 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from . import IST, air, firewatch, landuse
+from . import IST, air, cpcb, firewatch, landuse
 from .apis import LiveApi
+from .net import ApiError
 from .pipeline import SmokeRequest, WindUnavailable, run
 from .wind import MAX_FORECAST_DAYS, MAX_PAST_DAYS, OutsideForecast, forecast_days_needed, wind_level
 
@@ -268,6 +269,8 @@ def handle(event, api=None, cache=None, now=None, sample_path=SAMPLE_PATH, fire_
         return handle_fires(params, api, cache, now, fire_sample_path, gz)
     if _path(event).endswith("/air"):
         return handle_air(params, api, cache, now, gz)
+    if _path(event).endswith("/stations"):
+        return handle_stations(cache, now, gz)
 
     if _flag(params.get("sample")):
         try:
@@ -331,6 +334,24 @@ def handle_fires(params, api, cache, now, sample_path, gz=False):
     body = _dump(result.report)
     if result.cacheable:
         cache.put(key, body)
+    return _response(200, body, gz)
+
+
+def handle_stations(cache, now, gz=False, live=None):
+    """GET /stations: latest readings and AQI at every monitoring station (CPCB live feed)."""
+    key = ("stations",)
+    cached = cache.get(key)
+    if cached is not None:
+        return _response(200, cached, gz)
+    try:
+        doc, _ = (live or cpcb.live)(now)
+    except ApiError as err:
+        return _error(502, str(err))
+    except Exception:  # noqa: BLE001 - log it, never leak internals
+        log.exception("stations failed")
+        return _error(500, "Something went wrong while reading the monitoring stations.")
+    body = _dump(doc)
+    cache.put(key, body)  # also the OpenAQ fallback, so OpenAQ's rate limit is never hit
     return _response(200, body, gz)
 
 

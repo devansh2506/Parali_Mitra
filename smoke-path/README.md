@@ -399,6 +399,16 @@ The 48 hour AQI outlook at a spot (CAMS, station-corrected, plus the smoke of th
 fire watch, which it builds if needed). JSON: `now`, `worst`, `outlook` (hourly `air` dicts with `t`),
 `fires` (which fires add smoke here and how much), `air`, `notes`. Cached 30 minutes per ~1 km.
 
+### `GET /stations` (live air at monitoring stations)
+
+Latest readings and the CPCB AQI at every monitoring station, from CPCB's real-time feed on
+data.gov.in (needs `DATA_GOV_IN_API_KEY`: free, data.gov.in → My Account → Generate API Key). Without
+the key, or when data.gov.in is down, OpenAQ readings are used instead (PM2.5/PM10 only, often ~2 days
+late, AQI marked indicative). JSON: `source`, `stations` (name, city, state, lat, lon, updated, age_h,
+aqi, category, dominant, pollutants with avg/min/max/sub-index), `cities` (average AQI of a city's
+stations, worst station), `rankings` (most polluted, cleanest, most polluted in Punjab/Haryana/Delhi),
+`notes`. Cached 30 minutes. Used by the "Live air" tabs.
+
 ### `GET /smoke` (one smoke path)
 
 `GET /smoke?lat=30.245&lon=75.844&start=2026-10-10T14:00&hours=24&uncertainty=cone`

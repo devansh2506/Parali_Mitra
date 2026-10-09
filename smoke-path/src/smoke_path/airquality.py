@@ -37,7 +37,7 @@ VARIABLES = {
     "dust": "dust",  # desert dust (part of PM10); not an AQI pollutant, shown to explain high PM10
 }
 POLLUTANTS = ("pm2_5", "pm10", "co", "no2", "so2", "o3")  # the CPCB AQI pollutants we have
-NAMES = {"pm2_5": "PM2.5", "pm10": "PM10", "co": "CO", "no2": "NO2", "so2": "SO2", "o3": "O3"}
+NAMES = {"pm2_5": "PM2.5", "pm10": "PM10", "co": "CO", "no2": "NO2", "so2": "SO2", "o3": "O3", "nh3": "NH3"}
 
 # CPCB National AQI breakpoints: (concentration low, high) -> (index low, high).
 # Concentrations in µg/m³, except CO in mg/m³. The top band is open-ended in CPCB's
@@ -50,8 +50,9 @@ BREAKPOINTS = {
     "so2": (0, 40, 80, 380, 800, 1600, 2400),
     "co": (0, 1.0, 2.0, 10, 17, 34, 51),
     "o3": (0, 50, 100, 168, 208, 748, 1000),
+    "nh3": (0, 200, 400, 800, 1200, 1800, 2400),  # CPCB has NH3; CAMS (Open-Meteo) gives it only for Europe
 }
-WINDOW_H = {"pm2_5": 24, "pm10": 24, "no2": 24, "so2": 24, "co": 8, "o3": 8}
+WINDOW_H = {"pm2_5": 24, "pm10": 24, "no2": 24, "so2": 24, "co": 8, "o3": 8, "nh3": 24}
 AQI_MAX = 500
 
 CATEGORIES = (  # (upper index, key, label, CPCB health impact)
@@ -121,10 +122,13 @@ def averages(hourly, end):
     return out
 
 
-def aqi(averaged):
-    """{"aqi", "category", "label", "dominant", "sub"} from CPCB-averaged concentrations, or None."""
+def aqi(averaged, min_pollutants=3):
+    """{"aqi", "category", "label", "dominant", "sub"} from CPCB-averaged concentrations, or None.
+
+    CPCB needs at least 3 pollutants including PM2.5 or PM10; min_pollutants=1 gives an indicative AQI.
+    """
     sub = {p: sub_index(p, c) for p, c in averaged.items() if c is not None}
-    if len(sub) < 3 or not ({"pm2_5", "pm10"} & set(sub)):
+    if len(sub) < min_pollutants or not ({"pm2_5", "pm10"} & set(sub)):
         return None
     dominant = max(sub, key=lambda p: (sub[p], p in ("pm2_5", "pm10")))
     value = sub[dominant]

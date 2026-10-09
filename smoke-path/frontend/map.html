@@ -229,6 +229,8 @@
   <button type="button" class="tab" id="navFires" role="tab">&#128293; Fires</button>
   <button type="button" class="tab" id="navCheck" role="tab">&#128205; Check my village</button>
   <button type="button" class="tab" id="tabBurn" role="tab">&#127806; What if I burn?</button>
+  <button type="button" class="tab" id="navLive" role="tab">&#128308; Live air: stations</button>
+  <button type="button" class="tab" id="navCities" role="tab">&#127961; Live air: cities</button>
   <button type="button" class="tab" id="navAir" role="tab">&#128168; Air quality forecast</button>
   <button type="button" class="tab" id="navAbout" role="tab">&#8505; How it works</button>
 </nav>
@@ -257,6 +259,12 @@
     </div>
     <datalist id="placeList"></datalist>
     <span class="tbtext">or tap any spot on the map</span>
+  </div>
+  <div id="tbLive" class="tb" hidden>
+    <div class="row grow">
+      <input type="search" id="liveSearch" placeholder="Filter stations or cities…" autocomplete="off">
+    </div>
+    <span class="tbtext" id="liveSource">Measured air quality at monitoring stations.</span>
   </div>
   <div id="burnView" class="tb" hidden>
     <form id="controls" class="inline">
@@ -319,6 +327,7 @@
           <li><button type="button" data-go="navFires">&#128293; <b>Fires</b>: every fire NASA saw, what was burning, what it gives off and how toxic, and its smoke path</button></li>
           <li><button type="button" data-go="navCheck">&#128205; <b>Check my village</b>: is smoke coming, from which fires, and when</button></li>
           <li><button type="button" data-go="tabBurn">&#127806; <b>What if I burn?</b>: what your field would give off and where the smoke would go</button></li>
+          <li><button type="button" data-go="navLive">&#128308; <b>Live air</b>: measured AQI at monitoring stations and cities across India, rankings</button></li>
           <li><button type="button" data-go="navAir">&#128168; <b>Air quality forecast</b>: AQI map for the next 48 h (CAMS forecast)</button></li>
         </ul>
       </div>
@@ -328,6 +337,20 @@
         <h3>Fires seen by NASA satellites</h3>
         <p class="hint">Most toxic first. Amounts are per hour while the fire burns at the power the satellite measured. Tap a row or a fire on the map for the full list of pollutants, its smoke path and the places it reaches.</p>
         <div class="tablewrap"><table class="firetable" id="fireTable"></table></div>
+      </div>
+    </div>
+    <div id="pgLive" class="grid" hidden>
+      <div class="card span2" id="liveStation"><h3>Station details</h3><p class="hint">Tap a station on the map or in a list.</p></div>
+      <div class="card"><h3>Most polluted: Punjab, Haryana, Delhi, Chandigarh</h3><ol id="rankFocus" class="list"></ol></div>
+      <div class="card"><h3>Most polluted in India</h3><ol id="rankWorst" class="list"></ol></div>
+      <div class="card"><h3>Cleanest air in India</h3><ol id="rankClean" class="list"></ol></div>
+      <div class="card"><h3>About this data</h3><ul id="liveNotes" class="steps"></ul></div>
+    </div>
+    <div id="pgCities" class="grid" hidden>
+      <div class="card span2">
+        <h3>Air quality by city</h3>
+        <p class="hint">City AQI = average of its stations' AQI. Tap a column title to sort, a row to see it on the map.</p>
+        <div class="tablewrap"><table class="firetable" id="cityTable"></table></div>
       </div>
     </div>
     <div id="pgAir" class="grid" hidden>
@@ -1346,6 +1369,7 @@
 
   // ---- events -------------------------------------------------------------------
   map.on("click", function (e) {
+    if (mode === "watch" && (page === "live" || page === "cities")) return;
     if (mode === "watch") {
       if (page !== "check") showPage("check");
       showCheck(e.latlng.lat, e.latlng.lng, "this spot", SPOT_KM);
@@ -1361,7 +1385,7 @@
 
   document.addEventListener("click", function (e) {
     var button = e.target && e.target.closest ? e.target.closest("[data-fire]") : null;
-    if (!button) { if (!handleGo(e)) handleFireRow(e); return; }
+    if (!button) { if (!handleGo(e) && !handleCityTable(e)) handleFireRow(e); return; }
     var fire = popupFires[button.getAttribute("data-fire")];
     if (!fire) return;
     map.closePopup();
@@ -1412,7 +1436,9 @@
     fires: { nav: "navFires", show: ["tbFires", "pgFires"] },
     air: { nav: "navAir", show: ["tbAir", "pgAir"] },
     check: { nav: "navCheck", show: ["tbCheck", "pgCheck"] },
-    about: { nav: "navAbout", show: ["tbOverview", "pgAbout"] }
+    about: { nav: "navAbout", show: ["tbOverview", "pgAbout"] },
+    live: { nav: "navLive", show: ["tbLive", "pgLive"] },
+    cities: { nav: "navCities", show: ["tbLive", "pgCities"] }
   };
   var page = "overview";
   function showPage(name) {
@@ -1429,9 +1455,14 @@
     });
     if (mode === "watch") PAGES[page].show.forEach(function (id) { $(id).hidden = false; });
     if (typeof allPathsLayer !== "undefined") showAllPaths();
+    var liveOn = mode === "watch" && (page === "live" || page === "cities");
+    if (typeof liveLayer !== "undefined") {
+      if (liveOn) { map.removeLayer(watchLayer); map.addLayer(liveLayer); if (!liveDoc) loadLive(); }
+      else { map.removeLayer(liveLayer); if (mode === "watch") map.addLayer(watchLayer); }
+    }
   }
-  ["navFires", "navAir", "navCheck", "navAbout"].forEach(function (id) {
-    var name = { navFires: "fires", navAir: "air", navCheck: "check", navAbout: "about" }[id];
+  ["navFires", "navAir", "navCheck", "navAbout", "navLive", "navCities"].forEach(function (id) {
+    var name = { navFires: "fires", navAir: "air", navCheck: "check", navAbout: "about", navLive: "live", navCities: "cities" }[id];
     $(id).addEventListener("click", function () { showPage(name); setStatus(""); });
   });
   // Feature links on the overview ("data-go" = the nav button to press).
@@ -1488,6 +1519,131 @@
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  // ---- live air (GET /stations) ---------------------------------------------------------
+  var liveLayer = L.layerGroup();
+  var liveDoc = null, liveById = {}, liveMarkers = {}, citySort = { key: "aqi", desc: true };
+  var LIVE_NAMES = { pm2_5: "PM2.5", pm10: "PM10", no2: "NO2", so2: "SO2", co: "CO", o3: "Ozone", nh3: "Ammonia" };
+  function ageText(h) { return h == null ? "" : h < 1.5 ? "measured within the hour" : "measured " + Math.round(h) + " h ago"; }
+
+  var liveFitted = false;
+  async function loadLive() {
+    if (!API) {
+      $("liveSource").textContent = "Live station data needs the live server (open the page with ?api=).";
+      return;
+    }
+    setStatus("Getting the latest readings from monitoring stations…");
+    var doc = await getJson(API_BASE + "/stations");
+    if (!doc) return;
+    setStatus("");
+    liveDoc = doc;
+    drawLive();
+  }
+
+  function liveMatches(s, q) {
+    return !q || (s.name + " " + (s.city || "") + " " + (s.state || "")).toLowerCase().indexOf(q) >= 0;
+  }
+
+  function drawLive() {
+    var doc = liveDoc;
+    liveLayer.clearLayers();
+    liveById = {}; liveMarkers = {};
+    var q = $("liveSearch").value.trim().toLowerCase();
+    doc.stations.forEach(function (st) {
+      liveById[st.id] = st;
+      if (!liveMatches(st, q)) return;
+      var color = st.category ? AQI[st.category].color : "#9ca3af";
+      liveMarkers[st.id] = L.circleMarker([st.lat, st.lon], {
+        radius: 7, color: "#1f2937", weight: 1, fillColor: color, fillOpacity: 0.95
+      }).addTo(liveLayer).bindTooltip(esc(st.name) + (st.aqi != null ? ": AQI " + st.aqi : ""))
+        .on("click", function () { showStation(st.id); });
+    });
+    $("liveSource").textContent = "Source: " + doc.source + " · " + doc.counts.stations + " stations · updated " +
+      clock(Date.parse(doc.generated_at));
+    fillList($("liveNotes"), (doc.notes || []).concat([
+      doc.indicative ? "AQI here is indicative: one reading, PM only." : "AQI uses CPCB's method on each station's averages (24 h for PM, 8 h for CO and ozone).",
+      "Grey dots: not enough pollutants reported for an AQI."
+    ]));
+    var rank = function (el, ids) {
+      var list = $(el);
+      list.textContent = "";
+      (ids || []).map(function (id) { return liveById[id]; }).filter(function (st) { return st && liveMatches(st, q); }).forEach(function (st) {
+        var li = document.createElement("li");
+        var b = document.createElement("button");
+        b.type = "button";
+        b.innerHTML = aqiBadge(st) + " · " + esc(st.name) + (st.city && st.name.indexOf(st.city) < 0 ? ", " + esc(st.city) : "");
+        b.addEventListener("click", function () { showStation(st.id, true); });
+        li.appendChild(b);
+        list.appendChild(li);
+      });
+      if (!list.children.length) { var li = document.createElement("li"); li.textContent = "None."; list.appendChild(li); }
+    };
+    if (!liveFitted && doc.stations.length) {
+      liveFitted = true;
+      map.fitBounds(L.latLngBounds(doc.stations.map(function (st) { return [st.lat, st.lon]; })), { padding: [24, 24] });
+    }
+    rank("rankFocus", doc.rankings.focus_most_polluted);
+    rank("rankWorst", doc.rankings.most_polluted);
+    rank("rankClean", doc.rankings.cleanest);
+    drawCities();
+  }
+
+  function showStation(id, fly) {
+    var st = liveById[id];
+    if (!st) return;
+    if (fly) map.setView([st.lat, st.lon], Math.max(map.getZoom(), 10));
+    var rows = Object.keys(LIVE_NAMES).filter(function (k) { return st.pollutants[k]; }).map(function (k) {
+      var v = st.pollutants[k];
+      var unitText = k === "co" ? " mg/m³" : " µg/m³";
+      var sub = v.sub != null ? '<span class="aqi ' + aqiCategory(v.sub) + '">' + v.sub + "</span>" : "";
+      return "<tr><th>" + LIVE_NAMES[k] + "</th><td>" + esc(num(v.avg, k === "co" ? 2 : 0)) + unitText +
+        (v.min != null && v.max != null ? ' <span class="advice">(' + esc(num(v.min, 0)) + "–" + esc(num(v.max, 0)) + ")</span>" : "") +
+        "</td><td>" + sub + "</td></tr>";
+    }).join("");
+    var cat = st.category;
+    $("liveStation").innerHTML = "<h3>" + esc(st.name) + "</h3>" +
+      '<p class="advice">' + esc([st.city, st.state].filter(Boolean).join(", ")) + (st.updated ? " · " + esc(clock(Date.parse(st.updated)) + " " + dayText(Date.parse(st.updated))) + " (" + esc(ageText(st.age_h)) + ")" : "") + "</p>" +
+      (st.aqi != null ? "<p>AQI " + aqiBadge(st) + " · mostly " + esc(LIVE_NAMES[st.dominant] || st.dominant) + "</p>" +
+        '<p class="advice">' + esc(AQI[cat].advice) + "</p>" : "<p>Not enough pollutants reported for an AQI.</p>") +
+      '<table class="emtable"><tr><th>Pollutant</th><th>Average (min–max)</th><th>Sub-index</th></tr>' + rows + "</table>";
+    if (liveMarkers[id]) liveMarkers[id].bindPopup("<b>" + esc(st.name) + "</b><br>" + (st.aqi != null ? "AQI " + aqiBadge(st) : "no AQI")).openPopup();
+  }
+
+  function drawCities() {
+    if (!liveDoc) return;
+    var q = $("liveSearch").value.trim().toLowerCase();
+    var rows = liveDoc.cities.filter(function (c) { return !q || (c.city + " " + c.state).toLowerCase().indexOf(q) >= 0; });
+    rows.sort(function (a, b) {
+      var x = a[citySort.key], y = b[citySort.key];
+      var r = typeof x === "string" ? String(x).localeCompare(String(y)) : (x - y);
+      return citySort.desc ? -r : r;
+    });
+    var head = [["city", "City"], ["state", "State"], ["aqi", "AQI"], ["dominant", "Main pollutant"], ["stations", "Stations"], ["worst_aqi", "Worst station"]];
+    $("cityTable").innerHTML = "<thead><tr>" + head.map(function (h) {
+      return '<th data-sort="' + h[0] + '" style="cursor:pointer">' + h[1] + (citySort.key === h[0] ? (citySort.desc ? " ▼" : " ▲") : "") + "</th>";
+    }).join("") + "</tr></thead><tbody>" + rows.map(function (c) {
+      return '<tr class="click" data-city="' + esc(c.lat + "," + c.lon) + '"><td><b>' + esc(c.city) + "</b></td><td>" + esc(c.state) + "</td>" +
+        '<td><span class="aqi ' + esc(c.category) + '">' + esc(c.aqi) + "</span> " + esc(AQI[c.category].label) + "</td>" +
+        "<td>" + esc(LIVE_NAMES[c.dominant] || c.dominant || "") + "</td><td>" + esc(c.stations) + "</td>" +
+        '<td class="small">' + esc(c.worst_station) + " (" + esc(c.worst_aqi) + ")</td></tr>";
+    }).join("") + "</tbody>";
+  }
+  function handleCityTable(e) {
+    var th = e.target && e.target.closest ? e.target.closest("[data-sort]") : null;
+    if (th) {
+      var k = th.getAttribute("data-sort");
+      citySort = { key: k, desc: citySort.key === k ? !citySort.desc : true };
+      drawCities();
+      return true;
+    }
+    var tr = e.target && e.target.closest ? e.target.closest("[data-city]") : null;
+    if (!tr) return false;
+    var ll = tr.getAttribute("data-city").split(",").map(Number);
+    map.setView(ll, 11);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return true;
+  }
+  $("liveSearch").addEventListener("input", function () { if (liveDoc) drawLive(); });
+
   // ---- stats tiles, badge, fit button -------------------------------------
   function fillStats(doc) {
     var box = $("stats");
@@ -1526,6 +1682,7 @@
   // ---- start ----------------------------------------------------------------------
   $("start").value = tomorrowTwoPm();
   fillAqiScale();
+  setBadge();
   setMode("watch");
   if (!API) showBanner("Sample data: this page has no ?api= address, so it shows saved examples, not live data.");
   loadWatch();

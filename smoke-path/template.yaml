@@ -11,6 +11,11 @@ Parameters:
     NoEcho: true
     Default: ""
     Description: Free NASA FIRMS MAP_KEY (https://firms.modaps.eosdis.nasa.gov/api/map_key/). Leave empty to skip fires.
+  DataGovInApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Free data.gov.in API key (CPCB real-time air quality). Leave empty to use OpenAQ instead.
   OpenAqApiKey:
     Type: String
     NoEcho: true
@@ -62,6 +67,8 @@ Resources:
           FIRMS_MAP_KEY: !Ref FirmsMapKey
           # API key consumed by smoke_path/stations.py (OpenAQ). Comes from the NoEcho parameter.
           OPENAQ_API_KEY: !Ref OpenAqApiKey
+          # API key consumed by smoke_path/cpcb.py (CPCB live feed on data.gov.in).
+          DATA_GOV_IN_API_KEY: !Ref DataGovInApiKey
           WIND_LEVEL: !Ref WindLevel
           OVERPASS_URL: !Ref OverpassUrl
       Events:
@@ -76,6 +83,12 @@ Resources:
           Properties:
             ApiId: !Ref SmokeApi
             Path: /fires
+            Method: GET
+        GetStations:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SmokeApi
+            Path: /stations
             Method: GET
         GetAir:
           Type: HttpApi
