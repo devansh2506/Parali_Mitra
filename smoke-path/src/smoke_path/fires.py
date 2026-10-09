@@ -69,23 +69,31 @@ def _float(x):
         return None
 
 
+SATELLITES = {"VIIRS_SNPP_NRT": "Suomi NPP", "VIIRS_NOAA20_NRT": "NOAA-20", "VIIRS_NOAA21_NRT": "NOAA-21"}
+DAYNIGHT = {"D": "day", "N": "night"}
+
+
 def _fmt_time(t):
     return f"{t.hour % 12 or 12}:{t.minute:02d} {'am' if t.hour < 12 else 'pm'}"
 
 
 def parse_fires_csv(text, source):
-    """FIRMS CSV -> list of fire dicts. Returns [] for an error text."""
+    """FIRMS CSV -> list of fire dicts with every useful column. Returns [] for an error text.
+
+    The time is when the satellite passed over and saw the fire (acq_date +
+    acq_time, UTC); the fire may have started earlier.
+    """
     if not isinstance(text, str) or not looks_like_firms_csv(text):
         return []
     fires = []
-    for row in csv.DictReader(io.StringIO(text.lstrip("﻿"))):
+    for row in csv.DictReader(io.StringIO(text.lstrip("\ufeff"))):
         row = {(k or "").strip().lower(): (v or "").strip() for k, v in row.items()}
         lat, lon = _float(row.get("latitude")), _float(row.get("longitude"))
         if lat is None or lon is None:
             continue
         date = row.get("acq_date", "")
         hhmm = row.get("acq_time", "").zfill(4)
-        time_utc = time_ist = date_ist = None
+        time_utc = time_ist = date_ist = seen_at = seen_text = None
         try:
             utc = datetime.strptime(date + hhmm, "%Y-%m-%d%H%M").replace(tzinfo=timezone.utc)
         except ValueError:
@@ -95,6 +103,8 @@ def parse_fires_csv(text, source):
             time_utc = utc.strftime("%H:%M")
             time_ist = _fmt_time(ist)
             date_ist = ist.date().isoformat()
+            seen_at = ist.isoformat(timespec="minutes")
+            seen_text = f"{time_ist}, {ist.day} {ist.strftime('%b')}"
         conf = row.get("confidence", "")
         fires.append(
             {
@@ -104,8 +114,18 @@ def parse_fires_csv(text, source):
                 "time_utc": time_utc,
                 "time_ist": time_ist,
                 "date_ist": date_ist,
+                "seen_at": seen_at,
+                "seen_text": seen_text,
                 "confidence": CONFIDENCE.get(conf.lower(), conf),
                 "frp": _float(row.get("frp")),
+                "bright_ti4": _float(row.get("bright_ti4")),
+                "bright_ti5": _float(row.get("bright_ti5")),
+                "scan": _float(row.get("scan")),
+                "track": _float(row.get("track")),
+                "satellite": SATELLITES.get(source, row.get("satellite") or None),
+                "instrument": row.get("instrument") or "VIIRS",
+                "daynight": DAYNIGHT.get(row.get("daynight", "").upper(), row.get("daynight") or None),
+                "version": row.get("version") or None,
                 "source": source,
             }
         )

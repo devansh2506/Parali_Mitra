@@ -11,6 +11,7 @@
  "notes": [],
  "wind_level": "120m",
  "uncertainty": "cone",
+ "origin": "field",
  "start": "2026-10-10T14:00+05:30",
  "hours": 24,
  "generated_at": "2026-10-09T01:40+05:30",
@@ -27,6 +28,7 @@
    },
    "properties": {
     "kind": "field",
+    "origin": "field",
     "start": "2026-10-10T14:00+05:30",
     "start_text": "10 Oct, 2:00 pm"
    }
@@ -12257,8 +12259,18 @@
     "time_utc": "07:07",
     "time_ist": "12:37 pm",
     "date_ist": "2026-10-09",
+    "seen_at": "2026-10-09T12:37+05:30",
+    "seen_text": "12:37 pm, 9 Oct",
     "confidence": "nominal",
     "frp": 7.34,
+    "bright_ti4": 338.36,
+    "bright_ti5": 293.36,
+    "scan": 0.62,
+    "track": 0.71,
+    "satellite": "NOAA-21",
+    "instrument": "VIIRS",
+    "daynight": "day",
+    "version": "2.0NRT",
     "source": "VIIRS_NOAA21_NRT"
    }
   }

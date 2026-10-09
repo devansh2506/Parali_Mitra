@@ -5,6 +5,10 @@
     python3.12 scripts/try_live.py 30.245 75.844
     python3.12 scripts/try_live.py 30.245 75.844 2026-10-10T14:00 24
     python3.12 scripts/try_live.py 30.245 75.844 2026-10-10T14:00 48 --ensemble
+    python3.12 scripts/try_live.py 30.60486 74.99966 2026-10-09T12:37 24 --fire
+
+--fire traces smoke from a fire already seen by satellite (START = the time it was seen,
+up to 3 days ago), instead of a planned burn on your field.
 
 START is India time (YYYY-MM-DDTHH:MM); default is the next full hour.
 Fires use FIRMS_MAP_KEY from smoke-path/.env (or your shell).
@@ -35,6 +39,7 @@ def main():
     parser.add_argument("start", nargs="?", default="")
     parser.add_argument("hours", nargs="?", default="")
     parser.add_argument("--ensemble", action="store_true", help="use the ICON-EPS ensemble band")
+    parser.add_argument("--fire", action="store_true", help="START is when a satellite saw a fire here")
     parser.add_argument("--out", default="smoke.geojson", help="output file (default: smoke.geojson)")
     args = parser.parse_args()
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
@@ -46,6 +51,7 @@ def main():
         "start": args.start,
         "hours": args.hours,
         "uncertainty": "ensemble" if args.ensemble else "cone",
+        "origin": "fire" if args.fire else "field",
     }
     try:
         req = parse_request(params)
@@ -54,7 +60,8 @@ def main():
         return 2
 
     api = LiveApi.from_env()
-    print(f"Field {req.lat}, {req.lon} | burn {req.start:%Y-%m-%d %H:%M} IST | {req.hours} h | band: {req.uncertainty}")
+    what = "fire seen" if req.origin == "fire" else "burn"
+    print(f"{req.origin.title()} {req.lat}, {req.lon} | {what} {req.start:%Y-%m-%d %H:%M} IST | {req.hours} h | band: {req.uncertainty}")
     print(f"FIRMS key: {'set' if api.fires_available() else 'NOT set (fires will be skipped)'}")
     t0 = time.monotonic()
     try:

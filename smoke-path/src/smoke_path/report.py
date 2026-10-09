@@ -39,28 +39,43 @@ def arrival_text(arrival, start):
     return text
 
 
-def summary(start, located, places_checked=True):
+def _wording(start, origin):
+    """(lead, reach, none, unknown, joiner) for a planned burn or a fire already seen."""
+    if origin == "fire":
+        lead = f"Smoke from this fire (seen by satellite on {fmt_day(start)} at {fmt_time(start)})"
+        return (
+            f"{lead} likely travels over:",
+            f"{lead} likely does not pass any listed village, school or hospital.",
+            f"{lead} likely follows the path on the map "
+            "(villages, schools and hospitals could not be checked right now).",
+            "at about",
+        )
+    lead = f"If you burn on {fmt_day(start)} at {fmt_time(start)}"
+    return (
+        f"{lead}, smoke will likely reach:",
+        f"{lead}, the smoke will likely not pass any listed village, school or hospital.",
+        f"{lead}, smoke will likely follow the path on the map "
+        "(villages, schools and hospitals could not be checked right now).",
+        "by about",
+    )
+
+
+def summary(start, located, places_checked=True, origin="field"):
     """Headline, then up to 3 places in the band (schools and hospitals first)."""
-    when = f"{fmt_day(start)} at {fmt_time(start)}"
+    reach, none, unknown, joiner = _wording(start, origin)
     reached = [p for p in located if p["in_band"] and p["arrival"] - start >= FARM_ITSELF]
     sensitive = [p for p in reached if p["place_type"] in SENSITIVE_TYPES]
     others = [p for p in reached if p["place_type"] not in SENSITIVE_TYPES]
     chosen = sorted((sensitive + others)[:MAX_SUMMARY_PLACES], key=lambda p: p["arrival"])
     if not chosen and not places_checked:
         # Places failed or came back incomplete: never claim that no place is affected.
-        return [
-            f"If you burn on {when}, smoke will likely follow the path on the map "
-            "(villages, schools and hospitals could not be checked right now)."
-        ]
+        return [unknown]
     if not chosen:
-        return [
-            f"If you burn on {when}, the smoke will likely not pass any listed "
-            "village, school or hospital."
-        ]
-    lines = [f"If you burn on {when}, smoke will likely reach:"]
+        return [none]
+    lines = [reach]
     for p in chosen:
         label = p["name"] if not p.get("named", True) else f"{p['name']} ({p['place_type']})"
-        lines.append(f"{label} by about {arrival_text(p['arrival'], start)}")
+        lines.append(f"{label} {joiner} {arrival_text(p['arrival'], start)}")
     return lines
 
 
@@ -95,12 +110,18 @@ def build(
     uncertainty,
     generated_at,
     places_checked=True,
+    origin="field",
 ):
     """Assemble the FeatureCollection. Everything in it is JSON-serialisable."""
     features = [
         _feature(
             _point(lat, lon),
-            {"kind": "field", "start": iso(start), "start_text": f"{fmt_day(start)}, {fmt_time(start)}"},
+            {
+                "kind": "field",
+                "origin": origin,
+                "start": iso(start),
+                "start_text": f"{fmt_day(start)}, {fmt_time(start)}",
+            },
         ),
         _feature(
             _line([(p.lat, p.lon) for p in path]),
@@ -143,26 +164,18 @@ def build(
         features.append(
             _feature(
                 _point(f["lat"], f["lon"]),
-                {
-                    "kind": "fire",
-                    "date": f["date"],
-                    "time_utc": f["time_utc"],
-                    "time_ist": f["time_ist"],
-                    "date_ist": f["date_ist"],
-                    "confidence": f["confidence"],
-                    "frp": f["frp"],
-                    "source": f["source"],
-                },
+                {"kind": "fire", **{k: v for k, v in f.items() if k not in ("lat", "lon")}},
             )
         )
     return {
         "type": "FeatureCollection",
         "label": LABEL,
         "disclaimer": DISCLAIMER,
-        "summary": summary(start, located, places_checked),
+        "summary": summary(start, located, places_checked, origin),
         "notes": list(notes),
         "wind_level": wind_level,
         "uncertainty": uncertainty,
+        "origin": origin,
         "start": iso(start),
         "hours": hours,
         "generated_at": iso(generated_at),

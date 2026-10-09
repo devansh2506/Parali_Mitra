@@ -219,6 +219,19 @@ class FirmsTests(unittest.TestCase):
         self.assertEqual(found[1]["date_ist"], "2026-10-08")
         self.assertEqual(found[1]["confidence"], "high")
 
+    def test_every_detail_is_kept_for_the_popup(self):
+        found = parse_fires_csv(API_CSV, "VIIRS_NOAA21_NRT")
+        f = found[0]
+        self.assertEqual(f["satellite"], "NOAA-21")
+        self.assertEqual(f["instrument"], "VIIRS")
+        self.assertEqual(f["daynight"], "day")
+        self.assertEqual((f["bright_ti4"], f["bright_ti5"]), (332.94, 298.27))
+        self.assertEqual((f["scan"], f["track"]), (0.4, 0.37))
+        self.assertEqual(f["version"], "2.0NRT")
+        self.assertEqual(f["seen_at"], "2026-10-07T13:52+05:30")  # start time for tracing its smoke
+        self.assertEqual(f["seen_text"], "1:52 pm, 7 Oct")
+        self.assertEqual(found[1]["daynight"], "night")
+
     def test_error_text_gives_no_fires(self):
         self.assertEqual(parse_fires_csv("Invalid MAP_KEY.", "VIIRS_SNPP_NRT"), [])
         self.assertEqual(parse_fires_csv("", "VIIRS_SNPP_NRT"), [])

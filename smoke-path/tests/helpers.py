@@ -94,8 +94,9 @@ class FakeApi:
         self.places_delay = places_delay
         self.calls = []
 
-    def forecast(self, points, days, level):
+    def forecast(self, points, days, level, past_days=0):
         self.calls.append(("forecast", list(points)))
+        self.past_days = past_days
         if self.fail_wind:
             raise ApiError("Open-Meteo answered HTTP 500")
         if len(points) > 1 and self.fail_refine:
@@ -108,7 +109,7 @@ class FakeApi:
                 out.append(self.wind)
         return out
 
-    def ensemble(self, lat, lon, days):
+    def ensemble(self, lat, lon, days, past_days=0):
         self.calls.append(("ensemble",))
         if self._ensemble is None:
             raise ApiError("Open-Meteo ensemble answered HTTP 503")

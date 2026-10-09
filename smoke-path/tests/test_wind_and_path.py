@@ -173,6 +173,17 @@ class ParseForecastTests(unittest.TestCase):
         self.assertIn("wind_speed_unit=ms", url)
         self.assertIn("forecast_days=3", url)
 
+    def test_past_days_for_fires_already_seen(self):
+        from smoke_path.wind import ensemble_url, past_days_needed
+
+        today = DAY0.date()
+        self.assertEqual(past_days_needed(START, today), 0)
+        self.assertEqual(past_days_needed(START - timedelta(days=1), today), 1)
+        self.assertNotIn("past_days", forecast_url([(30.1, 75.1)], 2, "120m"))
+        self.assertIn("past_days=1", forecast_url([(30.1, 75.1)], 2, "120m", past_days=1))
+        self.assertIn("past_days=3", forecast_url([(30.1, 75.1)], 2, "120m", past_days=9))  # capped
+        self.assertIn("past_days=2", ensemble_url(30.1, 75.1, 2, past_days=2))
+
     def test_forecast_days_needed(self):
         today = DAY0.date()
         self.assertEqual(forecast_days_needed(START + timedelta(hours=24), today), 2)

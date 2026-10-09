@@ -7,7 +7,7 @@ import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from helpers import FIELD, NOW, START, FakeApi, const_series, km_east, place
+from helpers import DAY0, FIELD, NOW, START, FakeApi, const_series, km_east, place
 
 from smoke_path import IST, app
 from smoke_path.pipeline import SmokeRequest, run
@@ -45,6 +45,9 @@ PLACES = [
     place("Civil Hospital", *km_east(72), "hospital"),  # 6:00 pm
     place("Upwind Village", *km_east(-20)),  # not in band
 ]
+# Seen 9 Oct 12:37 pm; at 5 m/s (18 km/h) a village 18 km east is reached about 1 hour later.
+FIRE_PLACES = [place("Badal", *km_east(18))]
+
 FIRES = [
     {
         "lat": 30.34445,
@@ -130,6 +133,7 @@ class FullReportTests(unittest.TestCase):
         props = fires[0]["properties"]
         for key in ("date", "time_utc", "time_ist", "confidence", "frp", "source"):
             self.assertIn(key, props)
+        self.assertNotIn("lat", props)  # the position is in the geometry
         self.assertEqual(self.doc["notes"], [])
 
     def test_two_open_meteo_calls_second_with_sampled_points(self):
@@ -305,6 +309,61 @@ class PartialFailureTests(unittest.TestCase):
         self.assertLess(time.monotonic() - t0, 1.2)
         self.assertIn("Places unavailable: OpenStreetMap took too long to answer.", result.report["notes"])
         self.assertFalse(result.cacheable)
+
+
+class FireOriginTests(unittest.TestCase):
+    """Trace smoke from a fire already seen by satellite, starting at the time it was seen."""
+
+    def setUp(self):
+        # Wind data that also covers yesterday (the fire was seen on 9 Oct, "now" is 10 Oct).
+        self.api = FakeApi(wind=const_series(5, 270, n=96, t0=DAY0 - timedelta(days=1)), places=FIRE_PLACES)
+
+    def test_fire_seen_yesterday_is_traced_from_its_time(self):
+        resp, doc = call(self.api, start="2026-10-09T12:37", origin="fire")
+        self.assertEqual(resp["statusCode"], 200)
+        self.assertEqual(self.api.past_days, 1)  # wind from yesterday was requested
+        self.assertEqual(doc["origin"], "fire")
+        self.assertEqual(features(doc, "field")[0]["properties"]["origin"], "fire")
+        self.assertEqual(features(doc, "field")[0]["properties"]["start"], "2026-10-09T12:37+05:30")
+        self.assertEqual(
+            doc["summary"],
+            [
+                "Smoke from this fire (seen by satellite on 9 Oct at 12:37 pm) likely travels over:",
+                "Badal (village) at about 1:35 pm",
+            ],
+        )
+
+    def test_fire_wording_when_places_fail(self):
+        self.api.fail_places = True
+        _, doc = call(self.api, start="2026-10-09T12:37", origin="fire")
+        self.assertTrue(doc["summary"][0].startswith("Smoke from this fire (seen by satellite on 9 Oct at 12:37 pm) likely follows"))
+
+    def test_fire_time_rules(self):
+        for params in (
+            {"origin": "fire", "start": None},  # the time the satellite saw it is required
+            {"origin": "fire", "start": "2026-10-06T12:00"},  # more than 3 days ago
+            {"origin": "smoke"},
+            {"start": "2026-10-09T12:37"},  # a planned burn cannot be in the past
+        ):
+            with self.subTest(params=params):
+                resp, doc = call(self.api, **params)
+                self.assertEqual(resp["statusCode"], 400)
+        three_days = FakeApi(wind=const_series(5, 270, n=24 * 6, t0=DAY0 - timedelta(days=3)))
+        resp, _ = call(three_days, origin="fire", start="2026-10-07T13:30")  # 3 days back is fine
+        self.assertEqual(resp["statusCode"], 200)
+        self.assertEqual(three_days.past_days, 3)
+
+    def test_planned_burn_today_asks_no_past_wind(self):
+        call(self.api)
+        self.assertEqual(self.api.past_days, 0)
+
+    def test_cache_keeps_fire_and_field_apart(self):
+        cache = app.ResponseCache()
+        api = FakeApi(wind=const_series(5, 270, n=96, t0=DAY0 - timedelta(days=1)))
+        call(api, cache=cache, start="2026-10-10T14:00")
+        _, doc = call(api, cache=cache, start="2026-10-10T14:00", origin="fire")
+        self.assertEqual(doc["origin"], "fire")
+        self.assertEqual(api.count("forecast"), 4)
 
 
 class CacheAndSampleTests(unittest.TestCase):

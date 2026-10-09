@@ -24,7 +24,7 @@ from .ensemble import ensemble_puffs, member_lines, trace_members
 from .net import ApiError
 from .places import OVERPASS_TIMEOUT_S, locate
 from .trajectory import WindField, cone_puffs, hourly, refine_sites, single_site, trace
-from .wind import OutsideForecast, forecast_days_needed, wind_level
+from .wind import OutsideForecast, forecast_days_needed, past_days_needed, wind_level
 
 log = logging.getLogger(__name__)
 
@@ -47,6 +47,7 @@ class SmokeRequest:
     start: datetime  # aware, IST
     hours: int
     uncertainty: str = "cone"
+    origin: str = "field"  # "field": a planned burn; "fire": a fire already seen by satellite
 
 
 @dataclass
@@ -75,17 +76,19 @@ def run(
     notes = []
     cacheable = True
     end = req.start + timedelta(hours=req.hours)
-    days = max(1, forecast_days_needed(end, now.astimezone(IST).date()))
+    today = now.astimezone(IST).date()
+    days = max(1, forecast_days_needed(end, today))
+    past = past_days_needed(req.start, today)  # > 0 when tracing a fire seen on an earlier day
 
     pool = ThreadPoolExecutor(max_workers=6)
     try:
         ens_future = None
         if req.uncertainty == "ensemble":
-            ens_future = pool.submit(api.ensemble, req.lat, req.lon, days)
+            ens_future = pool.submit(api.ensemble, req.lat, req.lon, days, past)
 
         # Pass 1: wind at the field only.
         try:
-            field_series = api.forecast([(req.lat, req.lon)], days, level)[0]
+            field_series = api.forecast([(req.lat, req.lon)], days, level, past)[0]
         except ApiError as err:
             raise WindUnavailable(str(err)) from None
         path = trace(single_site(field_series), req.lat, req.lon, req.start, req.hours)
@@ -93,7 +96,7 @@ def run(
         # Pass 2: wind sampled along the first path, nearest site wins.
         sites = [(req.lat, req.lon)] + refine_sites(path)
         try:
-            series = api.forecast(sites, days, level)
+            series = api.forecast(sites, days, level, past)
             field = WindField([(la, lo, s) for (la, lo), s in zip(sites, series)])
             path = trace(field.at, req.lat, req.lon, req.start, req.hours)
         except (ApiError, OutsideForecast) as err:
@@ -183,5 +186,6 @@ def run(
         uncertainty=uncertainty,
         generated_at=now,
         places_checked=places_checked,
+        origin=req.origin,
     )
     return Result(report=doc, cacheable=cacheable)

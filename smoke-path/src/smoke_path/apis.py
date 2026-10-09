@@ -29,11 +29,11 @@ class LiveApi:
         return cls(firms_key=fires.map_key())
 
     # ---- raw replies -------------------------------------------------------
-    def forecast_raw(self, points, days, level):
-        return wind.fetch_forecast_raw(points, days, level)
+    def forecast_raw(self, points, days, level, past_days=0):
+        return wind.fetch_forecast_raw(points, days, level, past_days=past_days)
 
-    def ensemble_raw(self, lat, lon, days):
-        return wind.fetch_ensemble_raw(lat, lon, days)
+    def ensemble_raw(self, lat, lon, days, past_days=0):
+        return wind.fetch_ensemble_raw(lat, lon, days, past_days=past_days)
 
     def places_raw(self, line, timeout):
         return places.fetch_places_raw(line, timeout)
@@ -45,15 +45,15 @@ class LiveApi:
         return bool(self.firms_key)
 
     # ---- parsed results (shared by every flavour) --------------------------
-    def forecast(self, points, days, level):
+    def forecast(self, points, days, level, past_days=0):
         """One WindSeries per point, in the same order. ONE request for all points."""
-        series = wind.decode_forecast(self.forecast_raw(points, days, level), level)
+        series = wind.decode_forecast(self.forecast_raw(points, days, level, past_days), level)
         if len(series) != len(points):
             raise ApiError(f"Open-Meteo sent {len(series)} forecasts for {len(points)} points")
         return series
 
-    def ensemble(self, lat, lon, days):
-        return wind.decode_ensemble(self.ensemble_raw(lat, lon, days))
+    def ensemble(self, lat, lon, days, past_days=0):
+        return wind.decode_ensemble(self.ensemble_raw(lat, lon, days, past_days))
 
     def places(self, line, timeout):
         """(places, note or None)."""
@@ -101,13 +101,13 @@ class RecordingApi(LiveApi):
         else:
             path.write_bytes(data)
 
-    def forecast_raw(self, points, days, level):
-        body = super().forecast_raw(points, days, level)
+    def forecast_raw(self, points, days, level, past_days=0):
+        body = super().forecast_raw(points, days, level, past_days)
         self._save(_forecast_file(points), body)
         return body
 
-    def ensemble_raw(self, lat, lon, days):
-        body = super().ensemble_raw(lat, lon, days)
+    def ensemble_raw(self, lat, lon, days, past_days=0):
+        body = super().ensemble_raw(lat, lon, days, past_days)
         self._save(ENSEMBLE, body)
         return body
 
@@ -135,10 +135,10 @@ class FixtureApi(LiveApi):
             raise ApiError(f"No saved reply {name} in {self.folder.name}/")
         return path.read_bytes()
 
-    def forecast_raw(self, points, days, level):
+    def forecast_raw(self, points, days, level, past_days=0):
         return self._load(_forecast_file(points))
 
-    def ensemble_raw(self, lat, lon, days):
+    def ensemble_raw(self, lat, lon, days, past_days=0):
         return self._load(ENSEMBLE)
 
     def places_raw(self, line, timeout):

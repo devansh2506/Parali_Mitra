@@ -1,6 +1,7 @@
 """AWS Lambda handler for GET /smoke (API Gateway HTTP API, payload v2).
 
 GET /smoke?lat=30.245&lon=75.844&start=2026-10-10T14:00&hours=24&uncertainty=cone
+GET /smoke?lat=30.605&lon=74.999&start=2026-10-09T12:37&origin=fire   (a fire seen by satellite)
 
 Returns a GeoJSON FeatureCollection. 400 for bad input or a start time
 outside the forecast, 502 only if the wind forecast itself fails.
@@ -17,7 +18,7 @@ from pathlib import Path
 from . import IST
 from .apis import LiveApi
 from .pipeline import SmokeRequest, WindUnavailable, run
-from .wind import MAX_FORECAST_DAYS, OutsideForecast, forecast_days_needed, wind_level
+from .wind import MAX_FORECAST_DAYS, MAX_PAST_DAYS, OutsideForecast, forecast_days_needed, wind_level
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -87,15 +88,24 @@ def parse_request(params, now=None):
     uncertainty = str(params.get("uncertainty") or "cone").strip().lower()
     if uncertainty not in ("cone", "ensemble"):
         raise BadRequest("uncertainty must be 'cone' or 'ensemble'.")
+    origin = str(params.get("origin") or "field").strip().lower()
+    if origin not in ("field", "fire"):
+        raise BadRequest("origin must be 'field' or 'fire'.")
     today = now.date()
-    if start.date() < today:
+    if origin == "fire":
+        # A fire already seen by satellite: start = the time it was seen, up to 3 days back.
+        if not str(params.get("start") or "").strip():
+            raise BadRequest("start is required for a fire: the time the satellite saw it.")
+        if start.date() < today - timedelta(days=MAX_PAST_DAYS):
+            raise BadRequest(f"The fire time must be within the last {MAX_PAST_DAYS} days.")
+    elif start.date() < today:
         raise BadRequest("The burn time is in the past. The wind forecast starts today (India time).")
     if forecast_days_needed(start + timedelta(hours=hours), today) > MAX_FORECAST_DAYS:
         raise BadRequest(
             f"The burn time plus {hours} hours must fall within the next {MAX_FORECAST_DAYS} days "
             "(the length of the wind forecast)."
         )
-    return SmokeRequest(lat=lat, lon=lon, start=start, hours=hours, uncertainty=uncertainty)
+    return SmokeRequest(lat=lat, lon=lon, start=start, hours=hours, uncertainty=uncertainty, origin=origin)
 
 
 def _flag(raw):
@@ -135,8 +145,16 @@ class ResponseCache:
 
 
 def cache_key(req, level):
-    """lat/lon rounded to 0.01 (about 1 km), start time, hours, band type and wind height."""
-    return (round(req.lat, 2), round(req.lon, 2), req.start.isoformat(), req.hours, req.uncertainty, level)
+    """lat/lon rounded to 0.01 (about 1 km), start time, hours, band type, origin and wind height."""
+    return (
+        round(req.lat, 2),
+        round(req.lon, 2),
+        req.start.isoformat(),
+        req.hours,
+        req.uncertainty,
+        req.origin,
+        level,
+    )
 
 
 CACHE = ResponseCache()

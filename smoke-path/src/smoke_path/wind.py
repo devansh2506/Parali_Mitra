@@ -33,6 +33,7 @@ FORECAST_TIMEOUT_S = 8
 ENSEMBLE_TIMEOUT_S = 10
 MAX_FORECAST_DAYS = 16
 MAX_ENSEMBLE_DAYS = 7
+MAX_PAST_DAYS = 3  # wind from up to 3 days ago, for tracing smoke from fires already seen
 
 LEVELS = ("10m", "80m", "120m", "180m")
 DEFAULT_LEVEL = "120m"  # smoke rises; 10 m wind is too low for a plume
@@ -226,7 +227,12 @@ def forecast_days_needed(end, today):
     return (end.astimezone(IST).date() - today).days + 1
 
 
-def forecast_url(points, days, level):
+def past_days_needed(start, today):
+    """How many days before today the wind data must start (0 for today or later)."""
+    return max(0, (today - start.astimezone(IST).date()).days)
+
+
+def forecast_url(points, days, level, past_days=0):
     params = {
         "latitude": ",".join(f"{lat:.4f}" for lat, _ in points),
         "longitude": ",".join(f"{lon:.4f}" for _, lon in points),
@@ -235,10 +241,12 @@ def forecast_url(points, days, level):
         "timezone": ",".join([TIMEZONE] * len(points)),
         "forecast_days": max(1, min(days, MAX_FORECAST_DAYS)),
     }
+    if past_days > 0:
+        params["past_days"] = min(past_days, MAX_PAST_DAYS)
     return FORECAST_URL + "?" + urllib.parse.urlencode(params, safe=",/")
 
 
-def ensemble_url(lat, lon, days):
+def ensemble_url(lat, lon, days, past_days=0):
     params = {
         "latitude": f"{lat:.4f}",
         "longitude": f"{lon:.4f}",
@@ -248,18 +256,20 @@ def ensemble_url(lat, lon, days):
         "timezone": TIMEZONE,
         "forecast_days": max(1, min(days, MAX_ENSEMBLE_DAYS + 1)),
     }
+    if past_days > 0:
+        params["past_days"] = min(past_days, MAX_PAST_DAYS)
     return ENSEMBLE_URL + "?" + urllib.parse.urlencode(params, safe=",/")
 
 
-def fetch_forecast_raw(points, days, level, timeout=FORECAST_TIMEOUT_S):
+def fetch_forecast_raw(points, days, level, timeout=FORECAST_TIMEOUT_S, past_days=0):
     """Many points in ONE request. Returns the raw JSON bytes."""
-    return request(forecast_url(points, days, level), timeout, name="Open-Meteo")
+    return request(forecast_url(points, days, level, past_days), timeout, name="Open-Meteo")
 
 
-def fetch_ensemble_raw(lat, lon, days, timeout=ENSEMBLE_TIMEOUT_S):
+def fetch_ensemble_raw(lat, lon, days, timeout=ENSEMBLE_TIMEOUT_S, past_days=0):
     if days > MAX_ENSEMBLE_DAYS + 1:
         raise ApiError("The ensemble forecast only covers about 7 days")
-    return request(ensemble_url(lat, lon, days), timeout, name="Open-Meteo ensemble")
+    return request(ensemble_url(lat, lon, days, past_days), timeout, name="Open-Meteo ensemble")
 
 
 def decode_forecast(body, level):

@@ -8,7 +8,10 @@ using real wind forecasts:
 2. a soft **band** around the path that gets wider with time (uncertainty),
 3. the **villages, towns, schools and hospitals** the smoke would pass, and roughly when,
    for example: *"If you burn on 10 Oct at 2:00 pm, smoke will likely reach: Badrukhan (village) by about 4:15 pm"*,
-4. today's **farm fires** nearby, seen by NASA satellites.
+4. today's **farm fires** nearby, seen by NASA satellites. Tap a fire to see all its details
+   (time seen, satellite, confidence, fire strength, brightness, pixel size, day/night) and press
+   **"Show where this fire's smoke goes"** to run the same smoke path from that fire, starting at
+   the time the satellite saw it.
 
 It is always labelled **"Likely smoke direction"**. It is a simple wind model, not a smoke dispersion model.
 
@@ -66,6 +69,9 @@ smoke-path/
    colleges, hospitals and clinics within 3 km of the path. For each place we find the closest point
    on the path, the time the smoke is there, and whether it is inside the band at that time.
 6. **Fires.** NASA FIRMS VIIRS detections (S-NPP, NOAA-20, NOAA-21) in about 1° around the field, last day.
+   Each fire has the minute the satellite saw it (`acq_date` + `acq_time`, UTC). Tracing a fire
+   (`origin=fire`) runs steps 1-5 from the fire's position starting at that time; because that time is
+   in the past, the wind request adds Open-Meteo's `past_days` (up to 3 days back).
 
 ---
 
@@ -92,6 +98,7 @@ FIRMS_MAP_KEY=<YOUR_FIRMS_MAP_KEY>
 cd smoke-path
 python3.12 scripts/try_live.py 30.245 75.844                     # next full hour, 24 h
 python3.12 scripts/try_live.py 30.245 75.844 2026-10-10T14:00 48 --ensemble
+python3.12 scripts/try_live.py 30.60486 74.99966 2026-10-09T12:37 24 --fire   # a fire seen by satellite
 ```
 
 It prints the summary, notes, path length, places in the band, fire count and how long it took,
@@ -167,14 +174,17 @@ Later deploys are just `sam build && sam deploy`. To remove everything: `sam del
 | `start` | optional, India time `YYYY-MM-DDTHH:MM`; default the next full hour |
 | `hours` | optional, 1 to 48, default 24 |
 | `uncertainty` | optional, `cone` (default) or `ensemble` |
+| `origin` | optional, `field` (default: a planned burn, `start` today or later) or `fire` (a fire already seen by satellite: `start` = the time it was seen, required, up to 3 days back) |
 | `sample=true` | returns the saved demo response, with `"sample": true`, no external calls |
 
 The reply is a GeoJSON FeatureCollection. Every feature has `properties.kind`:
 `field`, `path` (with `km`), `puff` (one per hour: `hour`, `time`, `radius_km`),
 `member` (ensemble only), `place` (`name`, `name_local`, `place_type`, `distance_km`, `arrival`,
-`arrival_text`, `in_band`) and `fire` (`date`, `time_utc`, `time_ist`, `confidence`, `frp`, `source`).
+`arrival_text`, `in_band`) and `fire` (`date`, `time_utc`, `time_ist`, `date_ist`, `seen_at`, `seen_text`,
+`confidence`, `frp`, `bright_ti4`, `bright_ti5`, `scan`, `track`, `satellite`, `instrument`, `daynight`,
+`version`, `source`).
 Top level: `label`, `summary` (headline, then one line per place), `notes` (warnings), `wind_level`,
-`uncertainty`, `sample`.
+`uncertainty`, `origin`, `sample`.
 
 Errors: **400** `{"error": "..."}` for bad input or a time outside the forecast; **502** only when the
 wind forecast itself fails. If places or fires fail, the reply is still **200** with a note.
@@ -206,6 +216,8 @@ Settings (Lambda environment variables): `FIRMS_MAP_KEY` (from the `FirmsMapKey`
   not be checked. Set `OverpassUrl` to another Overpass server if the main one stays down.
 * Places come from OpenStreetMap, which is incomplete in rural areas; a missing school is not a safe school.
 * Fires are satellite detections from the last day. Clouds hide fires, and small fires can be missed.
+* A fire's time is when the satellite passed over (VIIRS passes Punjab around 1:30 am and 1:30 pm), not
+  when the fire was lit. Tracing from that time shows where its smoke went from then on.
 
 ## Data sources and terms
 
