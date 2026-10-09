@@ -132,6 +132,14 @@ def aqi(averaged):
     return {"aqi": value, "category": key, "label": label, "dominant": dominant, "sub": sub}
 
 
+def driver_text(a):
+    """What drives an `air` dict's AQI, in words: 'mostly PM10, largely desert dust'."""
+    name = NAMES.get(a["dominant"], a["dominant"])
+    if a["dominant"] == "pm10" and a.get("dust") and a.get("pm10") and a["dust"] >= 0.5 * a["pm10"]:
+        return "mostly PM10, largely desert dust"
+    return f"mostly {name}"
+
+
 def cigarettes(pm25_24h):
     return round(pm25_24h / CIGARETTE_PM25, 1) if pm25_24h is not None else None
 
@@ -221,6 +229,17 @@ class FieldGrid:
         k = min(int(x), self.n_hours - 2)
         a, b = self.node_hours(var, lat, lon, k, 2)
         return a + (x - k) * (b - a)
+
+
+def grid_to_json(grid):
+    """A FieldGrid as plain JSON (saved fixtures)."""
+    return {"south": grid.south, "west": grid.west, "step": grid.step, "rows": grid.rows, "cols": grid.cols,
+            "t0": grid.t0.isoformat(), "values": grid.values}
+
+
+def grid_from_json(doc):
+    return FieldGrid(doc["south"], doc["west"], doc["step"], doc["rows"], doc["cols"],
+                     datetime.fromisoformat(doc["t0"]), doc["values"])
 
 
 def _fill(values):

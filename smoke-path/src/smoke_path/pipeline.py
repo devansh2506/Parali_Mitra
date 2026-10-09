@@ -249,5 +249,5 @@ def _air_line(emission, best):
     if best is None or best["air"]["pm2_5_fires"] < 1:
         return start + "."
     a = best["air"]
-    return (f"{start}; the most reaches {best['name']} (about +{a['pm2_5_fires']:.0f} µg/m³ of PM2.5, "
-            f"AQI {a['aqi']} {airquality.category(a['aqi'])[1].lower()}).")
+    return (f"{start}; the most reaches {best['name']}: about +{a['pm2_5_fires']:.0f} µg/m³ of PM2.5 "
+            f"(AQI there {a['aqi']}, {airquality.category(a['aqi'])[1].lower()}, {airquality.driver_text(a)}).")

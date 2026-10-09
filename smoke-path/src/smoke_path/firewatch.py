@@ -479,14 +479,6 @@ def _at_text(t, now):
     return fmt_time(round_5min(t)) + ("" if t.astimezone(IST).date() == now.date() else f" ({fmt_day(t)})")
 
 
-def driver_text(a):
-    """What drives the AQI, in words: 'mostly PM10, largely desert dust'."""
-    name = air.airquality.NAMES.get(a["dominant"], a["dominant"])
-    if a["dominant"] == "pm10" and a.get("dust") and a.get("pm10") and a["dust"] >= 0.5 * a["pm10"]:
-        return "mostly PM10, largely desert dust"
-    return f"mostly {name}"
-
-
 def summary(fires, places, counts, places_checked, n_detections, now, types=None, worst=None, smokiest=None):
     if not fires:
         return [f"No fires were seen by NASA satellites {REGION} in the last day."]
@@ -523,6 +515,6 @@ def summary(fires, places, counts, places_checked, n_detections, now, types=None
     if worst is not None:
         a = worst["air"]
         label = air.airquality.category(a["aqi"])[1]
-        lines.append(f"Worst air on a smoke path: {_place_label(worst)}, AQI {a['aqi']} ({label}, {driver_text(a)}) "
+        lines.append(f"Worst air on a smoke path: {_place_label(worst)}, AQI {a['aqi']} ({label}, {air.airquality.driver_text(a)}) "
                      f"around {_at_text(a['t'], now)}.")
     return lines

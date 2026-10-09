@@ -114,8 +114,8 @@ ENSEMBLE = "ensemble.json"
 OVERPASS = "overpass.json"
 META = "meta.json"
 SAMPLE = "sample_response.json"
-AIR_QUALITY = "air_quality.json"  # CAMS on the grid around the burn sample's path (one request)
-MET = "met.json"  # mixing height etc. on the same grid
+AIR_QUALITY = "air_quality.json"  # CAMS on the grid around the burn sample's path (decoded grid)
+MET = "met.json"  # mixing height etc. on the same grid (decoded grid)
 
 
 def firms_file(source):
@@ -123,7 +123,7 @@ def firms_file(source):
 
 
 def raw_fixture_names():
-    return [FORECAST_FIELD, FORECAST_MULTI, ENSEMBLE, OVERPASS] + [firms_file(s) for s in FIRE_SOURCES]
+    return [FORECAST_FIELD, FORECAST_MULTI, ENSEMBLE, OVERPASS, AIR_QUALITY, MET] + [firms_file(s) for s in FIRE_SOURCES]
 
 
 def _forecast_file(points):
@@ -164,15 +164,15 @@ class RecordingApi(LiveApi):
         self._save(firms_file(source), text)
         return text
 
-    def air_quality_raw(self, points, past_days, forecast_days):
-        body = super().air_quality_raw(points, past_days, forecast_days)
-        self._save(AIR_QUALITY, body)
-        return body
+    def air_quality(self, spec, past_days, forecast_days):
+        grid = super().air_quality(spec, past_days, forecast_days)  # several requests: save the merged grid
+        self._save(AIR_QUALITY, json.dumps(airquality.grid_to_json(grid), separators=(",", ":")))
+        return grid
 
-    def met_raw(self, points, past_days, forecast_days):
-        body = super().met_raw(points, past_days, forecast_days)
-        self._save(MET, body)
-        return body
+    def met(self, spec, past_days, forecast_days):
+        grid = super().met(spec, past_days, forecast_days)
+        self._save(MET, json.dumps(airquality.grid_to_json(grid), separators=(",", ":")))
+        return grid
 
     def stations_available(self):
         return False  # station readings are not saved with the fixtures
@@ -206,11 +206,11 @@ class FixtureApi(LiveApi):
     def fires_available(self):
         return any((self.folder / firms_file(s)).exists() for s in FIRE_SOURCES)
 
-    def air_quality_raw(self, points, past_days, forecast_days):
-        return self._load(AIR_QUALITY)
+    def air_quality(self, spec, past_days, forecast_days):
+        return airquality.grid_from_json(json.loads(self._load(AIR_QUALITY)))
 
-    def met_raw(self, points, past_days, forecast_days):
-        return self._load(MET)
+    def met(self, spec, past_days, forecast_days):
+        return airquality.grid_from_json(json.loads(self._load(MET)))
 
     def stations_available(self):
         return False

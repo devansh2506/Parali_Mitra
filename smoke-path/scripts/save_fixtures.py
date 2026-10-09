@@ -40,14 +40,17 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from _env import load_env  # noqa: E402
 
-from smoke_path import IST  # noqa: E402
+from smoke_path import IST, airquality  # noqa: E402
 from smoke_path.apis import (  # noqa: E402
+    AIR_QUALITY,
     ENSEMBLE,
     FIRE_SOURCES,
+    MET,
     META,
     OVERPASS,
     SAMPLE,
     FixtureApi,
+    LiveApi,
     RecordingApi,
     firms_file,
     load_meta,
@@ -237,6 +240,32 @@ def refresh_fires():
     return worked > 0
 
 
+def refresh_air():
+    """Download only the air-quality and weather grids for the saved burn (wind, places, fires kept)."""
+    meta = load_meta(FIXTURES)
+    start = datetime.fromisoformat(meta["start"]).astimezone(IST)
+    req = SmokeRequest(float(meta["lat"]), float(meta["lon"]), start, int(meta["hours"]), "cone")
+    saved_at = datetime.fromisoformat(meta["saved_at"]).astimezone(IST)
+
+    class AirRecording(FixtureApi):
+        """Saved wind, places and fires; live CAMS and weather, saved as they arrive."""
+
+        def air_quality(self, spec, past_days, forecast_days):
+            grid = LiveApi.air_quality(self, spec, past_days, forecast_days)
+            (FIXTURES / AIR_QUALITY).write_text(json.dumps(airquality.grid_to_json(grid), separators=(",", ":")))
+            return grid
+
+        def met(self, spec, past_days, forecast_days):
+            grid = LiveApi.met(self, spec, past_days, forecast_days)
+            (FIXTURES / MET).write_text(json.dumps(airquality.grid_to_json(grid), separators=(",", ":")))
+            return grid
+
+    result = run(req, AirRecording(FIXTURES), level=meta.get("wind_level"), now=saved_at)
+    ok = (FIXTURES / AIR_QUALITY).exists() and (FIXTURES / MET).exists()
+    print("  air quality and weather saved" if ok else "  FAILED: " + "; ".join(result.report["notes"]))
+    return ok
+
+
 def describe_ensemble_keys():
     """Print the real member key format, so we can confirm the parser's grouping."""
     path = FIXTURES / ENSEMBLE
@@ -282,11 +311,19 @@ def main():
     parser.add_argument("--offline", action="store_true", help="only rebuild the sample from saved replies")
     parser.add_argument("--fires-only", action="store_true", help="refresh only today's fires, keep path and places")
     parser.add_argument("--places-retries", type=int, default=2, help="extra tries if OpenStreetMap is busy (default 2)")
+    parser.add_argument("--air-only", action="store_true", help="refresh only the air-quality data, keep the rest")
     args = parser.parse_args()
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
     load_env()  # FIRMS_MAP_KEY etc. from smoke-path/.env (shell variables win)
 
-    if args.fires_only:
+    if args.air_only:
+        if not (FIXTURES / META).exists():
+            print("No fixtures/meta.json yet. Run this script once without --air-only.")
+            return 2
+        print("Refreshing the air-quality forecast for the saved burn ...")
+        if not refresh_air():
+            print("Air quality was not updated.")
+    elif args.fires_only:
         if not (FIXTURES / META).exists():
             print("No fixtures/meta.json yet. Run this script once without --fires-only.")
             return 2
