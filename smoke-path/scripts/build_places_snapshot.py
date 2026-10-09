@@ -54,9 +54,16 @@ def tiles_in(box):
     return [(i, j) for i in range(i0, i1) for j in range(j0, j1)]
 
 
+SPLIT_AFTER = 2  # after this many failed tries, fetch the tile as 4 quarter tiles
+
+
 def tile_query(i, j):
     s, w = i * TILE_DEG, j * TILE_DEG
-    bbox = f"{s:.2f},{w:.2f},{s + TILE_DEG:.2f},{w + TILE_DEG:.2f}"
+    return box_query(s, w, s + TILE_DEG, w + TILE_DEG)
+
+
+def box_query(s, w, n, e):
+    bbox = f"{s:.3f},{w:.3f},{n:.3f},{e:.3f}"
     return (
         f"[out:json][timeout:{SERVER_TIMEOUT_S}][maxsize:{SERVER_MAXSIZE}][bbox:{bbox}];\n"
         "(\n"
@@ -98,7 +105,30 @@ def wait_for_slot(status=fetch_status, sleep=time.sleep):
 
 def fetch_tile(i, j):
     """Raw JSON bytes for one complete tile. Raises ApiError when the server cuts it short."""
-    body = urllib.parse.urlencode({"data": tile_query(i, j)}).encode("utf-8")
+    return fetch_query(tile_query(i, j))
+
+
+def fetch_tile_split(i, j, fetch=None):
+    """The same tile as 4 lighter quarter-tile queries, merged into one reply (raw JSON bytes)."""
+    fetch = fetch or (lambda q: fetch_query(q))
+    s, w, half = i * TILE_DEG, j * TILE_DEG, TILE_DEG / 2
+    merged, seen, stamps = [], set(), []
+    for qs, qw in ((s, w), (s, w + half), (s + half, w), (s + half, w + half)):
+        data = json.loads(fetch(box_query(qs, qw, qs + half, qw + half)))
+        stamp = (data.get("osm3s") or {}).get("timestamp_osm_base")
+        if stamp:
+            stamps.append(stamp)
+        for el in data["elements"]:
+            key = (el.get("type"), el.get("id"))
+            if key not in seen:  # a way crossing quarters comes back twice
+                seen.add(key)
+                merged.append(el)
+    osm3s = {"timestamp_osm_base": min(stamps)} if stamps else {}
+    return json.dumps({"version": 0.6, "osm3s": osm3s, "elements": merged, "split": 4}).encode("utf-8")
+
+
+def fetch_query(query):
+    body = urllib.parse.urlencode({"data": query}).encode("utf-8")
     raw = request(
         overpass_url(),
         SERVER_TIMEOUT_S + 30,
@@ -118,8 +148,11 @@ def priority(tile):
     return math.hypot((i + 0.5) * TILE_DEG - CORE[0], (j + 0.5) * TILE_DEG - CORE[1])
 
 
-def download(tiles, fetch=fetch_tile, sleep=time.sleep, status=fetch_status):
-    """Fetch missing tiles into the cache, most useful first. Returns the tiles that failed."""
+def download(tiles, fetch=fetch_tile, sleep=time.sleep, status=fetch_status, fetch_split=fetch_tile_split):
+    """Fetch missing tiles into the cache, most useful first. Returns the tiles that failed.
+
+    A tile that fails SPLIT_AFTER times is fetched as 4 quarter tiles instead (lighter queries).
+    """
     CACHE.mkdir(exist_ok=True)
     failed = []
     todo = sorted((t for t in tiles if not cache_file(*t).exists()), key=priority)
@@ -132,13 +165,14 @@ def download(tiles, fetch=fetch_tile, sleep=time.sleep, status=fetch_status):
                 sleep(wait)
             wait_for_slot(status, sleep)
             t0 = time.monotonic()
+            split = attempt >= SPLIT_AFTER
             try:
-                raw = fetch(i, j)
-            except ApiError as err:
-                print(f"  {label}: {err}")
+                raw = fetch_split(i, j) if split else fetch(i, j)
+            except (ApiError, ValueError, KeyError) as err:
+                print(f"  {label}{' (as 4 quarters)' if split else ''}: {err}")
                 continue
             cache_file(i, j).write_bytes(raw)
-            print(f"  {label}: ok, {len(raw) // 1024} KB in {time.monotonic() - t0:.1f} s")
+            print(f"  {label}: ok{' (as 4 quarters)' if split else ''}, {len(raw) // 1024} KB in {time.monotonic() - t0:.1f} s")
             break
         else:
             failed.append((i, j))

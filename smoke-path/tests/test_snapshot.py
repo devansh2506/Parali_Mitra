@@ -165,6 +165,9 @@ class SnapshotFileTests(unittest.TestCase):
 
 class BuildScriptTests(unittest.TestCase):
     def setUp(self):
+        no_net = mock.patch.object(builder, "request", side_effect=AssertionError("network used in a test"))
+        no_net.start()
+        self.addCleanup(no_net.stop)
         self.tmp = tempfile.TemporaryDirectory()
         self.cache = Path(self.tmp.name) / "cache"
         self.out = Path(self.tmp.name) / "places_snapshot.json.gz"
@@ -215,13 +218,50 @@ class BuildScriptTests(unittest.TestCase):
 
         tiles = [(60, 151), (60, 152), (61, 151)]
         with mock.patch("builtins.print"):
-            failed = builder.download(tiles, fetch=fetch, sleep=lambda s: None, status=lambda: "2 slots available now.")
+            failed = builder.download(tiles, fetch=fetch, sleep=lambda s: None, status=lambda: "2 slots available now.",
+                                      fetch_split=fetch)
         self.assertEqual(failed, [(60, 152)])
         self.assertEqual(attempts[(60, 151)], 3)
         self.assertEqual(attempts[(60, 152)], 1 + len(builder.WAITS_S))
         with mock.patch("builtins.print"):
-            builder.download(tiles, fetch=fetch, sleep=lambda s: None, status=lambda: "2 slots available now.")  # second run
+            builder.download(tiles, fetch=fetch, sleep=lambda s: None, status=lambda: "2 slots available now.",
+                             fetch_split=fetch)  # second run
         self.assertEqual(attempts[(60, 151)], 3)
+
+    def test_hard_tile_is_fetched_as_four_quarters(self):
+        calls = []
+
+        def fetch(i, j):
+            calls.append("whole")
+            raise ApiError("server busy")
+
+        def fetch_split(i, j):
+            calls.append("quarters")
+            return self.tile_reply(i, j)
+
+        with mock.patch("builtins.print"):
+            failed = builder.download([(61, 155)], fetch=fetch, sleep=lambda s: None,
+                                      status=lambda: "2 slots available now.", fetch_split=fetch_split)
+        self.assertEqual(failed, [])
+        self.assertEqual(calls, ["whole"] * builder.SPLIT_AFTER + ["quarters"])
+        self.assertTrue(builder.cache_file(61, 155).exists())
+
+    def test_quarters_are_merged_without_duplicates(self):
+        def quarter(query):
+            # Every quarter returns its own node plus one way that crosses all four quarters.
+            south = float(query.split("[bbox:")[1].split(",")[0])
+            west = float(query.split("[bbox:")[1].split(",")[1])
+            return json.dumps({"osm3s": {"timestamp_osm_base": f"2026-10-09T0{int(west * 4) % 10}:00:00Z"}, "elements": [
+                {"type": "node", "id": int(south * 1000 + west * 10), "lat": south + 0.1, "lon": west + 0.1, "tags": {"name": "Q", "place": "village"}},
+                {"type": "way", "id": 7, "center": {"lat": 30.75, "lon": 76.25}, "tags": {"amenity": "hospital"}},
+            ]}).encode()
+
+        merged = json.loads(builder.fetch_tile_split(61, 152, fetch=quarter))
+        self.assertEqual(len(merged["elements"]), 5)  # 4 nodes + the shared way once
+        self.assertEqual(merged["split"], 4)
+        self.assertTrue(merged["osm3s"]["timestamp_osm_base"].startswith("2026-10-09T"))
+        q = builder.box_query(30.5, 76.0, 30.75, 76.25)
+        self.assertIn("[bbox:30.500,76.000,30.750,76.250]", q)
 
     def test_build_merges_tiles_and_loads_back(self):
         self.cache.mkdir()
