@@ -135,30 +135,107 @@
   .strip .axis { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
   .key.sq { border-radius: 2px; }
   input[type="number"] { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); min-width: 0; }
+  /* ---- layout v2 ---- */
+  header { justify-content: space-between; align-items: center; padding: 10px 16px; background: linear-gradient(90deg, #1f2937, #7c2d12); }
+  .brand { font-size: 1.1rem; }
+  .logo { margin-right: 4px; }
+  .badge { font-size: 0.8rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,.15); color: #fff; }
+  .badge.live { background: #16a34a; }
+  .badge.sample { background: #ca8a04; }
+  .mapwrap { position: relative; min-height: 0; display: flex; }
+  .mapwrap #map { flex: 1; }
+  .mapctl { position: absolute; top: 10px; right: 10px; z-index: 500; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: 70%; }
+  .ctlbtn, .mapctl select { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; font-size: 0.85rem; font-weight: 600; color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.15); display: inline-flex; align-items: center; gap: 6px; flex-direction: row; }
+  .maplegend { position: absolute; left: 10px; bottom: 22px; z-index: 500; background: rgba(255,255,255,.95); border-radius: 10px; padding: 6px 10px; box-shadow: 0 1px 6px rgba(0,0,0,.2); max-width: 300px; font-size: 0.8rem; }
+  .maplegend summary { cursor: pointer; font-weight: 700; }
+  .maplegend .legend { margin: 6px 0; gap: 3px 10px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 10px 0; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+  details.card > summary { cursor: pointer; font-weight: 700; font-size: 1rem; list-style: none; display: flex; justify-content: space-between; }
+  details.card > summary::after { content: "\25BE"; color: var(--muted); }
+  details.card:not([open]) > summary::after { content: "\25B8"; }
+  details.card[open] > summary { margin-bottom: 8px; }
+  .panel { background: var(--bg); }
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 4px 0 6px; }
+  .stat { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  .stat b { display: block; font-size: 1.5rem; line-height: 1.1; }
+  .stat span { font-size: 0.8rem; color: var(--muted); }
+  .stat .aqi { font-size: 1.2rem; }
+  .summary .headline { font-size: 1.05rem; }
+  .summary li { font-size: 0.98rem; }
+  .list { margin: 0; padding-left: 1.4em; }
+  .list li { margin: 6px 0; }
+  .list button { border: 0; background: none; padding: 0; color: var(--ink); text-align: left; font: inherit; }
+  .list button:hover { color: var(--blue); }
+  .check { border: 2px solid #bfdbfe; background: #eff6ff; }
+  .tabs { background: var(--bg); }
+  .credits { padding-bottom: 8px; }
+  @media (min-width: 900px) {
+    main { grid-template-columns: minmax(0, 1fr) 460px; }
+    .mapwrap { height: auto; }
+  }
+  html, body { overflow-x: hidden; }
+  main > * { min-width: 0; }
+  @media (max-width: 899px) {
+    main { grid-template-columns: minmax(0, 1fr); }
+    .brand small { display: none; }
+    .tab { padding: 8px 6px; font-size: 0.92rem; }
+    .mapctl { left: 54px; right: 8px; max-width: none; }
+    .ctlbtn, .mapctl select { padding: 5px 8px; font-size: 0.8rem; }
+    .mapwrap { height: 55vh; min-height: 320px; }
+    .mapctl { max-width: 90%; }
+    .maplegend:not([open]) { bottom: 10px; }
+  }
 </style>
 </head>
 <body>
-<header>Parali Mitra <small>Smoke path</small></header>
+<header>
+  <div class="brand"><span class="logo" aria-hidden="true">&#127806;</span> Parali Mitra <small>Smoke &amp; air watch</small></div>
+  <span id="liveBadge" class="badge">Loading…</span>
+</header>
 <div id="banner" hidden></div>
 <main>
-  <div id="map" aria-label="Map of fires and likely smoke paths"></div>
+  <div class="mapwrap">
+    <div id="map" aria-label="Map of fires and likely smoke paths"></div>
+    <div class="mapctl" id="mapCtl">
+      <label class="ctlbtn"><input type="checkbox" id="aqToggle"> AQI layer</label>
+      <select id="aqTime" aria-label="AQI map time"></select>
+      <button type="button" class="ctlbtn" id="fitAll">Show all fires</button>
+    </div>
+    <details class="maplegend" id="mapLegend">
+      <summary>Legend</summary>
+      <div class="legend" id="legendWatch">
+        <span><i class="key" style="background:#b91c1c"></i>Farm fire</span>
+        <span><i class="key" style="background:#7c3aed"></i>Industrial / kiln</span>
+        <span><i class="key" style="background:#4b5563"></i>Built-up area</span>
+        <span><i class="key" style="background:#15803d"></i>Forest / grass</span>
+        <span><i class="key solid"></i>Smoke path</span>
+        <span><i class="key ring"></i>School / hospital</span>
+        <span><i class="key" style="background:#f87171"></i>Smoke from 1 fire</span>
+        <span><i class="key" style="background:#7f1d1d"></i>Smoke from 5+ fires</span>
+        <span><i class="key sq" style="background:#0e7490"></i>Air station</span>
+      </div>
+      <div class="legend aqilegend">
+        <span><i class="key sq" style="background:#00b050"></i>Good</span>
+        <span><i class="key sq" style="background:#92d050"></i>Satisfactory</span>
+        <span><i class="key sq" style="background:#ffff00"></i>Moderate</span>
+        <span><i class="key sq" style="background:#ff9900"></i>Poor</span>
+        <span><i class="key sq" style="background:#ff0000"></i>Very poor</span>
+        <span><i class="key sq" style="background:#c00000"></i>Severe</span>
+      </div>
+    </details>
+  </div>
   <section class="panel">
     <nav class="tabs" role="tablist">
-      <button type="button" class="tab active" id="tabWatch" data-tab="watch" role="tab">Fire watch</button>
-      <button type="button" class="tab" id="tabBurn" data-tab="burn" role="tab">What if I burn?</button>
+      <button type="button" class="tab active" id="tabWatch" data-tab="watch" role="tab">&#128293; Fire watch</button>
+      <button type="button" class="tab" id="tabBurn" data-tab="burn" role="tab">&#127806; What if I burn?</button>
     </nav>
     <div id="status" role="status" aria-live="polite"></div>
 
-    <!-- Fire watch: every fire NASA saw, where its smoke goes, who it reaches. -->
     <section id="watchView">
-      <h2>Fires seen by NASA satellites</h2>
-      <p class="disclaimer" id="watchInfo">In and around Punjab and Haryana, last day. Likely smoke direction from a simple wind model, not a smoke dispersion model.</p>
-      <div id="watchSummary" class="summary"></div>
-      <div id="typeChips" class="chips" aria-label="Show fires by what was burning"></div>
-      <p class="hint">Tap a fire on the map to see what was burning, where its smoke goes and which places it reaches.</p>
+      <div class="stats" id="stats"></div>
 
-      <div class="check">
-        <label for="placeSearch">Is smoke coming to my village or school?</label>
+      <div class="card check">
+        <label for="placeSearch">&#128205; Is smoke coming to my village or school?</label>
         <div class="row">
           <input type="search" id="placeSearch" list="placeList" placeholder="Type a village, school or hospital" autocomplete="off">
           <button type="button" id="placeGo">Check</button>
@@ -168,93 +245,83 @@
         <div id="checkResult"></div>
       </div>
 
-      <h3>Most affected places</h3>
-      <ol id="topPlaces"></ol>
+      <details class="card" open>
+        <summary>Today's fires</summary>
+        <p class="disclaimer" id="watchInfo">In and around Punjab and Haryana, last day.</p>
+        <div id="watchSummary" class="summary"></div>
+        <div id="typeChips" class="chips" aria-label="Show fires by what was burning"></div>
+        <p class="hint">Tap a chip to hide or show that kind of fire. Tap a fire on the map for details and its smoke path.</p>
+      </details>
 
-      <h3>Air quality on smoke paths</h3>
-      <p class="hint" id="airInfo">India's AQI (CPCB) when the smoke is there: the CAMS air-quality forecast plus the smoke each fire adds.</p>
-      <div class="aqcontrols">
-        <label><input type="checkbox" id="aqToggle"> Show AQI on the map</label>
-        <select id="aqTime" aria-label="AQI map time"></select>
-      </div>
-      <ol id="worstAir"></ol>
+      <details class="card" open>
+        <summary>Worst air on smoke paths</summary>
+        <p class="hint" id="airInfo">India's AQI (CPCB) when the smoke is there.</p>
+        <ol id="worstAir" class="list"></ol>
+      </details>
+
+      <details class="card">
+        <summary>Places getting smoke from most fires</summary>
+        <ol id="topPlaces" class="list"></ol>
+      </details>
+
       <ul id="watchNotes" class="notes"></ul>
-
-      <div class="legend">
-        <span><i class="key" style="background:#b91c1c"></i>Farm fire (tap it)</span>
-        <span><i class="key" style="background:#7c3aed"></i>Industrial / kiln fire</span>
-        <span><i class="key" style="background:#4b5563"></i>Fire in a built-up area</span>
-        <span><i class="key" style="background:#15803d"></i>Forest / grass fire</span>
-        <span><i class="key sq" style="background:#0e7490"></i>Air monitoring station</span>
-        <span><i class="key solid"></i>Smoke path of the fire you tapped</span>
-        <span><i class="key" style="background:#f87171"></i>Place: smoke from 1 fire</span>
-        <span><i class="key" style="background:#dc2626"></i>Place: smoke from 2-4 fires</span>
-        <span><i class="key" style="background:#7f1d1d"></i>Place: smoke from 5+ fires</span>
-        <span><i class="key ring"></i>School or hospital</span>
-      </div>
-      <div class="legend" aria-label="AQI colours (CPCB)">
-        <span><i class="key sq" style="background:#00b050"></i>Good (0-50)</span>
-        <span><i class="key sq" style="background:#92d050"></i>Satisfactory (51-100)</span>
-        <span><i class="key sq" style="background:#ffff00"></i>Moderate (101-200)</span>
-        <span><i class="key sq" style="background:#ff9900"></i>Poor (201-300)</span>
-        <span><i class="key sq" style="background:#ff0000"></i>Very poor (301-400)</span>
-        <span><i class="key sq" style="background:#c00000"></i>Severe (401-500)</span>
-      </div>
     </section>
 
-    <!-- What if I burn? (a planned burn on your field) -->
     <section id="burnView" hidden>
-      <form id="controls">
-        <label class="wide">Burn time (India time)
-          <input type="datetime-local" id="start" required>
-        </label>
-        <label>Hours
-          <select id="hours"><option value="24">24 hours</option><option value="48">48 hours</option></select>
-        </label>
-        <label>Band
-          <select id="band"><option value="cone">Simple cone</option><option value="ensemble">Forecast spread</option></select>
-        </label>
-        <label class="wide">Field size (acres): how much straw burns
-          <input type="number" id="acres" min="0.5" max="100" step="0.5" value="5" inputmode="decimal">
-        </label>
-        <button type="submit" id="go" class="primary wide">Show smoke path</button>
-        <p class="hint wide">Tap the map to move your field.</p>
-      </form>
+      <div class="card">
+        <p class="hint">&#128073; Tap the map to put your field, then choose:</p>
+        <form id="controls">
+          <label class="wide">Burn time (India time)
+            <input type="datetime-local" id="start" required>
+          </label>
+          <label>Field size (acres)
+            <input type="number" id="acres" min="0.5" max="100" step="0.5" value="5" inputmode="decimal">
+          </label>
+          <label>Hours to follow
+            <select id="hours"><option value="24">24 hours</option><option value="48">48 hours</option></select>
+          </label>
+          <label class="wide">Band
+            <select id="band"><option value="cone">Simple cone</option><option value="ensemble">Forecast spread</option></select>
+          </label>
+          <button type="submit" id="go" class="primary wide">Show smoke path</button>
+        </form>
+      </div>
     </section>
 
-    <!-- One smoke path in detail: your planned burn, or one fire from fire watch. -->
     <section id="resultView" hidden>
       <button type="button" class="linkbtn" id="backToWatch" hidden>&larr; Back to all fires</button>
-      <h2 id="label">Likely smoke direction</h2>
-      <p class="disclaimer" id="disclaimer">Simple wind model: it follows the forecast wind from your field. It is not a smoke dispersion model.</p>
-      <div id="summary" class="summary"></div>
-
-      <div class="slider">
+      <div class="card">
+        <h2 id="label">Likely smoke direction</h2>
+        <p class="disclaimer" id="disclaimer">Simple wind model: it follows the forecast wind.</p>
+        <div id="summary" class="summary"></div>
+      </div>
+      <div class="card slider">
         <label for="hour">Hours after burning: <span id="hourText">0</span></label>
         <input type="range" id="hour" min="0" max="24" step="1" value="0">
       </div>
-
       <ul id="notes" class="notes"></ul>
-
-      <div class="legend">
-        <span><i class="key" style="background:#f97316"></i>Your field</span>
-        <span><i class="key line"></i>Smoke path</span>
-        <span><i class="key" style="background:rgba(100,95,90,.35)"></i>Likely smoke band</span>
-        <span><i class="key" style="background:#f59e0b"></i>Fire seen by satellite (tap it)</span>
-        <span><i class="key" style="background:#dc2626"></i>School / hospital in band</span>
-        <span><i class="key" style="background:#1f2937"></i>Village / town in band</span>
-        <span><i class="key" style="background:#9ca3af"></i>Place outside band</span>
-      </div>
-      <p class="hint">Tap a place in the band to see the AQI expected there when the smoke arrives.</p>
+      <details class="card">
+        <summary>Legend</summary>
+        <div class="legend">
+          <span><i class="key" style="background:#f97316"></i>Your field</span>
+          <span><i class="key line"></i>Smoke path</span>
+          <span><i class="key" style="background:rgba(100,95,90,.35)"></i>Likely smoke band</span>
+          <span><i class="key" style="background:#f59e0b"></i>Fire seen by satellite</span>
+          <span><i class="key" style="background:#dc2626"></i>School / hospital in band</span>
+          <span><i class="key" style="background:#1f2937"></i>Village / town in band</span>
+          <span><i class="key" style="background:#9ca3af"></i>Place outside band</span>
+        </div>
+        <p class="hint">Tap a place in the band to see the AQI expected there.</p>
+      </details>
     </section>
 
     <p class="credits">
-      Wind: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0) ·
-      Places: &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors ·
-      Fires: <a href="https://firms.modaps.eosdis.nasa.gov/" target="_blank" rel="noopener">NASA FIRMS</a> (VIIRS) ·
-      Air quality: <a href="https://atmosphere.copernicus.eu/" target="_blank" rel="noopener">Copernicus CAMS</a> via Open-Meteo,
-      stations via <a href="https://openaq.org/" target="_blank" rel="noopener">OpenAQ</a> ·
-      Land cover: <a href="https://esa-worldcover.org/" target="_blank" rel="noopener">ESA WorldCover 2021</a> (CC BY 4.0)
+      Wind: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
+      Places: &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> ·
+      Fires: <a href="https://firms.modaps.eosdis.nasa.gov/" target="_blank" rel="noopener">NASA FIRMS</a> ·
+      Air: <a href="https://atmosphere.copernicus.eu/" target="_blank" rel="noopener">Copernicus CAMS</a>,
+      <a href="https://openaq.org/" target="_blank" rel="noopener">OpenAQ</a> ·
+      Land cover: <a href="https://esa-worldcover.org/" target="_blank" rel="noopener">ESA WorldCover</a>
     </p>
   </section>
 </main>
@@ -438,6 +505,8 @@
     $("backToWatch").hidden = next !== "detail";
     if (next === "watch") { map.addLayer(watchLayer); map.removeLayer(dataLayer); } else { map.removeLayer(watchLayer); map.addLayer(dataLayer); }
     if (next === "burn") { map.addLayer(fieldMarker); fieldMarker.bringToFront(); } else { map.removeLayer(fieldMarker); }
+    var ctl = $("mapCtl"); if (ctl) ctl.hidden = next !== "watch";
+    var lg = $("mapLegend"); if (lg) lg.hidden = next !== "watch";
     map.closePopup();
   }
 
@@ -628,6 +697,8 @@
     });
     drawChips(typeCounts);
     drawAir(doc);
+    fillStats(doc);
+    setBadge();
 
     watchBounds = bounds.isValid() ? bounds : L.latLngBounds(REGION_BOX);
     map.fitBounds(watchBounds, { padding: [24, 24], maxZoom: 11 });
@@ -1174,6 +1245,37 @@
     else dataLayer.clearLayers();
   });
   $("backToWatch").addEventListener("click", function () { $("tabWatch").click(); });
+
+  // ---- layout v2: stats tiles, badge, fit button -------------------------------------
+  function fillStats(doc) {
+    var box = $("stats");
+    if (!box) return;
+    var st = doc.stats || {};
+    var reachedN = 0;
+    Object.keys(st.reached || {}).forEach(function (k) { reachedN += st.reached[k]; });
+    var farm = (st.fire_types || {}).farm;
+    var worst = reachedFeatures.filter(function (f) { return f.properties.air; })
+      .sort(function (a, b) { return b.properties.air.aqi - a.properties.air.aqi; })[0];
+    var tiles = [
+      ["<b>" + esc(st.fires || 0) + "</b>", "fires seen" + (farm != null ? " (" + farm + " farm)" : "")],
+      ["<b>" + esc(reachedN) + "</b>", "places on smoke paths"],
+      [worst ? '<b><span class="aqi ' + esc(worst.properties.air.category) + '">' + esc(worst.properties.air.aqi) + "</span></b>" : "<b>–</b>",
+        worst ? "worst AQI: " + esc(worst.properties.name) : "worst AQI"],
+      ["<b>" + esc(doc.air ? doc.air.stations : 0) + "</b>", doc.air && doc.air.corrected ? "air stations used" : "air stations"]
+    ];
+    box.innerHTML = tiles.map(function (t) { return '<div class="stat">' + t[0] + "<span>" + t[1] + "</span></div>"; }).join("");
+  }
+  $("fitAll").addEventListener("click", function () {
+    if (mode !== "watch") $("tabWatch").click();
+    if (watchBounds) map.fitBounds(watchBounds, { padding: [24, 24], maxZoom: 11 });
+  });
+  function setBadge() {
+    var b = $("liveBadge");
+    if (!API) { b.textContent = "Sample data"; b.className = "badge sample"; return; }
+    var t = watchDoc && Date.parse(watchDoc.generated_at);
+    b.textContent = t ? "Live · " + clock(t) : "Live";
+    b.className = "badge live";
+  }
 
   // ---- start ----------------------------------------------------------------------
   $("start").value = tomorrowTwoPm();
