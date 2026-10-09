@@ -247,13 +247,23 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
             series = air.cached(("wind", level, today.isoformat(), past, days),
                                 lambda: api.forecast(points, days, level, past, timeout=GRID_TIMEOUT_S), WIND_TTL_S, clock)
         except ApiError as err:
-            raise WindUnavailable(str(err)) from None
-        grid = WindGrid(GRID["south"], GRID["west"], GRID["step"], GRID["rows"], GRID["cols"], series)
+            # Fires, what was burning and toxicity do not need the wind: show them without paths.
+            log.warning("wind grid failed: %s", err)
+            series = None
+            notes.append(f"Smoke paths are not available right now (wind forecast: {err}). "
+                         "Fires, what was burning and toxicity are shown.")
+            cacheable = False
+            places_checked = False
+        grid = WindGrid(GRID["south"], GRID["west"], GRID["step"], GRID["rows"], GRID["cols"], series) if series else None
 
         # 4-5. Trace every fire and check the saved places along its path.
         untraced = 0
         leaves_saved_area = False
         for fire, start in zip(fires, starts):
+            if grid is None:
+                fire["path"] = None
+                fire["places_reached"] = None
+                continue
             try:
                 path = _as_sent(hourly(trace(grid.at, fire["lat"], fire["lon"], start, req.hours)))
             except OutsideForecast:

@@ -367,7 +367,7 @@
   }
   function pathText(p) {
     var info = pathInfo(p.id);
-    if (!info) return p.traced === false ? "not traced (outside the wind forecast)" : "";
+    if (!info) return p.traced === false ? "no smoke path (wind forecast not available for it)" : "";
     var first = firstPlace(p.id);
     return "goes " + info.dir + ", " + Math.round(info.km) + " km in " + info.hours + " h" +
       (first ? "; first reaches " + first.name + " " + whenText(first.t, watchNow) : "");

@@ -231,9 +231,15 @@ class FireWatchProblemTests(unittest.TestCase):
         self.assertIn("Some satellite fire data is missing (VIIRS_NOAA21_NRT).", result.report["notes"])
         self.assertFalse(result.cacheable)
 
-    def test_wind_fails(self):
-        with self.assertRaises(firewatch.WindUnavailable):
-            run(FakeApi(wind=wind(), fires=DETECTIONS, fail_wind=True))
+    def test_wind_fails_fires_still_shown(self):
+        result, _ = run(FakeApi(wind=wind(), fires=DETECTIONS, fail_wind=True))
+        doc = result.report
+        fires = [f["properties"] for f in doc["features"] if f["properties"]["kind"] == "fire"]
+        self.assertEqual(len(fires), 2)
+        self.assertTrue(all(not f["traced"] and f["fire_type"] for f in fires))
+        self.assertEqual([f for f in doc["features"] if f["properties"]["kind"] in ("fire_path", "reached")], [])
+        self.assertTrue(any(n.startswith("Smoke paths are not available right now") for n in doc["notes"]))
+        self.assertFalse(result.cacheable)
 
     def test_no_saved_places(self):
         result, _ = run(snap=None)
