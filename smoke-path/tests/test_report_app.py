@@ -105,8 +105,9 @@ class FullReportTests(unittest.TestCase):
         self.assertEqual(puffs[10]["properties"]["day"], "11 Oct")
 
     def test_summary_has_right_places_and_times(self):
+        self.assertTrue(self.doc["summary"][-1].startswith("Burning 5 acres burns about 10.2 tonnes of straw"))
         self.assertEqual(
-            self.doc["summary"],
+            self.doc["summary"][:-1],
             [
                 "If you burn on 10 Oct at 2:00 pm, smoke will likely reach:",
                 "Badal (village) by about 3:00 pm",
@@ -262,7 +263,7 @@ class PartialFailureTests(unittest.TestCase):
         self.assertTrue(any(n.startswith("Places unavailable") for n in doc["notes"]))
         self.assertEqual(len(features(doc, "puff")), 25)
         # Never claim "no places" when places could not be checked.
-        self.assertEqual(len(doc["summary"]), 1)
+        self.assertEqual(len(doc["summary"]), 2)  # + how much smoke the field gives off
         self.assertNotIn("not pass", doc["summary"][0])
         self.assertIn("could not be checked", doc["summary"][0])
 

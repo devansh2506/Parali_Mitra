@@ -173,7 +173,8 @@ class FireWatchRunTests(unittest.TestCase):
         )
         self.assertTrue(self.doc["summary"][1].startswith("What was burning: "))
         self.assertTrue(self.doc["summary"][-1].startswith("Worst air on a smoke path: "))
-        self.assertEqual(self.doc["notes"], ["No monitoring-station key (OPENAQ_API_KEY): the forecast is not corrected by measurements."])
+        self.assertEqual(self.doc["notes"], [])
+        self.assertEqual((self.doc["air"]["stations"], self.doc["air"]["corrected"]), (0, False))
         self.assertTrue(self.result.cacheable)
         json.dumps(self.doc)
 

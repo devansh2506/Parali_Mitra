@@ -18,11 +18,12 @@ from concurrent.futures import TimeoutError as FutureTimeout
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from . import IST, report
+from . import IST, air, airquality, plume, report
 from .apis import FIRE_SOURCES
 from .ensemble import ensemble_puffs, member_lines, trace_members
 from .net import ApiError
 from .places import OVERPASS_TIMEOUT_S, locate
+from .report import iso
 from .trajectory import WindField, cone_puffs, hourly, refine_sites, single_site, trace
 from .wind import OutsideForecast, forecast_days_needed, past_days_needed, wind_level
 
@@ -48,6 +49,9 @@ class SmokeRequest:
     hours: int
     uncertainty: str = "cone"
     origin: str = "field"  # "field": a planned burn; "fire": a fire already seen by satellite
+    acres: float = 5.0  # field size for a planned burn (how much straw burns)
+    frp: float = None  # a satellite fire's radiative power (MW), for origin "fire"
+    fire_type: str = "farm"  # what was burning, for origin "fire"
 
 
 @dataclass
@@ -127,8 +131,10 @@ def run(
                 notes.append(f"Forecast spread (ensemble) unavailable ({reason}); showing the simple cone instead.")
                 cacheable = False
 
-        # Places and fires in parallel.
+        # Places, fires and air quality in parallel.
         line = [(p.lat, p.lon) for p in hourly(path)]
+        aq_spec, met_spec = air.spec_around(line)
+        air_future = pool.submit(air.prepare, api, now, aq_spec, met_spec, clock)
         places_timeout = max(2.0, min(places_timeout_s, remaining() - 1.0))
         places_future = pool.submit(api.places, line, places_timeout)
         fire_futures = {}
@@ -168,6 +174,29 @@ def run(
         elif failed:
             notes.append("Some satellite fire data is missing (" + ", ".join(s for s, _ in failed) + ").")
             cacheable = False
+        emission = _emission(req)
+        best, air_info = None, None
+        try:
+            ctx = air_future.result(timeout=remaining())
+            notes.extend(ctx.notes)
+            air_info = ctx.info()
+            src = air.Source("burn", path, emission["rates"], req.start) if emission["rates"] else None
+            for p in located:
+                if not p["in_band"]:
+                    continue
+                extra = ctx.extra(p["lat"], p["lon"], [src]) if src else {}
+                pm = extra.get("pm2_5") or {}
+                t = ctx.aq.t0 + timedelta(hours=max(pm, key=pm.get)) if pm else p["arrival"]
+                a = ctx.at(p["lat"], p["lon"], t, extra)
+                if a:
+                    a["t"] = iso(t)
+                    p["air"] = a
+                    if best is None or a["pm2_5_fires"] > best["air"]["pm2_5_fires"]:
+                        best = p
+        except Exception as err:  # noqa: BLE001 - air quality is optional
+            log.warning("air quality failed: %r", err)
+            notes.append("Air quality could not be predicted right now (the CAMS forecast did not load).")
+            cacheable = False
     finally:
         # Do not wait for slow background calls; the answer is ready.
         pool.shutdown(wait=False, cancel_futures=True)
@@ -189,4 +218,36 @@ def run(
         places_checked=places_checked,
         origin=req.origin,
     )
+    doc["air"] = air_info
+    doc["emission"] = {k: v for k, v in emission.items() if k != "rates"}
+    doc["emission"]["rates_g_s"] = {k: round(v, 2) for k, v in emission["rates"].items()} if emission["rates"] else None
+    line = _air_line(emission, best)
+    if line:
+        doc["summary"].append(line)
     return Result(report=doc, cacheable=cacheable, places_checked=places_checked)
+
+
+def _emission(req):
+    """What the fire gives off: rates in g/s while it burns, and totals for the page."""
+    if req.origin == "fire":
+        rates = plume.rates_from_frp(req.frp, req.fire_type) if req.frp else None
+        return {"source": "frp", "frp_mw": req.frp, "fire_type": req.fire_type, "hours": plume.FIRE_HOURS,
+                "rates": rates, "pm2_5_kg": round(rates["pm2_5"] * plume.FIRE_HOURS * 3.6, 1) if rates else None}
+    rates = plume.rates_from_area(req.acres)
+    return {"source": "field", "acres": req.acres, "straw_burned_t": round(plume.burned_tonnes(req.acres), 1),
+            "hours": plume.FIRE_HOURS, "rates": rates, "pm2_5_kg": round(rates["pm2_5"] * plume.FIRE_HOURS * 3.6, 1)}
+
+
+def _air_line(emission, best):
+    if not emission.get("pm2_5_kg"):
+        return None
+    if emission["source"] == "field":
+        start = (f"Burning {emission['acres']:g} acres burns about {emission['straw_burned_t']:g} tonnes of straw "
+                 f"and releases about {emission['pm2_5_kg']:.0f} kg of PM2.5")
+    else:
+        start = f"This fire releases about {emission['pm2_5_kg']:.0f} kg of PM2.5 an hour"
+    if best is None or best["air"]["pm2_5_fires"] < 1:
+        return start + "."
+    a = best["air"]
+    return (f"{start}; the most reaches {best['name']} (about +{a['pm2_5_fires']:.0f} µg/m³ of PM2.5, "
+            f"AQI {a['aqi']} {airquality.category(a['aqi'])[1].lower()}).")

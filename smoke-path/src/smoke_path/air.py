@@ -71,6 +71,17 @@ class AirContext:
     now: object
     notes: list = field(default_factory=list)
 
+    def info(self):
+        """What the air numbers are based on, for the page."""
+        return {
+            "forecast": "CAMS global (ECMWF), via Open-Meteo",
+            "stations": len(self.stations),
+            "corrected": bool(self.factors),
+            "fire_plumes": self.met is not None,
+            "forecast_from": self.aq.t0.isoformat(timespec="minutes"),
+            "forecast_to": self.aq.end.isoformat(timespec="minutes"),
+        }
+
     def hour(self, t):
         return math.floor(self.aq.hour_index(t))
 
@@ -179,6 +190,4 @@ def prepare(api, now, aq_spec, met_spec, clock=time.monotonic):
         except (ApiError, ValueError) as err:
             log.warning("OpenAQ failed: %s", err)
             notes.append("Monitoring stations could not be read; the forecast is not corrected by measurements.")
-    else:
-        notes.append("No monitoring-station key (OPENAQ_API_KEY): the forecast is not corrected by measurements.")
     return AirContext(aq=aq, met=met, stations=found, factors=factors, now=now, notes=notes)

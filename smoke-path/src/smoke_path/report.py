@@ -157,6 +157,7 @@ def build(
                     "arrival": iso(p["arrival"]),
                     "arrival_text": arrival_text(p["arrival"], start),
                     "in_band": bool(p["in_band"]),
+                    "air": p.get("air"),
                 },
             )
         )

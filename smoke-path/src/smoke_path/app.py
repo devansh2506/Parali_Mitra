@@ -1,10 +1,14 @@
-"""AWS Lambda handler for GET /smoke and GET /fires (API Gateway HTTP API, payload v2).
+"""AWS Lambda handler for GET /smoke, /fires and /air (API Gateway HTTP API, payload v2).
 
 GET /fires?hours=24   Fire watch: every fire NASA saw in and around Punjab and Haryana,
-                      its smoke path, and the villages, schools and hospitals it reaches.
+                      what was burning, its smoke path, the villages, schools and hospitals
+                      it reaches, and the air quality (India AQI) there.
 
-GET /smoke?lat=30.245&lon=75.844&start=2026-10-10T14:00&hours=24&uncertainty=cone
-GET /smoke?lat=30.605&lon=74.999&start=2026-10-09T12:37&origin=fire   (a fire seen by satellite)
+GET /smoke?lat=30.245&lon=75.844&start=2026-10-10T14:00&hours=24&uncertainty=cone&acres=5
+GET /smoke?lat=30.605&lon=74.999&start=2026-10-09T12:37&origin=fire&frp=6.2&fire_type=farm
+
+GET /air?lat=30.9&lon=75.85   48-hour AQI outlook at one spot, with the smoke from the
+                              fires in the latest fire watch (JSON, not GeoJSON).
 
 Returns a GeoJSON FeatureCollection. 400 for bad input or a start time
 outside the forecast, 502 only if the wind forecast itself fails.
@@ -20,7 +24,7 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from . import IST, firewatch
+from . import IST, air, firewatch, landuse
 from .apis import LiveApi
 from .pipeline import SmokeRequest, WindUnavailable, run
 from .wind import MAX_FORECAST_DAYS, MAX_PAST_DAYS, OutsideForecast, forecast_days_needed, wind_level
@@ -112,7 +116,26 @@ def parse_request(params, now=None):
             f"The burn time plus {hours} hours must fall within the next {MAX_FORECAST_DAYS} days "
             "(the length of the wind forecast)."
         )
-    return SmokeRequest(lat=lat, lon=lon, start=start, hours=hours, uncertainty=uncertainty, origin=origin)
+    acres = _optional(params, "acres", 0.5, 100, 5.0)
+    frp = _optional(params, "frp", 0.01, 5000, None)
+    fire_type = str(params.get("fire_type") or "farm").strip().lower()
+    if fire_type not in landuse.CATEGORIES:
+        raise BadRequest("fire_type must be one of: " + ", ".join(landuse.CATEGORIES) + ".")
+    return SmokeRequest(lat=lat, lon=lon, start=start, hours=hours, uncertainty=uncertainty, origin=origin,
+                        acres=acres, frp=frp, fire_type=fire_type)
+
+
+def _optional(params, name, lo, hi, default):
+    raw = params.get(name)
+    if raw is None or str(raw).strip() == "":
+        return default
+    try:
+        value = float(raw)
+    except ValueError:
+        raise BadRequest(f"{name} must be a number.") from None
+    if not math.isfinite(value) or not lo <= value <= hi:
+        raise BadRequest(f"{name} must be between {lo:g} and {hi:g}.")
+    return value
 
 
 def _flag(raw):
@@ -160,6 +183,9 @@ def cache_key(req, level):
         req.hours,
         req.uncertainty,
         req.origin,
+        req.acres,
+        req.frp,
+        req.fire_type,
         level,
     )
 
@@ -240,6 +266,8 @@ def handle(event, api=None, cache=None, now=None, sample_path=SAMPLE_PATH, fire_
     gz = _accepts_gzip(event)
     if _path(event).endswith("/fires"):
         return handle_fires(params, api, cache, now, fire_sample_path, gz)
+    if _path(event).endswith("/air"):
+        return handle_air(params, api, cache, now, gz)
 
     if _flag(params.get("sample")):
         try:
@@ -304,6 +332,86 @@ def handle_fires(params, api, cache, now, sample_path, gz=False):
     if result.cacheable:
         cache.put(key, body)
     return _response(200, body, gz)
+
+
+def handle_air(params, api, cache, now, gz=False):
+    """GET /air: the 48 hour AQI outlook at one spot, with smoke from the latest fire watch."""
+    try:
+        lat = _number(params, "lat", -90, 90)
+        lon = _number(params, "lon", -180, 180)
+        hours = parse_hours(params.get("hours"))
+    except BadRequest as err:
+        return _error(400, str(err))
+    level = wind_level()
+    key = ("air", round(lat, 2), round(lon, 2), hours, level)
+    cached = cache.get(key)
+    if cached is not None:
+        return _response(200, cached, gz)
+    now = (now or datetime.now(IST)).astimezone(IST)
+    api = api or LiveApi.from_env()
+    notes = []
+    known = firewatch.remembered(hours, level)
+    if known is None:
+        # No recent fire watch in this Lambda: build one (it is cached for /fires too).
+        try:
+            result = firewatch.run(firewatch.FireWatchRequest(hours=hours), api, level=level, now=now)
+            if result.cacheable:
+                cache.put(("fires", hours, level), _dump(result.report))
+            known = firewatch.remembered(hours, level)
+        except Exception as err:  # noqa: BLE001 - fall back to the forecast without fire plumes
+            log.warning("fire watch for /air failed: %r", err)
+            notes.append("Smoke from today's fires could not be added (the fire watch is unavailable).")
+    if known is not None:
+        ctx, sources, generated = known
+    else:
+        try:
+            ctx = air.prepare(api, now, firewatch.AIR_GRID, firewatch.MET_GRID)
+        except air.AirUnavailable as err:
+            return _error(502, f"Air quality forecast unavailable: {err}")
+        sources, generated = [], now
+    ctx.now = now
+    try:
+        doc = air_outlook(ctx, sources, lat, lon, generated, notes)
+    except Exception:  # noqa: BLE001 - log it, never leak internals
+        log.exception("air outlook failed")
+        return _error(500, "Something went wrong while predicting the air quality.")
+    body = _dump(doc)
+    cache.put(key, body)
+    return _response(200, body, gz)
+
+
+def air_outlook(ctx, sources, lat, lon, generated, notes):
+    fires = []
+    total = {}
+    for src in sources:
+        extra = ctx.extra(lat, lon, [src])
+        pm = extra.get("pm2_5") or {}
+        if not pm or max(pm.values()) < 0.5:
+            continue
+        h = max(pm, key=pm.get)
+        fires.append({"id": src.id, "pm2_5_peak": round(pm[h], 1),
+                      "at": (ctx.aq.t0 + timedelta(hours=h)).isoformat(timespec="minutes")})
+        for p, by_hour in extra.items():
+            for k, v in by_hour.items():
+                total.setdefault(p, {})[k] = total.get(p, {}).get(k, 0.0) + v
+    fires.sort(key=lambda f: -f["pm2_5_peak"])
+    outlook = ctx.outlook(lat, lon, total)
+    return {
+        "lat": round(lat, 5),
+        "lon": round(lon, 5),
+        "generated_at": now_iso(ctx.now),
+        "fire_watch_at": now_iso(generated),
+        "now": outlook[0] if outlook else None,
+        "worst": max(outlook, key=lambda a: a["aqi"]) if outlook else None,
+        "outlook": outlook,
+        "fires": fires[:10],
+        "air": ctx.info(),
+        "notes": notes + ctx.notes,
+    }
+
+
+def now_iso(t):
+    return t.astimezone(IST).isoformat(timespec="minutes")
 
 
 def lambda_handler(event, context=None):

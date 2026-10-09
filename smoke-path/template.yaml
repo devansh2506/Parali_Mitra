@@ -11,6 +11,11 @@ Parameters:
     NoEcho: true
     Default: ""
     Description: Free NASA FIRMS MAP_KEY (https://firms.modaps.eosdis.nasa.gov/api/map_key/). Leave empty to skip fires.
+  OpenAqApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Free OpenAQ v3 API key (https://explore.openaq.org/register). Leave empty for no station correction.
   WindLevel:
     Type: String
     Default: 120m
@@ -55,6 +60,8 @@ Resources:
         Variables:
           # API key consumed by smoke_path/fires.py (NASA FIRMS). Comes from the NoEcho parameter.
           FIRMS_MAP_KEY: !Ref FirmsMapKey
+          # API key consumed by smoke_path/stations.py (OpenAQ). Comes from the NoEcho parameter.
+          OPENAQ_API_KEY: !Ref OpenAqApiKey
           WIND_LEVEL: !Ref WindLevel
           OVERPASS_URL: !Ref OverpassUrl
       Events:
@@ -69,6 +76,12 @@ Resources:
           Properties:
             ApiId: !Ref SmokeApi
             Path: /fires
+            Method: GET
+        GetAir:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SmokeApi
+            Path: /air
             Method: GET
 
 Outputs:

@@ -5,6 +5,7 @@
 
 GET /smoke?...   -> turned into an API Gateway (HTTP API v2) event for the handler
 GET /fires?...   -> fire watch, same handler
+GET /air?...     -> 48 hour AQI outlook at one spot, same handler
 GET /map.html    -> frontend/map.html (sample data when there is no ?api=)
 GET /            -> redirects to /map.html?api=/smoke (live, through this server)
 
@@ -54,7 +55,7 @@ def route(method, target, headers=None):
     parts = urlsplit(target)
     path = parts.path or "/"
     accepts_gzip = "gzip" in str((headers or {}).get("Accept-Encoding", "")).lower()
-    if path in ("/smoke", "/fires"):
+    if path in ("/smoke", "/fires", "/air"):
         resp = lambda_handler(make_event(method, path, parts.query, headers))
         body = resp["body"]
         data = base64.b64decode(body) if resp.get("isBase64Encoded") else body.encode("utf-8")
@@ -113,6 +114,7 @@ def main():
     print(f"Sample map:  {base}/map.html    (saved sample data, no API calls)")
     print(f"API:         {base}/smoke?lat=30.245&lon=75.844&hours=24")
     print(f"FIRMS key:   {'set' if os.environ.get('FIRMS_MAP_KEY') else 'NOT set (fires will be skipped)'}")
+    print(f"OpenAQ key:  {'set' if os.environ.get('OPENAQ_API_KEY') else 'NOT set (no station correction)'}")
     print("Press Ctrl+C to stop.")
     try:
         server.serve_forever()
