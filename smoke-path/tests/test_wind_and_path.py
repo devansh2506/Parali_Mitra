@@ -165,13 +165,22 @@ class ParseForecastTests(unittest.TestCase):
             series_from_hourly(["2026-10-10T00:00"], [None], [None])
 
     def test_forecast_url_has_one_timezone_per_point(self):
-        url = forecast_url([(30.1, 75.1), (30.2, 75.2), (30.3, 75.3)], 3, "120m")
-        self.assertIn("latitude=30.1000,30.2000,30.3000", url)
-        self.assertIn("longitude=75.1000,75.2000,75.3000", url)
+        url = forecast_url([(30.1, 75.1), (30.2, 75.2), (30.3, 75.34567)], 3, "120m")
+        self.assertIn("latitude=30.1,30.2,30.3&", url)
+        self.assertIn("longitude=75.1,75.2,75.3457&", url)
         self.assertIn("timezone=Asia/Kolkata,Asia/Kolkata,Asia/Kolkata", url)
         self.assertIn("hourly=wind_speed_120m,wind_direction_120m", url)
         self.assertIn("wind_speed_unit=ms", url)
         self.assertIn("forecast_days=3", url)
+
+    def test_grid_request_fits_in_a_url(self):
+        from smoke_path.trajectory import WindGrid
+
+        points = WindGrid.points(24.0, 69.75, 0.75, 17, 17)
+        url = forecast_url(points, 3, "120m", past_days=1)
+        self.assertLess(len(url), 6000)  # Open-Meteo answers HTTP 414 above about 8 KB
+        self.assertIn("timezone=Asia/Kolkata&", url)  # once, for all 289 points
+        self.assertIn("latitude=24,24,24", url)
 
     def test_past_days_for_fires_already_seen(self):
         from smoke_path.wind import ensemble_url, past_days_needed

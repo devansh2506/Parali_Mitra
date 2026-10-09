@@ -232,13 +232,22 @@ def past_days_needed(start, today):
     return max(0, (today - start.astimezone(IST).date()).days)
 
 
+def _coord(x):
+    """4 decimals without trailing zeros ("24.0000" -> "24"), to keep long URLs short."""
+    return f"{x:.4f}".rstrip("0").rstrip(".")
+
+
+MANY_POINTS = 50  # above this, send the timezone once (it then applies to every point)
+
+
 def forecast_url(points, days, level, past_days=0):
+    timezones = [TIMEZONE] if len(points) > MANY_POINTS else [TIMEZONE] * len(points)
     params = {
-        "latitude": ",".join(f"{lat:.4f}" for lat, _ in points),
-        "longitude": ",".join(f"{lon:.4f}" for _, lon in points),
+        "latitude": ",".join(_coord(lat) for lat, _ in points),
+        "longitude": ",".join(_coord(lon) for _, lon in points),
         "hourly": f"wind_speed_{level},wind_direction_{level}",
         "wind_speed_unit": "ms",
-        "timezone": ",".join([TIMEZONE] * len(points)),
+        "timezone": ",".join(timezones),
         "forecast_days": max(1, min(days, MAX_FORECAST_DAYS)),
     }
     if past_days > 0:
@@ -248,8 +257,8 @@ def forecast_url(points, days, level, past_days=0):
 
 def ensemble_url(lat, lon, days, past_days=0):
     params = {
-        "latitude": f"{lat:.4f}",
-        "longitude": f"{lon:.4f}",
+        "latitude": _coord(lat),
+        "longitude": _coord(lon),
         "hourly": f"wind_speed_{ENSEMBLE_LEVEL},wind_direction_{ENSEMBLE_LEVEL}",
         "models": ENSEMBLE_MODEL,
         "wind_speed_unit": "ms",
