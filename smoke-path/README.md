@@ -155,6 +155,28 @@ On the October 2026 test day: 120 farm fires, 2 industrial, 1 forest, 1 grasslan
 Why not Google Maps: Google has no land-cover API. Its Places API lists businesses, needs a billing
 account, and its terms do not allow storing results, so it cannot say "this pixel is a paddy field".
 
+### What a fire gives off (emissions and toxicity)
+
+For every vegetation fire (`emissions` on each fire; `emission.pollutants` in `/smoke`):
+
+* **Burn rate:** the fire's total power in one satellite pass (FRP, MW, all its pixels) × 0.368 kg/MJ
+  (Wooster et al. 2005) × 3600 = kg of vegetation burned **per hour** while it burns that hard.
+  How long a fire burns is not known, so amounts are per hour. For "What if I burn?" the field size
+  gives the whole amount (acres × 6.3 t straw/ha × 80% burned).
+* **Pollutants:** kg per hour = burned × the GFED4.1 emission factor (van der Werf et al. 2017,
+  mostly Akagi et al. 2011): crop residue for farm fires and fires in built-up areas, savanna/grass
+  for grassland, temperate forest for forest. PM2.5, total particles (incl. PM10), black carbon,
+  organic carbon, CO, NOx (as NO2), SO2, ammonia, benzene, toluene, formaldehyde, methane, CO2.
+  Industrial and landfill fires are not estimated (the factors are for burning vegetation).
+* **Toxicity score:** for each pollutant with a health limit, kg ÷ limit = the air it would poison up
+  to that limit (PM2.5 60, NO2 80, SO2 80, CO 2000, NH3 400, benzene 5 µg/m³: CPCB national standards;
+  formaldehyde 100 µg/m³: WHO), added up, in km³ of air per hour. Low < 0.5, moderate < 2, high < 5,
+  very high ≥ 5. The share of each pollutant shows which one is most harmful (usually PM2.5, then NO2).
+  Total particles are not scored (PM2.5 is part of them).
+
+Example: a 5 MW farm fire burns ~6.6 t of straw an hour and gives off ~41 kg PM2.5, ~680 kg CO,
+~32 kg NOx (as NO2), ~1 kg benzene: about 1.8 km³ of air poisoned per hour (moderate).
+
 ### Air quality (PM2.5 and AQI)
 
 The AQI at a place = **the CAMS forecast** (corrected by **monitoring stations** when available)

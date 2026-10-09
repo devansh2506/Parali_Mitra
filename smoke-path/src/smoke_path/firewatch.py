@@ -22,7 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from . import DISCLAIMER, IST, LABEL, air, landuse, plume, snapshot
+from . import DISCLAIMER, IST, LABEL, air, emissions, landuse, plume, snapshot
 from .apis import FIRE_SOURCES
 from .net import ApiError
 from .pipeline import WindUnavailable
@@ -241,7 +241,7 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
         )
         rates = plume.rates_from_frp(fire["frp_mw"], fire["fire_type"])
         fire["_rates"] = rates
-        fire["smoke_rate"] = {k: round(v, 2) for k, v in rates.items()} if rates else None
+        fire["emissions"] = emissions.from_frp(fire["frp_mw"], fire["fire_type"])
     reached = {}
     geometry = {}  # place idx -> {fire id: (distance km, segment, fraction)}
     places_checked = snap is not None
@@ -491,6 +491,14 @@ def summary(fires, places, counts, places_checked, n_detections, now, types=None
     ]
     if types:
         lines.append(type_line(types))
+    with_em = [f for f in fires if f.get("emissions")]
+    if with_em:
+        pm = sum(f["emissions"]["kg"]["pm2_5"] for f in with_em)
+        toxic = max(with_em, key=lambda f: f["emissions"]["toxicity"]["km3"])
+        t = toxic["emissions"]["toxicity"]
+        lines.append(f"While burning, these fires give off about {pm:,.0f} kg of PM2.5 an hour. Most toxic: fire "
+                     f"{toxic['id']}" + (f" near {toxic['near']}" if toxic.get("near") else "") +
+                     f" ({t['km3']:.1f} km³ of air poisoned per hour, {t['level']}).")
     if not places:
         if places_checked:
             lines.append("Their smoke will likely not pass any listed village, school or hospital.")

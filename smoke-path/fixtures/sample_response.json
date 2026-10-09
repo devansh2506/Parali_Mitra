@@ -20904,6 +20904,40 @@
    "co": 288.95,
    "no2": 13.51,
    "so2": 1.13
+  },
+  "pollutants": {
+   "per": "field",
+   "burned_kg": 10198,
+   "table": "AGRI",
+   "kg": {
+    "pm2_5": 63.8,
+    "tpm": 126.5,
+    "bc": 7.65,
+    "oc": 23.5,
+    "co": 1040,
+    "no2": 48.6,
+    "so2": 4.08,
+    "nh3": 22.1,
+    "benzene": 1.53,
+    "toluene": 1.94,
+    "formaldehyde": 21.2,
+    "ch4": 59.4,
+    "co2": 16164
+   },
+   "toxicity": {
+    "km3": 2.816,
+    "level": "high",
+    "worst": "pm2_5",
+    "shares": {
+     "pm2_5": 38,
+     "no2": 22,
+     "co": 18,
+     "benzene": 11,
+     "formaldehyde": 8,
+     "nh3": 2,
+     "so2": 2
+    }
+   }
   }
  }
 }

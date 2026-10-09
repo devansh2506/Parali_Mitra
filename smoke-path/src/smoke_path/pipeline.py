@@ -18,7 +18,7 @@ from concurrent.futures import TimeoutError as FutureTimeout
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from . import IST, air, airquality, plume, report
+from . import IST, air, airquality, emissions, plume, report
 from .apis import FIRE_SOURCES
 from .ensemble import ensemble_puffs, member_lines, trace_members
 from .net import ApiError
@@ -221,6 +221,8 @@ def run(
     doc["air"] = air_info
     doc["emission"] = {k: v for k, v in emission.items() if k != "rates"}
     doc["emission"]["rates_g_s"] = {k: round(v, 2) for k, v in emission["rates"].items()} if emission["rates"] else None
+    doc["emission"]["pollutants"] = (emissions.from_field(req.acres) if req.origin == "field"
+                                     else emissions.from_frp(req.frp, req.fire_type))
     line = _air_line(emission, best)
     if line:
         doc["summary"].append(line)

@@ -162,7 +162,7 @@ class FireWatchRunTests(unittest.TestCase):
 
     def test_summary(self):
         self.assertEqual(
-            [line for line in self.doc["summary"] if not line.startswith(("What was burning", "Most smoke", "Worst air"))],
+            [line for line in self.doc["summary"] if not line.startswith(("What was burning", "While burning", "Most smoke", "Worst air"))],
             [
                 "NASA satellites saw 2 fires in and around Punjab and Haryana in the last day (3 satellite detections).",
                 "Their smoke will likely reach 2 villages, 1 town and 1 school or college.",
@@ -181,7 +181,7 @@ class FireWatchRunTests(unittest.TestCase):
     def test_future_arrival_says_from(self):
         early = datetime(2026, 10, 9, 14, 0, tzinfo=IST)  # "now" before the smoke reaches the villages
         doc = firewatch.run(FireWatchRequest(24), FakeApi(wind=wind(), fires=DETECTIONS), now=early, snap=snap()).report
-        self.assertEqual(doc["summary"][3], "Shared Village (village): smoke from 2 fires, from about 3:30 pm.")
+        self.assertEqual(doc["summary"][4], "Shared Village (village): smoke from 2 fires, from about 3:30 pm.")
 
 
 class SameAnswerAsTheMapTests(unittest.TestCase):
@@ -241,7 +241,7 @@ class FireWatchProblemTests(unittest.TestCase):
         doc = result.report
         self.assertEqual(kind(doc, "reached"), [])
         self.assertIn("Villages, schools and hospitals could not be checked (no saved places).", doc["notes"])
-        self.assertEqual(doc["summary"][2], "Villages, schools and hospitals on their smoke paths could not be checked right now.")
+        self.assertEqual(doc["summary"][3], "Villages, schools and hospitals on their smoke paths could not be checked right now.")
 
     def test_paths_leaving_the_saved_area(self):
         result, _ = run(snap=snap(tiles=[[60, 151]]))

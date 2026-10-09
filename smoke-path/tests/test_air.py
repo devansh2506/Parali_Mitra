@@ -424,3 +424,34 @@ class OpenMeteoLimitTests(unittest.TestCase):
             [t.join() for t in threads]
         self.assertEqual(len(calls), 9)
         self.assertLessEqual(peak[0], 3)
+
+
+class EmissionTests(unittest.TestCase):
+    def test_per_hour_from_frp(self):
+        from smoke_path import emissions
+
+        e = emissions.from_frp(5, "farm")
+        burned = 0.368 * 5 * 3600  # kg of straw an hour
+        self.assertEqual(e["burned_kg"], round(burned))
+        self.assertAlmostEqual(e["kg"]["pm2_5"], round(burned * 6.26 / 1000, 1))
+        self.assertAlmostEqual(e["kg"]["no2"], round(burned * 3.11 * 46 / 30 / 1000, 1))
+        self.assertEqual(e["table"], "AGRI")
+        self.assertIsNone(emissions.from_frp(5, "industrial"))
+        self.assertEqual(emissions.from_frp(5, "forest")["table"], "TEMF")
+
+    def test_toxicity_score(self):
+        from smoke_path import emissions
+
+        t = emissions.toxicity({"pm2_5": 60.0, "benzene": 5.0})  # 60 kg at 60 µg/m³ = 1 km³; 5 kg at 5 = 1 km³
+        self.assertAlmostEqual(t["km3"], 2.0)
+        self.assertEqual(t["shares"], {"pm2_5": 50, "benzene": 50})
+        self.assertEqual(t["level"], "high")
+        self.assertEqual(emissions.toxicity({"pm2_5": 1.0})["level"], "low")
+        self.assertIsNone(emissions.toxicity({}))
+
+    def test_field(self):
+        from smoke_path import emissions
+
+        f = emissions.from_field(5)
+        self.assertEqual(f["per"], "field")
+        self.assertAlmostEqual(f["kg"]["pm2_5"], round(plume.burned_tonnes(5) * 6.26, 1))
