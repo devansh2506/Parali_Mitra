@@ -198,7 +198,8 @@ class MapPageTests(unittest.TestCase):
         self.assertIn("Hours after burning", MAP)
         self.assertIn("function esc(", MAP)
         self.assertIn("Sample data", MAP)
-        self.assertIn("Fire watch", MAP)
+        for tab in ("Overview", "Fires", "Air quality", "Check my village", "What if I burn?", "How it works"):
+            self.assertIn(tab, MAP)
         self.assertIn("Is smoke coming to my village or school?", MAP)
         self.assertIn('id="fire-watch-sample"', MAP)
         # OSM names only reach HTML through esc(); textContent and input values are safe as they are.
