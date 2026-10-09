@@ -5,7 +5,6 @@
   "hours": 24,
   "wind_level": "120m",
   "saved_at": "2026-10-09T01:40:10+05:30",
-  "live_notes": [
-    "Fires unavailable: no NASA FIRMS key is set (FIRMS_MAP_KEY)."
-  ]
+  "live_notes": [],
+  "fires_saved_at": "2026-10-09T14:14:35+05:30"
 }

@@ -2,6 +2,9 @@
 .aws-sam/
 samconfig.toml
 
+# Temporary capture folder of scripts/save_fixtures.py
+fixtures/_new/
+
 # Output of scripts/try_live.py
 smoke.geojson
 

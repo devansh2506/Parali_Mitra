@@ -93,9 +93,13 @@ and writes `smoke.geojson` (drag it onto https://geojson.io to look at it).
 ## Save real sample data (for the demo and for `sample=true`)
 
 ```bash
-python3.12 scripts/save_fixtures.py          # demo field 30.245, 75.844, tomorrow 2 pm, 24 h
-python3.12 scripts/save_fixtures.py --offline  # rebuild the sample from saved replies only
+python3.12 scripts/save_fixtures.py             # demo field 30.245, 75.844, tomorrow 2 pm, 24 h
+python3.12 scripts/save_fixtures.py --fires-only  # refresh only today's fires (keeps path + places)
+python3.12 scripts/save_fixtures.py --offline     # rebuild the sample from saved replies only
 ```
+
+A new capture never makes the sample worse: if OpenStreetMap is busy and the new list of places
+comes back incomplete, the previous wind + places are kept and only the fires are updated.
 
 This saves the raw replies in `fixtures/`, rebuilds the demo response from them (no network),
 and copies it to `src/smoke_path/sample_response.json` and into `frontend/map.html`.

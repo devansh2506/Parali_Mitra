@@ -3,10 +3,16 @@
     python3.12 scripts/save_fixtures.py
         Demo field 30.245, 75.844 (Sangrur, Punjab), burn tomorrow 2 pm, 24 hours.
     python3.12 scripts/save_fixtures.py 30.245 75.844 2026-10-10T14:00 24
+    python3.12 scripts/save_fixtures.py --fires-only
+        Refresh only today's fires (keeps the saved path and places), then rebuild.
     python3.12 scripts/save_fixtures.py --offline
         No network: only rebuild the sample from replies already in fixtures/.
 
 Set FIRMS_MAP_KEY in your shell first so the sample includes real fires.
+
+A new capture never makes the sample worse: if OpenStreetMap is busy and the
+new list of places is incomplete, the previous wind + places are kept (they
+belong together) and only the fires are updated.
 
 Writes:
   fixtures/forecast_field.json   Open-Meteo, wind at the field (pass 1)
@@ -35,11 +41,13 @@ sys.path.insert(0, str(ROOT / "src"))
 from smoke_path import IST  # noqa: E402
 from smoke_path.apis import (  # noqa: E402
     ENSEMBLE,
+    FIRE_SOURCES,
     META,
     OVERPASS,
     SAMPLE,
     FixtureApi,
     RecordingApi,
+    firms_file,
     load_meta,
     raw_fixture_names,
 )
@@ -51,6 +59,7 @@ from smoke_path.pipeline import SmokeRequest, WindUnavailable, run  # noqa: E402
 from smoke_path.wind import OutsideForecast, wind_level  # noqa: E402
 
 FIXTURES = ROOT / "fixtures"
+NEW_CAPTURE = FIXTURES / "_new"  # a capture is recorded here first, then adopted
 PACKAGE_SAMPLE = ROOT / "src" / "smoke_path" / SAMPLE
 MAP_HTML = ROOT / "frontend" / "map.html"
 DEMO_FIELD = ("30.245", "75.844")
@@ -81,9 +90,9 @@ def embedded_sample(html):
     return json.loads(m.group(2)) if m else None
 
 
-def places_complete():
-    """True if fixtures/overpass.json exists and is a complete (not cut short) answer."""
-    path = FIXTURES / OVERPASS
+def places_complete(folder=FIXTURES):
+    """True if <folder>/overpass.json exists and is a complete (not cut short) answer."""
+    path = Path(folder) / OVERPASS
     if not path.exists():
         return False
     try:
@@ -105,38 +114,85 @@ def retry_places(doc, api, retries, wait_s=20):
         except ApiError as err:
             print(f"  still failing: {err}")
             continue
-        if places_complete():
+        if places_complete(api.folder):
             print("  OpenStreetMap answered with a complete list.")
             return True
         print("  OpenStreetMap answered, but the search was cut short.")
     return False
 
 
+def _write_meta(folder, meta):
+    (Path(folder) / META).write_text(json.dumps(meta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def adopt(new_dir, fixtures_dir, meta):
+    """Move a new capture into fixtures/ without ever making the sample worse.
+
+    Returns "all" (new capture adopted) or "fires_only" (new places were
+    incomplete, so the previous wind + places were kept and only fires moved).
+    """
+    new_dir, fixtures_dir = Path(new_dir), Path(fixtures_dir)
+    if not places_complete(new_dir) and places_complete(fixtures_dir) and (fixtures_dir / META).exists():
+        old_meta = load_meta(fixtures_dir)
+        moved = False
+        for source in FIRE_SOURCES:  # fires do not depend on the path, so they can be swapped in
+            src = new_dir / firms_file(source)
+            if src.exists():
+                src.replace(fixtures_dir / firms_file(source))
+                moved = True
+        if moved:
+            old_meta["fires_saved_at"] = meta["saved_at"]
+            _write_meta(fixtures_dir, old_meta)
+        return "fires_only"
+    for name in raw_fixture_names():
+        (fixtures_dir / name).unlink(missing_ok=True)
+        src = new_dir / name
+        if src.exists():
+            src.replace(fixtures_dir / name)
+    _write_meta(fixtures_dir, meta)
+    return "all"
+
+
+def _remove_capture_dir(folder):
+    if folder.exists():
+        for path in folder.iterdir():
+            path.unlink()
+        folder.rmdir()
+
+
 def record(req, places_retries=2):
     """Call the live APIs once (ensemble mode, so every API is used) and save raw replies."""
     FIXTURES.mkdir(exist_ok=True)
-    for name in raw_fixture_names():  # remove stale replies from an older run
-        (FIXTURES / name).unlink(missing_ok=True)
+    _remove_capture_dir(NEW_CAPTURE)
+    NEW_CAPTURE.mkdir()
     key = map_key()
     print(f"FIRMS key: {'set' if key else 'NOT set - fires will be missing from the sample'}")
-    api = RecordingApi(FIXTURES, firms_key=key)
-    live_req = SmokeRequest(req.lat, req.lon, req.start, req.hours, "ensemble")
-    # Not behind API Gateway, so wait longer for a busy Overpass server.
-    result = run(live_req, api, budget_s=150, places_timeout_s=120)
-    if not places_complete() and places_retries:
-        retry_places(result.report, api, places_retries)
-    if not places_complete():
-        print("WARNING: no complete list of places was saved. Run this script again later.")
-    meta = {
-        "lat": req.lat,
-        "lon": req.lon,
-        "start": req.start.isoformat(timespec="minutes"),
-        "hours": req.hours,
-        "wind_level": wind_level(),
-        "saved_at": datetime.now(IST).isoformat(timespec="seconds"),
-        "live_notes": result.report["notes"],
-    }
-    (FIXTURES / META).write_text(json.dumps(meta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    try:
+        api = RecordingApi(NEW_CAPTURE, firms_key=key)
+        live_req = SmokeRequest(req.lat, req.lon, req.start, req.hours, "ensemble")
+        # Not behind API Gateway, so wait longer for a busy Overpass server.
+        result = run(live_req, api, budget_s=150, places_timeout_s=120)
+        if not places_complete(NEW_CAPTURE) and places_retries:
+            retry_places(result.report, api, places_retries)
+        meta = {
+            "lat": req.lat,
+            "lon": req.lon,
+            "start": req.start.isoformat(timespec="minutes"),
+            "hours": req.hours,
+            "wind_level": wind_level(),
+            "saved_at": datetime.now(IST).isoformat(timespec="seconds"),
+            "live_notes": result.report["notes"],
+        }
+        adopted = adopt(NEW_CAPTURE, FIXTURES, meta)
+    finally:
+        _remove_capture_dir(NEW_CAPTURE)
+
+    if adopted == "fires_only":
+        print("\nOpenStreetMap was busy, so the new list of places was incomplete.")
+        print("Kept the previous wind + places (they belong together) and updated only the fires.")
+        print("Run this script again later for a completely new capture.")
+    elif not places_complete():
+        print("\nWARNING: no complete list of places was saved. Run this script again later.")
     print("\nSaved replies:")
     for name in raw_fixture_names():
         path = FIXTURES / name
@@ -146,6 +202,31 @@ def record(req, places_retries=2):
         for note in result.report["notes"]:
             print("  - " + note)
     describe_ensemble_keys()
+
+
+def refresh_fires():
+    """Re-download only the FIRMS fires for the saved field. Returns True if any source worked."""
+    meta = load_meta(FIXTURES)
+    key = map_key()
+    if not key:
+        print("FIRMS_MAP_KEY is not set in this terminal.")
+        return False
+    api = RecordingApi(FIXTURES, firms_key=key)  # saves only on success, so old files stay on failure
+    worked = 0
+    for source in FIRE_SOURCES:
+        try:
+            text = api.fires_raw(source, float(meta["lat"]), float(meta["lon"]))
+        except ApiError as err:
+            print(f"  FAILED {source}: {err}")
+            continue
+        worked += 1
+        print(f"  OK     {source}: {max(0, len(text.strip().splitlines()) - 1)} fires")
+    if worked:
+        meta["fires_saved_at"] = datetime.now(IST).isoformat(timespec="seconds")
+        fire_notes = ("Fires unavailable", "Some satellite fire data")
+        meta["live_notes"] = [n for n in meta.get("live_notes", []) if not n.startswith(fire_notes)]
+        _write_meta(FIXTURES, meta)
+    return worked > 0
 
 
 def describe_ensemble_keys():
@@ -191,11 +272,19 @@ def main():
     parser.add_argument("start", nargs="?", default="", help="India time YYYY-MM-DDTHH:MM (default: tomorrow 14:00)")
     parser.add_argument("hours", nargs="?", default="24")
     parser.add_argument("--offline", action="store_true", help="only rebuild the sample from saved replies")
+    parser.add_argument("--fires-only", action="store_true", help="refresh only today's fires, keep path and places")
     parser.add_argument("--places-retries", type=int, default=2, help="extra tries if OpenStreetMap is busy (default 2)")
     args = parser.parse_args()
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
 
-    if not args.offline:
+    if args.fires_only:
+        if not (FIXTURES / META).exists():
+            print("No fixtures/meta.json yet. Run this script once without --fires-only.")
+            return 2
+        print("Refreshing today's fires for the saved field ...")
+        if not refresh_fires():
+            print("Fires were not updated; the sample keeps the previous fires.")
+    elif not args.offline:
         start = args.start
         if not start:
             tomorrow = datetime.now(IST).date() + timedelta(days=1)

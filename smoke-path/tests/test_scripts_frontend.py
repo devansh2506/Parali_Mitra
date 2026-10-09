@@ -3,7 +3,9 @@
 import json
 import re
 import sys
+import tempfile
 import unittest
+from pathlib import Path
 
 from helpers import ROOT
 
@@ -67,6 +69,59 @@ class SampleEmbedTests(unittest.TestCase):
         kinds = {f["properties"]["kind"] for f in fixture["features"]}
         self.assertTrue({"field", "path", "puff"} <= kinds)
         self.assertEqual(fixture["label"], "Likely smoke direction")
+
+
+COMPLETE = '{"elements": [{"type": "node", "id": 1, "lat": 30.3, "lon": 75.9, "tags": {"place": "village", "name": "A"}}]}'
+CUT_SHORT = '{"elements": [], "remark": "runtime error: Query timed out in \\"query\\" at line 5"}'
+
+
+def make_capture(folder, overpass, label):
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "forecast_field.json").write_text(label)
+    (folder / "forecast_multi.json").write_text(label)
+    (folder / "overpass.json").write_text(overpass)
+    (folder / "firms_VIIRS_SNPP_NRT.csv").write_text("latitude,longitude\n" + label)
+
+
+class AdoptCaptureTests(unittest.TestCase):
+    """A new capture must never make the saved sample worse."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        self.new, self.fix = root / "_new", root / "fixtures"
+        self.meta = {"lat": 30.2, "lon": 75.8, "start": "2026-10-10T14:00+05:30", "hours": 24, "saved_at": "NEW"}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def old_capture(self, overpass):
+        make_capture(self.fix, overpass, "old")
+        (self.fix / "meta.json").write_text(json.dumps(dict(self.meta, saved_at="OLD")))
+
+    def test_complete_new_capture_replaces_everything(self):
+        self.old_capture(COMPLETE)
+        make_capture(self.new, COMPLETE, "new")
+        self.assertEqual(save_fixtures.adopt(self.new, self.fix, self.meta), "all")
+        self.assertEqual((self.fix / "forecast_field.json").read_text(), "new")
+        self.assertEqual(json.loads((self.fix / "meta.json").read_text())["saved_at"], "NEW")
+
+    def test_busy_osm_keeps_old_path_and_places_but_takes_new_fires(self):
+        self.old_capture(COMPLETE)
+        make_capture(self.new, CUT_SHORT, "new")
+        self.assertEqual(save_fixtures.adopt(self.new, self.fix, self.meta), "fires_only")
+        self.assertEqual((self.fix / "forecast_field.json").read_text(), "old")
+        self.assertEqual((self.fix / "overpass.json").read_text(), COMPLETE)
+        self.assertTrue((self.fix / "firms_VIIRS_SNPP_NRT.csv").read_text().endswith("new"))
+        meta = json.loads((self.fix / "meta.json").read_text())
+        self.assertEqual((meta["saved_at"], meta["fires_saved_at"]), ("OLD", "NEW"))
+
+    def test_no_good_old_capture_takes_the_new_one(self):
+        make_capture(self.new, CUT_SHORT, "new")
+        self.fix.mkdir()
+        self.assertEqual(save_fixtures.adopt(self.new, self.fix, self.meta), "all")
+        self.assertEqual((self.fix / "forecast_field.json").read_text(), "new")
+        self.assertFalse(save_fixtures.places_complete(self.fix))
 
 
 class MapPageTests(unittest.TestCase):
