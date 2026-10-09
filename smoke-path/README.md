@@ -166,8 +166,12 @@ The AQI at a place = **the CAMS forecast** (corrected by **monitoring stations**
    6 parallel requests while NASA's data loads, and keeps it for an hour (CAMS updates twice a day).
 2. **Stations** (optional, needs a free OpenAQ key): the latest PM2.5/PM10 of CPCB and other reference
    monitors. Where a station measures twice what CAMS says for that hour, nearby CAMS values are doubled
-   (factor kept within 0.5-3, fading to none at 75 km), and the factor is kept for the forecast hours.
-   Station dots on the map show the measured values.
+   (factor kept within 0.2-5, fading to none at 75 km), and the factor is kept for the forecast hours.
+   Station dots on the map show the measured values. Readings are compared with CAMS at the hour they
+   were measured, so older readings still work: OpenAQ's copy of India's CPCB network was about
+   48 hours late when tested (9 Oct 2026), so readings up to 72 hours old are used and the map shows
+   their age. On that day the stations measured a median 0.7× CAMS's PM2.5 and PM10 (0.1-7.5×), mostly
+   lower where CAMS forecast desert dust.
 3. **Plume per fire.** CAMS cells are too coarse to see one village downwind of one field, so each fire
    adds its own smoke along its traced path:
    * burning rate = FRP (MW) × 0.368 kg/MJ (Wooster et al. 2005), for 1 hour (assumed burn time);

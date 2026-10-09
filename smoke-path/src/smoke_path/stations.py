@@ -3,9 +3,13 @@
 Used twice:
 1. The map shows each station's latest PM2.5 / PM10 reading.
 2. The CAMS forecast is corrected near stations: where a station measures twice what
-   CAMS says for that hour, nearby CAMS values are doubled (factor clamped to 0.5-3),
+   CAMS says for that hour, nearby CAMS values are doubled (factor clamped to 0.2-5),
    fading back to no correction at CORRECTION_KM. The same factor is kept for the
-   forecast hours (persistence of the current bias).
+   forecast hours (persistence of the bias).
+
+Readings are compared with CAMS at the hour they were measured, so a reading from
+yesterday still tells us how far off CAMS is. That matters because OpenAQ's copy of
+India's CPCB network often arrives about 2 days late; readings up to MAX_AGE_H old are used.
 
 Needs a free OpenAQ API key (OPENAQ_API_KEY). Without it everything still works,
 with no correction and no station dots.
@@ -27,12 +31,12 @@ log = logging.getLogger(__name__)
 OPENAQ_URL = "https://api.openaq.org/v3"
 PARAMETERS = {2: "pm2_5", 1: "pm10"}  # OpenAQ parameter ids
 TIMEOUT_S = 8
-MAX_AGE_H = 3  # readings older than this are not used
+MAX_AGE_H = 72  # readings older than this are not used (CAMS grid keeps 3 past days to compare with)
 MAX_STATIONS = 40  # keeps us far below OpenAQ's 60 requests a minute
 CELL_DEG = 0.25  # one station per cell (Delhi alone has ~40)
 WORKERS = 8
 CORRECTION_KM = 75.0
-FACTOR_RANGE = (0.5, 3.0)
+FACTOR_RANGE = (0.2, 5.0)  # measured 9 Oct 2026: CAMS/station ratios 0.09-7.5 (CAMS dust overestimates PM10)
 
 
 def api_key():
@@ -174,9 +178,10 @@ def correction_at(lat, lon, station_factors, pollutant, max_km=CORRECTION_KM):
     return 1.0 + (blended - 1.0) * (1.0 - nearest / max_km)
 
 
-def station_feature_props(s, aqi_info=None):
+def station_feature_props(s, aqi_info=None, now=None):
     props = {"kind": "station", "name": s["name"], "provider": s["provider"],
              "time": s["time"].isoformat(timespec="minutes"),
+             "age_h": round((now - s["time"]).total_seconds() / 3600, 1) if now else None,
              "pm2_5": None if s.get("pm2_5") is None else round(s["pm2_5"], 1),
              "pm10": None if s.get("pm10") is None else round(s["pm10"], 1)}
     if aqi_info:

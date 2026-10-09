@@ -1,6 +1,6 @@
 """Predicted air quality at places on smoke paths: CAMS forecast + station correction + fire plumes.
 
-prepare() fetches (or reuses, for CACHE_TTL_S) three things for the area the smoke covers:
+prepare() fetches (or reuses, see the *_TTL_S values) three things for the area the smoke covers:
   - the CAMS air-quality forecast on its 0.4 degree grid (Open-Meteo, no key)
   - the weather that spreads smoke: mixing height, 10 m wind, sunshine, cloud (Open-Meteo)
   - the latest station readings (OpenAQ, only with a key)
@@ -22,7 +22,11 @@ from .net import ApiError
 
 log = logging.getLogger(__name__)
 
-CACHE_TTL_S = 3600  # CAMS updates twice a day; stations hourly
+# How long downloaded grids are reused. Open-Meteo's free tier counts every grid point as a call
+# (10,000 a day), so the big grids are kept longer than the 30-minute answers that use them.
+AQ_TTL_S = 6 * 3600  # CAMS updates twice a day
+MET_TTL_S = 3 * 3600
+STATIONS_TTL_S = 3600
 OVERLAY_HOURS = (0, 6, 12, 24, 48)
 OUTLOOK_HOURS = 48
 PAST_DAYS = 3  # 24 hour averages for smoke that arrived up to a day before the fires were seen
@@ -31,7 +35,8 @@ FORECAST_DAYS = 3
 _cache = {}
 
 
-def _cached(key, make, clock=time.monotonic):
+def cached(key, make, ttl_s, clock=time.monotonic):
+    """make() once per ttl_s for this key (per Lambda instance); errors are not cached."""
     now = clock()
     hit = _cache.get(key)
     if hit and hit[0] > now:
@@ -39,7 +44,7 @@ def _cached(key, make, clock=time.monotonic):
     value = make()
     for k in [k for k, v in _cache.items() if v[0] <= now]:
         del _cache[k]
-    _cache[key] = (now + CACHE_TTL_S, value)
+    _cache[key] = (now + ttl_s, value)
     return value
 
 
@@ -153,7 +158,7 @@ class AirContext:
         for s in self.stations:
             sub = airquality.sub_index("pm2_5", s.get("pm2_5")) if s.get("pm2_5") is not None else None
             out.append({"lat": s["lat"], "lon": s["lon"],
-                        "props": stations.station_feature_props(s, {"pm2_5_index": sub})})
+                        "props": stations.station_feature_props(s, {"pm2_5_index": sub}, self.now)})
         return out
 
 
@@ -171,11 +176,11 @@ def prepare(api, now, aq_spec, met_spec, clock=time.monotonic):
     spec = aq_spec
     notes = []
     try:
-        aq = _cached(("aq", key, day), lambda: api.air_quality(aq_spec, PAST_DAYS, FORECAST_DAYS), clock)
+        aq = cached(("aq", key, day), lambda: api.air_quality(aq_spec, PAST_DAYS, FORECAST_DAYS), AQ_TTL_S, clock)
     except (ApiError, ValueError) as err:
         raise AirUnavailable(str(err)) from None
     try:
-        met = _cached(("met", mkey, day), lambda: api.met(met_spec, PAST_DAYS, FORECAST_DAYS), clock)
+        met = cached(("met", mkey, day), lambda: api.met(met_spec, PAST_DAYS, FORECAST_DAYS), MET_TTL_S, clock)
     except (ApiError, ValueError) as err:
         log.warning("weather for plumes failed: %s", err)
         met = None
@@ -185,7 +190,7 @@ def prepare(api, now, aq_spec, met_spec, clock=time.monotonic):
         bbox = (spec["south"], spec["west"], spec["south"] + (spec["rows"] - 1) * spec["step"],
                 spec["west"] + (spec["cols"] - 1) * spec["step"])
         try:
-            found = _cached(("st", key, now.strftime("%Y-%m-%dT%H")), lambda: api.stations(bbox, now), clock)
+            found = cached(("st", key), lambda: api.stations(bbox, now), STATIONS_TTL_S, clock)
             factors = stations.factors(found, aq)
         except (ApiError, ValueError) as err:
             log.warning("OpenAQ failed: %s", err)

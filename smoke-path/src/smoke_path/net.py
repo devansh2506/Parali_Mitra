@@ -2,6 +2,8 @@
 
 import http.client
 import json
+import threading
+import time
 import urllib.error
 import urllib.request
 
@@ -74,6 +76,24 @@ def request(url, timeout, data=None, headers=None, name="API"):
         raise ApiError(f"{name} could not be reached ({_short(err.reason, 80)})") from None
     except (OSError, http.client.HTTPException) as err:
         raise ApiError(f"{name} connection failed ({type(err).__name__})") from None
+
+
+# Open-Meteo refuses too many requests at once from one address ("HTTP 429: Too many concurrent
+# requests"), so every Open-Meteo call in this process shares these slots.
+OPEN_METEO_SLOTS = threading.BoundedSemaphore(3)
+RETRY_429_S = 2.0
+
+
+def request_open_meteo(url, timeout, name="Open-Meteo"):
+    """request() for Open-Meteo: at most 3 at a time, and one retry after a 429."""
+    for attempt in (0, 1):
+        with OPEN_METEO_SLOTS:
+            try:
+                return request(url, timeout, name=name)
+            except ApiError as err:
+                if attempt or "HTTP 429" not in str(err):
+                    raise
+        time.sleep(RETRY_429_S)
 
 
 def parse_json(body, name="API"):

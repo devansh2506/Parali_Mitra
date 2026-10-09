@@ -19,7 +19,7 @@ import urllib.parse
 from datetime import datetime, timedelta, timezone
 
 from . import IST
-from .net import ApiError, parse_json, request
+from .net import ApiError, parse_json, request_open_meteo
 
 log = logging.getLogger(__name__)
 
@@ -272,13 +272,13 @@ def ensemble_url(lat, lon, days, past_days=0):
 
 def fetch_forecast_raw(points, days, level, timeout=FORECAST_TIMEOUT_S, past_days=0):
     """Many points in ONE request. Returns the raw JSON bytes."""
-    return request(forecast_url(points, days, level, past_days), timeout, name="Open-Meteo")
+    return request_open_meteo(forecast_url(points, days, level, past_days), timeout, name="Open-Meteo")
 
 
 def fetch_ensemble_raw(lat, lon, days, timeout=ENSEMBLE_TIMEOUT_S, past_days=0):
     if days > MAX_ENSEMBLE_DAYS + 1:
         raise ApiError("The ensemble forecast only covers about 7 days")
-    return request(ensemble_url(lat, lon, days, past_days), timeout, name="Open-Meteo ensemble")
+    return request_open_meteo(ensemble_url(lat, lon, days, past_days), timeout, name="Open-Meteo ensemble")
 
 
 def decode_forecast(body, level):

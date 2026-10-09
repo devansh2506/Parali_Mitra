@@ -291,6 +291,19 @@ class StationTests(unittest.TestCase):
         self.assertEqual((s["pm2_5"], s["pm10"]), (88.5, None))
         self.assertIsNone(stations.parse_latest({"results": []}, loc, self.NOW))
 
+    def test_late_readings_up_to_three_days(self):
+        loc = stations.parse_locations(self.locations(), self.NOW)[0]
+        two_days = {"results": [{"datetime": {"utc": "2026-10-07T12:00:00Z"}, "value": 70, "sensorsId": 11}]}
+        four_days = {"results": [{"datetime": {"utc": "2026-10-05T12:00:00Z"}, "value": 70, "sensorsId": 11}]}
+        self.assertEqual(stations.parse_latest(two_days, loc, self.NOW)["pm2_5"], 70.0)  # OpenAQ's CPCB copy lags ~2 days
+        self.assertIsNone(stations.parse_latest(four_days, loc, self.NOW))
+
+    def test_factor_is_clamped(self):
+        spec = {"south": 30.4, "west": 75.6, "step": 0.4, "rows": 3, "cols": 3}
+        grid = const_grid(spec, {"pm2_5": 100.0, "pm10": 100.0})
+        far_off = [{"lat": 30.9, "lon": 75.85, "time": GRID_T0 + timedelta(hours=60), "pm2_5": 5.0, "pm10": 900.0}]
+        self.assertEqual(stations.factors(far_off, grid), [{"lat": 30.9, "lon": 75.85, "pm2_5": 0.2, "pm10": 5.0}])
+
     def test_key_is_never_shown(self):
         from unittest import mock
 
@@ -373,3 +386,41 @@ class AirEndpointTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class OpenMeteoLimitTests(unittest.TestCase):
+    def test_retries_once_after_429_and_limits_concurrency(self):
+        import threading
+        from unittest import mock
+
+        from smoke_path import net
+        from smoke_path.net import ApiError
+
+        calls = []
+        with mock.patch.object(net, "request", side_effect=[ApiError("Open-Meteo answered HTTP 429: busy"), b"ok"]), \
+                mock.patch.object(net, "RETRY_429_S", 0):
+            self.assertEqual(net.request_open_meteo("https://x", 1), b"ok")
+        with mock.patch.object(net, "request", side_effect=ApiError("Open-Meteo answered HTTP 500")) as req:
+            with self.assertRaises(ApiError):
+                net.request_open_meteo("https://x", 1)
+            self.assertEqual(req.call_count, 1)  # only 429 is retried
+
+        busy, peak, lock = [0], [0], threading.Lock()
+
+        def slow(*a, **k):
+            with lock:
+                busy[0] += 1
+                peak[0] = max(peak[0], busy[0])
+            import time as _t
+            _t.sleep(0.02)
+            with lock:
+                busy[0] -= 1
+            calls.append(1)
+            return b"ok"
+
+        with mock.patch.object(net, "request", side_effect=slow):
+            threads = [threading.Thread(target=net.request_open_meteo, args=("https://x", 1)) for _ in range(9)]
+            [t.start() for t in threads]
+            [t.join() for t in threads]
+        self.assertEqual(len(calls), 9)
+        self.assertLessEqual(peak[0], 3)

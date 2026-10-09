@@ -15,14 +15,14 @@ import urllib.parse
 from datetime import datetime, timedelta, timezone
 
 from . import IST
-from .net import ApiError, parse_json, request
+from .net import ApiError, parse_json, request_open_meteo
 from .wind import TIMEZONE, _coord
 
 AQ_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
-AQ_TIMEOUT_S = 15
+AQ_TIMEOUT_S = 20
 CAMS_STEP = 0.4  # CAMS global grid spacing (degrees)
 MAX_AQ_POINTS = 400
-CHUNK_POINTS = 100  # points per request, fetched in parallel (big replies are slow to build)
+CHUNK_POINTS = 190  # points per request (3 requests for fire watch's 550 CAMS points), fetched in parallel
 MAX_PAST_DAYS = 3
 MAX_FORECAST_DAYS = 5
 
@@ -317,7 +317,7 @@ def aq_url(points, past_days, forecast_days):
 
 def fetch_aq_raw(points, past_days, forecast_days, timeout=AQ_TIMEOUT_S):
     """Raw JSON bytes for up to CHUNK_POINTS points (one request)."""
-    return request(aq_url(points, past_days, forecast_days), timeout, name="Open-Meteo air quality")
+    return request_open_meteo(aq_url(points, past_days, forecast_days), timeout, name="Open-Meteo air quality")
 
 
 def grid_spec(latlons, pad=0.2, step=CAMS_STEP, max_points=MAX_AQ_POINTS):
@@ -428,7 +428,7 @@ def met_url(points, past_days, forecast_days):
 
 
 def fetch_met_raw(points, past_days, forecast_days, timeout=AQ_TIMEOUT_S):
-    return request(met_url(points, past_days, forecast_days), timeout, name="Open-Meteo weather")
+    return request_open_meteo(met_url(points, past_days, forecast_days), timeout, name="Open-Meteo weather")
 
 
 def decode_met(raw_chunks, spec):

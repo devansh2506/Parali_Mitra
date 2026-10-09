@@ -45,6 +45,7 @@ TOP_PLACES = 3
 NEAR_TOWN_KM = 25  # to tell apart villages with the same name ("Rampura, near Barnala")
 BUDGET_S = 25
 GRID_TIMEOUT_S = 15  # the 289-point wind reply is ~650 KB, so it gets longer than the usual 8 s
+WIND_TTL_S = 3 * 3600  # reuse the wind grid between fire watch refreshes
 # Air quality: CAMS on its own 0.4 degree grid (550 points, lat 26-34.4, lon 70.4-80) and the
 # weather that spreads smoke on a 0.8 degree grid, both fetched while NASA's data loads.
 AIR_GRID = {"south": 26.0, "west": 70.4, "step": 0.4, "rows": 22, "cols": 25}
@@ -252,7 +253,9 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
         days = max(1, forecast_days_needed(max(starts) + timedelta(hours=req.hours), today))
         points = WindGrid.points(GRID["south"], GRID["west"], GRID["step"], GRID["rows"], GRID["cols"])
         try:
-            series = api.forecast(points, days, level, past, timeout=GRID_TIMEOUT_S)
+            # The 289-point grid is kept for WIND_TTL_S (Open-Meteo counts each point as a call).
+            series = air.cached(("wind", level, today.isoformat(), past, days),
+                                lambda: api.forecast(points, days, level, past, timeout=GRID_TIMEOUT_S), WIND_TTL_S, clock)
         except ApiError as err:
             raise WindUnavailable(str(err)) from None
         grid = WindGrid(GRID["south"], GRID["west"], GRID["step"], GRID["rows"], GRID["cols"], series)
