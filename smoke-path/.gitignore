@@ -17,3 +17,5 @@ __pycache__/
 
 # Tile cache of scripts/build_places_snapshot.py
 .snapshot_cache/
+.venv-build/
+.build_cache/

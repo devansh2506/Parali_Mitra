@@ -11,22 +11,24 @@ replies go through exactly the same code as live ones.
 """
 
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import fires, places, snapshot, wind
+from . import airquality, fires, places, snapshot, stations, wind
 from .net import ApiError
 
 FIRE_SOURCES = fires.SOURCES
 
 
 class LiveApi:
-    def __init__(self, firms_key=None):
+    def __init__(self, firms_key=None, openaq_key=None):
         self.firms_key = firms_key
+        self.openaq_key = openaq_key
 
     @classmethod
     def from_env(cls):
-        # API key consumed here: NASA FIRMS MAP_KEY from the FIRMS_MAP_KEY env var.
-        return cls(firms_key=fires.map_key())
+        # API keys consumed here: NASA FIRMS MAP_KEY (FIRMS_MAP_KEY) and OpenAQ (OPENAQ_API_KEY).
+        return cls(firms_key=fires.map_key(), openaq_key=stations.api_key())
 
     # ---- raw replies -------------------------------------------------------
     def forecast_raw(self, points, days, level, past_days=0, timeout=None):
@@ -49,6 +51,19 @@ class LiveApi:
     def fires_available(self):
         return bool(self.firms_key)
 
+    def air_quality_raw(self, points, past_days, forecast_days):
+        return airquality.fetch_aq_raw(points, past_days, forecast_days)
+
+    def met_raw(self, points, past_days, forecast_days):
+        return airquality.fetch_met_raw(points, past_days, forecast_days)
+
+    def stations_available(self):
+        return bool(self.openaq_key)
+
+    def stations(self, bbox, now):
+        """Latest station readings in bbox (south, west, north, east)."""
+        return stations.fetch_stations(bbox, self.openaq_key, now)
+
     # ---- parsed results (shared by every flavour) --------------------------
     def forecast(self, points, days, level, past_days=0, timeout=None):
         """One WindSeries per point, in the same order. ONE request for all points."""
@@ -70,6 +85,20 @@ class LiveApi:
             raise ApiError(f"NASA FIRMS {source} did not send fire data")
         return fires.parse_fires_csv(text, source)
 
+    def air_quality(self, spec, past_days, forecast_days):
+        """CAMS forecast on a grid (airquality.grid_spec) as a FieldGrid, in as few requests as fit."""
+        chunks = airquality.chunks(airquality.FieldGrid.points(**spec))
+        with ThreadPoolExecutor(max_workers=min(8, len(chunks))) as pool:
+            raws = list(pool.map(lambda c: self.air_quality_raw(c, past_days, forecast_days), chunks))
+        return airquality.decode_grid(raws, spec)
+
+    def met(self, spec, past_days, forecast_days):
+        """Mixing height, 10 m wind, sunshine and cloud on the same grid, as a FieldGrid."""
+        chunks = airquality.chunks(airquality.FieldGrid.points(**spec))
+        with ThreadPoolExecutor(max_workers=min(8, len(chunks))) as pool:
+            raws = list(pool.map(lambda c: self.met_raw(c, past_days, forecast_days), chunks))
+        return airquality.decode_met(raws, spec)
+
     def fires_box(self, source, box, days):
         """Every detection from one satellite source in a region box (fire watch)."""
         text = self.fires_box_raw(source, box, days)
@@ -85,6 +114,8 @@ ENSEMBLE = "ensemble.json"
 OVERPASS = "overpass.json"
 META = "meta.json"
 SAMPLE = "sample_response.json"
+AIR_QUALITY = "air_quality.json"  # CAMS on the grid around the burn sample's path (one request)
+MET = "met.json"  # mixing height etc. on the same grid
 
 
 def firms_file(source):
@@ -133,6 +164,19 @@ class RecordingApi(LiveApi):
         self._save(firms_file(source), text)
         return text
 
+    def air_quality_raw(self, points, past_days, forecast_days):
+        body = super().air_quality_raw(points, past_days, forecast_days)
+        self._save(AIR_QUALITY, body)
+        return body
+
+    def met_raw(self, points, past_days, forecast_days):
+        body = super().met_raw(points, past_days, forecast_days)
+        self._save(MET, body)
+        return body
+
+    def stations_available(self):
+        return False  # station readings are not saved with the fixtures
+
 
 class FixtureApi(LiveApi):
     """Replays replies saved by RecordingApi. No network."""
@@ -161,6 +205,15 @@ class FixtureApi(LiveApi):
 
     def fires_available(self):
         return any((self.folder / firms_file(s)).exists() for s in FIRE_SOURCES)
+
+    def air_quality_raw(self, points, past_days, forecast_days):
+        return self._load(AIR_QUALITY)
+
+    def met_raw(self, points, past_days, forecast_days):
+        return self._load(MET)
+
+    def stations_available(self):
+        return False
 
 
 def load_meta(folder):
