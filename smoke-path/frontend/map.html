@@ -190,6 +190,9 @@
   .firetable th { text-align: left; font-size: 0.8rem; color: var(--muted); border-bottom: 2px solid var(--line); padding: 6px 8px; white-space: nowrap; }
   .firetable td { padding: 6px 8px; border-bottom: 1px solid var(--line); }
   .firetable tr.click { cursor: pointer; }
+  .firetable td.small { font-size: 0.8rem; color: var(--muted); min-width: 220px; }
+  .firetable td { white-space: nowrap; }
+  .firetable td.small { white-space: normal; }
   .firetable tr.click:hover { background: #fff7ed; }
   .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
   .aqiscale { list-style: none; margin: 0; padding: 0; }
@@ -238,6 +241,9 @@
     <span class="tblabel">What was burning:</span>
     <div id="typeChips" class="chips" aria-label="Show fires by what was burning"></div>
     <button type="button" class="ctlbtn" id="fitAll">Show all fires</button>
+    <span class="tbtext">Smoke paths by toxicity:
+      <i class="dot" style="background:#16a34a"></i>low <i class="dot" style="background:#ca8a04"></i>moderate
+      <i class="dot" style="background:#ea580c"></i>high <i class="dot" style="background:#b91c1c"></i>very high · bigger dot = more toxic</span>
   </div>
   <div id="tbAir" class="tb" hidden>
     <label class="ctlbtn"><input type="checkbox" id="aqToggle"> AQI on the map</label>
@@ -523,6 +529,7 @@
   map.getPane("aqPane").style.zIndex = 350;  // under paths and markers
   var aqLayer = L.layerGroup();      // AQI squares (optional)
   var stationLayer = L.layerGroup(); // air monitoring stations
+  var allPathsLayer = L.layerGroup(); // every fire's smoke path (Fires tab)
   var watchLayer = L.layerGroup();   // fire watch: fires, paths, places reached
   var dataLayer = L.layerGroup();    // one smoke path in detail
   var field = startField();
@@ -627,6 +634,34 @@
     benzene: "Benzene", toluene: "Toluene", formaldehyde: "Formaldehyde", ch4: "Methane", co2: "Carbon dioxide" };
   var TOX_COLORS = { pm2_5: "#7c2d12", no2: "#b45309", co: "#6b7280", benzene: "#7c3aed", formaldehyde: "#db2777", nh3: "#0e7490", so2: "#ca8a04" };
   var TOX_NAMES = { pm2_5: "PM2.5", no2: "NO2", co: "CO", benzene: "Benzene", formaldehyde: "Formaldehyde", nh3: "Ammonia", so2: "SO2" };
+  var TOX_LINE = { low: "#16a34a", moderate: "#ca8a04", high: "#ea580c", "very high": "#b91c1c" };
+  var TOX_RADIUS = { low: 5, moderate: 7, high: 9, "very high": 11 };
+  var DIRS = ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"];
+  function pathInfo(id) {
+    var path = watchPaths.filter(function (q) { return q.id === id; })[0];
+    if (!path || path.coords.length < 2) return null;
+    var a = path.coords[0], b = path.coords[path.coords.length - 1];
+    var dx = (b[0] - a[0]) * Math.cos(a[1] * Math.PI / 180), dy = b[1] - a[1];
+    var bearing = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
+    var hours = (Date.parse(path.times[path.times.length - 1]) - Date.parse(path.times[0])) / 3600000;
+    return { dir: DIRS[Math.round(bearing / 45) % 8], km: path.km[path.km.length - 1], hours: Math.round(hours) };
+  }
+  function firstPlace(id) {
+    var best = null;
+    reachedFeatures.forEach(function (f) {
+      (f.properties.arrivals || []).forEach(function (a) {
+        if (a[0] === id && (!best || Date.parse(a[1]) < best.t)) best = { name: f.properties.name, t: Date.parse(a[1]) };
+      });
+    });
+    return best;
+  }
+  function pathText(p) {
+    var info = pathInfo(p.id);
+    if (!info) return p.traced === false ? "not traced (outside the wind forecast)" : "";
+    var first = firstPlace(p.id);
+    return "goes " + info.dir + ", " + Math.round(info.km) + " km in " + info.hours + " h" +
+      (first ? "; first reaches " + first.name + " " + whenText(first.t, watchNow) : "");
+  }
   function kgText(v) { return v >= 1000 ? (v / 1000).toFixed(1) + " t" : v >= 10 ? Math.round(v) + " kg" : num(v, 2) + " kg"; }
   function toxBadge(t) { return t ? '<span class="tox ' + esc(t.level.replace(" ", "_")) + '">' + esc(num(t.km3, 1)) + " km³ · " + esc(t.level) + "</span>" : ""; }
 
@@ -722,6 +757,7 @@
       row("Brightness", first.bright_ti4 == null ? null : num(first.bright_ti4, 1) + " K") +
       row("Pixel size", first.scan == null ? null : num(first.scan, 2) + " × " + num(first.track, 2) + " km") +
       row("Location", num(ll[0], 5) + ", " + num(ll[1], 5)) +
+      row("Smoke path", esc(pathText(p)) || null) +
       row("Smoke reaches", p.places_reached == null ? (p.traced ? null : "not traced") : plural(p.places_reached, "listed place")) +
       "</table>" + typeHtml(p) + "<small>Times are when satellites passed over; the fire may have started earlier.</small>";
     if (p.traced) {
@@ -783,7 +819,8 @@
       typeCounts[type] = (typeCounts[type] || 0) + 1;
       popupFires[key] = { latlng: ll, props: p, watch: true };
       var marker = L.circleMarker(ll, {
-        radius: strengthRadius(p.strength), color: industrial ? "#1c1f23" : "#ffffff", weight: industrial ? 3 : 2,
+        radius: p.emissions && p.emissions.toxicity ? TOX_RADIUS[p.emissions.toxicity.level] : strengthRadius(p.strength),
+        color: industrial ? "#1c1f23" : "#ffffff", weight: industrial ? 3 : 2,
         fillColor: (FIRE_TYPES[type] || FIRE_TYPES.unknown).color, fillOpacity: 1
       }).bindPopup(watchFirePopup(p, ll, key), { maxWidth: 320 })
         .on("click", function () { showFire(p.id); });
@@ -792,6 +829,7 @@
       bounds.extend(ll);
     });
     drawChips(typeCounts);
+    drawAllPaths();
     drawAir(doc);
     fillStats(doc);
     setBadge();
@@ -834,6 +872,24 @@
     $("checkResult").textContent = "";
   }
 
+  function drawAllPaths() {
+    allPathsLayer.clearLayers();
+    watchPaths.forEach(function (path) {
+      var p = watchFires[path.id] || {};
+      if (hiddenTypes[p.fire_type || "farm"]) return;
+      var level = p.emissions && p.emissions.toxicity ? p.emissions.toxicity.level : null;
+      L.polyline(path.coords.map(latlng), {
+        color: level ? TOX_LINE[level] : "#6b7280", weight: 2, opacity: 0.6, interactive: false
+      }).addTo(allPathsLayer);
+    });
+    showAllPaths();
+  }
+  function showAllPaths() {
+    var on = mode === "watch" && page === "fires";
+    if (on && !watchLayer.hasLayer(allPathsLayer)) allPathsLayer.addTo(watchLayer);
+    if (!on && watchLayer.hasLayer(allPathsLayer)) watchLayer.removeLayer(allPathsLayer);
+  }
+
   function drawChips(counts) {
     var box = $("typeChips");
     box.textContent = "";
@@ -851,6 +907,7 @@
           if (m.type !== type) return;
           if (hiddenTypes[type]) watchLayer.removeLayer(m.marker); else m.marker.addTo(watchLayer);
         });
+        drawAllPaths();
       });
       box.appendChild(b);
     });
@@ -1371,6 +1428,7 @@
       $(PAGES[k].nav).classList.toggle("active", mode === "watch" && k === page);
     });
     if (mode === "watch") PAGES[page].show.forEach(function (id) { $(id).hidden = false; });
+    if (typeof allPathsLayer !== "undefined") showAllPaths();
   }
   ["navFires", "navAir", "navCheck", "navAbout"].forEach(function (id) {
     var name = { navFires: "fires", navAir: "air", navCheck: "check", navAbout: "about" }[id];
@@ -1407,9 +1465,10 @@
         "<td>" + esc(p.strength || "") + (p.frp_max != null ? " (" + num(p.frp_max, 1) + " MW)" : "") + "</td>" +
         '<td class="n">' + (e ? esc(kgText(e.kg.pm2_5)) : "–") + "</td>" +
         "<td>" + (e ? toxBadge(e.toxicity) : "not estimated") + "</td>" +
-        "<td>" + (p.places_reached == null ? "–" : esc(p.places_reached)) + "</td></tr>";
+        "<td>" + (p.places_reached == null ? "–" : esc(p.places_reached)) + "</td>" +
+        '<td class="small">' + esc(pathText(p)) + "</td></tr>";
     }).join("");
-    $("fireTable").innerHTML = "<thead><tr><th>Fire</th><th>What was burning</th><th>Near</th><th>First seen (IST)</th><th>Strength</th><th>PM2.5 per hour</th><th>Toxicity per hour</th><th>Places reached</th></tr></thead><tbody>" + rows + "</tbody>";
+    $("fireTable").innerHTML = "<thead><tr><th>Fire</th><th>What was burning</th><th>Near</th><th>First seen (IST)</th><th>Strength</th><th>PM2.5 per hour</th><th>Toxicity per hour</th><th>Places reached</th><th>Smoke goes</th></tr></thead><tbody>" + rows + "</tbody>";
   }
   // A row of the fires table: show that fire on the map.
   function handleFireRow(e) {
