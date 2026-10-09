@@ -132,7 +132,7 @@ class FireWatchRunTests(unittest.TestCase):
         p1 = paths[0]["properties"]
         self.assertEqual(len(paths[0]["geometry"]["coordinates"]), 25)
         self.assertEqual(p1["times"][0], "2026-10-09T13:30+05:30")
-        self.assertEqual(p1["km"][1], 18.0)
+        self.assertAlmostEqual(p1["km"][1], 18.0, places=3)
 
     def test_one_wind_request_for_all_fires_with_past_hours(self):
         forecasts = [c for c in self.api.calls if c[0] == "forecast"]
@@ -147,6 +147,8 @@ class FireWatchRunTests(unittest.TestCase):
             {n: p["fires"] for n, p in reached.items()},
             {"Shared Village": 2, "Big Town": 2, "B School": 1, "Only A Village": 1},
         )  # "Home" is upwind: never inside the smoke band
+        self.assertEqual(reached["Shared Village"]["near_town"], "Big Town")  # within 25 km
+        self.assertEqual(reached["Big Town"]["near_town"], "")  # towns are not "near" themselves
         shared = reached["Shared Village"]
         first = datetime.fromisoformat(shared["first_arrival"])  # B + 2 h (36 km at 18 km/h)
         self.assertLess(abs((first - datetime(2026, 10, 9, 15, 30, tzinfo=IST)).total_seconds()), 120)
@@ -174,6 +176,26 @@ class FireWatchRunTests(unittest.TestCase):
         early = datetime(2026, 10, 9, 14, 0, tzinfo=IST)  # "now" before the smoke reaches the villages
         doc = firewatch.run(FireWatchRequest(24), FakeApi(wind=wind(), fires=DETECTIONS), now=early, snap=snap()).report
         self.assertEqual(doc["summary"][2], "Shared Village (village): smoke from 2 fires, from about 3:30 pm.")
+
+
+class SameAnswerAsTheMapTests(unittest.TestCase):
+    def test_exposure_uses_the_path_exactly_as_sent(self):
+        doc = run()[0].report
+        path = kind(doc, "fire_path")[0]
+        for lon, lat in path["geometry"]["coordinates"]:
+            self.assertEqual((round(lat, 5), round(lon, 5)), (lat, lon))
+        self.assertTrue(all(round(k, 3) == k for k in path["properties"]["km"]))
+
+    def test_arrivals_are_listed_in_time_order(self):
+        # Two fires seen at the same minute, 12 km apart north-south, a town halfway: both reach it.
+        dets = [det(*at(0, 6), "2026-10-10T13:30+05:30"), det(*at(0, -6), "2026-10-10T13:30+05:30")]
+        mid = Snapshot({"format": 1, "tile_deg": 0.5, "tiles": ALL_TILES, "osm_base": None,
+                        "places": [row("Middle Town", at(30, 0), "town", "n9")]})
+        doc = firewatch.run(FireWatchRequest(24), FakeApi(wind=wind(), fires=dets), now=NOW, snap=mid).report
+        (place,) = kind(doc, "reached")
+        times = [t for _, t in place["properties"]["arrivals"]]
+        self.assertEqual(len(times), 2)
+        self.assertEqual(times, sorted(times))
 
 
 class FireWatchProblemTests(unittest.TestCase):
@@ -246,6 +268,24 @@ class FiresEndpointTests(unittest.TestCase):
         self.assertEqual(r1["body"], r2["body"])
         self.assertEqual(api.count("forecast"), 1)  # second answer came from the cache
         self.assertEqual(r1["headers"]["Access-Control-Allow-Origin"], "*")
+
+    def test_large_replies_are_gzipped_for_browsers(self):
+        import base64
+        import gzip
+        from unittest import mock
+
+        api = FakeApi(wind=wind(), fires=DETECTIONS)
+        ev = self.event(hours="24")
+        ev["headers"] = {"accept-encoding": "gzip, deflate, br"}
+        with mock.patch.object(firewatch.snapshot, "get", return_value=snap()), mock.patch.object(app, "GZIP_MIN_BYTES", 100):
+            resp = app.handle(ev, api=api, cache=app.ResponseCache(), now=NOW)
+            plain = app.handle(self.event(hours="24"), api=api, cache=app.ResponseCache(), now=NOW)
+        self.assertTrue(resp["isBase64Encoded"])
+        self.assertEqual(resp["headers"]["Content-Encoding"], "gzip")
+        doc = json.loads(gzip.decompress(base64.b64decode(resp["body"])))
+        self.assertEqual(doc["view"], "fires")
+        self.assertFalse(plain["isBase64Encoded"])  # no Accept-Encoding: plain JSON
+        self.assertNotIn("Content-Encoding", plain["headers"])
 
     def test_errors(self):
         no_key = app.handle(self.event(), api=FakeApi(wind=wind(), fires_key=False), cache=app.ResponseCache(), now=NOW)

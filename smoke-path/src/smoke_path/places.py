@@ -17,6 +17,7 @@ from .trajectory import KM_PER_DEG, flat_km, radius_at
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"  # override with the OVERPASS_URL setting
 OVERPASS_TIMEOUT_S = 15
+OUTSIDE_TIMEOUT_S = 8  # with the snapshot covering the start, don't wait long for the rest
 
 TOWN_RADIUS_M = 15000
 VILLAGE_RADIUS_M = 5000
@@ -182,7 +183,7 @@ def find_places(line, timeout, fetch_raw, snap):
         return found, None
     rest = line[max(0, first_out - 1) :]  # from the last covered point, so no gap at the edge
     try:
-        live, note = decode_places(fetch_raw(rest, timeout))
+        live, note = decode_places(fetch_raw(rest, min(timeout, OUTSIDE_TIMEOUT_S) if first_out > 0 else timeout))
     except ApiError as err:
         return found, f"Places outside the saved area could not be checked ({str(err).rstrip('.')})."
     seen = {p["osm"] for p in found}

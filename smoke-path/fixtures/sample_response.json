@@ -1818,7 +1818,7 @@
     "name": "Chirinjeev Hospital",
     "name_local": "",
     "place_type": "hospital",
-    "distance_km": 0.6,
+    "distance_km": 0.5,
     "arrival": "2026-10-10T14:01+05:30",
     "arrival_text": "2:00 pm",
     "in_band": true
@@ -6538,7 +6538,7 @@
     "name": "Sandhu Hospital",
     "name_local": "",
     "place_type": "hospital",
-    "distance_km": 2.8,
+    "distance_km": 2.9,
     "arrival": "2026-10-10T22:36+05:30",
     "arrival_text": "10:35 pm",
     "in_band": true
@@ -9079,7 +9079,7 @@
     "name_local": "لکھو ملکانہ",
     "place_type": "village",
     "distance_km": 2.5,
-    "arrival": "2026-10-11T01:50+05:30",
+    "arrival": "2026-10-11T01:51+05:30",
     "arrival_text": "1:50 am (11 Oct)",
     "in_band": true
    }

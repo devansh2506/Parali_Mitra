@@ -29,8 +29,10 @@ class LiveApi:
         return cls(firms_key=fires.map_key())
 
     # ---- raw replies -------------------------------------------------------
-    def forecast_raw(self, points, days, level, past_days=0):
-        return wind.fetch_forecast_raw(points, days, level, past_days=past_days)
+    def forecast_raw(self, points, days, level, past_days=0, timeout=None):
+        return wind.fetch_forecast_raw(
+            points, days, level, timeout=timeout or wind.FORECAST_TIMEOUT_S, past_days=past_days
+        )
 
     def ensemble_raw(self, lat, lon, days, past_days=0):
         return wind.fetch_ensemble_raw(lat, lon, days, past_days=past_days)
@@ -48,9 +50,9 @@ class LiveApi:
         return bool(self.firms_key)
 
     # ---- parsed results (shared by every flavour) --------------------------
-    def forecast(self, points, days, level, past_days=0):
+    def forecast(self, points, days, level, past_days=0, timeout=None):
         """One WindSeries per point, in the same order. ONE request for all points."""
-        series = wind.decode_forecast(self.forecast_raw(points, days, level, past_days), level)
+        series = wind.decode_forecast(self.forecast_raw(points, days, level, past_days, timeout), level)
         if len(series) != len(points):
             raise ApiError(f"Open-Meteo sent {len(series)} forecasts for {len(points)} points")
         return series
@@ -111,8 +113,8 @@ class RecordingApi(LiveApi):
         else:
             path.write_bytes(data)
 
-    def forecast_raw(self, points, days, level, past_days=0):
-        body = super().forecast_raw(points, days, level, past_days)
+    def forecast_raw(self, points, days, level, past_days=0, timeout=None):
+        body = super().forecast_raw(points, days, level, past_days, timeout)
         self._save(_forecast_file(points), body)
         return body
 
@@ -145,7 +147,7 @@ class FixtureApi(LiveApi):
             raise ApiError(f"No saved reply {name} in {self.folder.name}/")
         return path.read_bytes()
 
-    def forecast_raw(self, points, days, level, past_days=0):
+    def forecast_raw(self, points, days, level, past_days=0, timeout=None):
         return self._load(_forecast_file(points))
 
     def ensemble_raw(self, lat, lon, days, past_days=0):

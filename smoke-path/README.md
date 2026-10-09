@@ -165,10 +165,21 @@ python3.12 scripts/build_places_snapshot.py               # downloads 132 tiles 
 python3.12 scripts/build_places_snapshot.py --build-only  # rebuild the file from .snapshot_cache/
 ```
 
-It fetches tiles nearest Punjab first, waits and retries when the server is busy, and keeps finished
-tiles in `.snapshot_cache/` (git-ignored), so you can stop it and run it again to continue. Tiles that
-never finish are left out; paths that reach them use live Overpass. Re-run it every few months to pick
-up new OpenStreetMap edits.
+It fetches tiles nearest Punjab first, waits and retries when the server is busy (fetching a heavy tile
+as 4 quarters), and keeps finished tiles in `.snapshot_cache/` (git-ignored), so you can stop it and
+run it again to continue. Tiles that never finish are left out; paths that reach them use live Overpass
+(the farmer view, with an 8 s limit) or say "not checked here" (fire watch).
+
+**What is saved now (9 Oct 2026):** 61 of the 132 tiles, 25,703 places (15,896 villages, 2,034 schools,
+548 colleges, 4,913 hospitals, 1,886 clinics, 362 towns, 64 cities): all of Punjab and most of Haryana,
+including Chandigarh, Karnal, Kurukshetra, Panipat, Hisar and Sirsa, plus the border area of Pakistan
+Punjab. Not yet saved: Rohtak, Delhi and the outer ring. Checked against a live Overpass answer for one
+24-hour path: 500 of the 501 places in the saved tiles matched, none extra (the one difference was a
+village 5.008 km from the path, right at the 5 km limit). To add the rest later, run the script again.
+
+The main Overpass server allows about 10 minutes of query time per day per user; if it refuses you
+(HTTP 429 or "connection refused"), wait a day or use the VK Maps mirror:
+`OVERPASS_URL=https://maps.mail.ru/osm/tools/overpass/api/interpreter python3.12 scripts/build_places_snapshot.py`
 
 ## Fire watch sample
 
@@ -232,9 +243,12 @@ Later deploys are just `sam build && sam deploy`. To remove everything: `sam del
 FeatureCollection with `kind` = `fire` (one per merged fire: `id`, `seen_at`, `seen_text`,
 `detections`, `frp_max`, `strength`, `satellites`, `confidence`, `near`, `places_reached`, `traced`,
 `details` with every detection), `fire_path` (hourly line with `times` and `km`) and `reached`
-(`name`, `name_local`, `place_type`, `fires`, `first_arrival`, `first_arrival_text`, `arrivals`
-= up to 5 `[fire id, time]`). Top level: `summary`, `stats`, `notes`, `generated_at`, `region`.
+(`name`, `name_local`, `place_type`, `near_town` (nearest town within 25 km, to tell apart villages with
+the same name), `fires`, `first_arrival`, `arrivals` = up to 5 `[fire id, time]`).
+Top level: `summary`, `stats`, `notes`, `generated_at`, `region`.
 Errors: 503 without a FIRMS key, 502 if NASA FIRMS or the wind forecast fails.
+Replies over 50 KB are gzipped when the client sends `Accept-Encoding: gzip` (browsers always do);
+a busy day's fire watch is 1-2 MB raw and about 0.2 MB gzipped.
 
 ### `GET /smoke` (one smoke path)
 

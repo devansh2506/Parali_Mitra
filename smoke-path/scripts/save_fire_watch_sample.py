@@ -37,7 +37,7 @@ def main():
         print(f"Could not build the fire watch: {err}")
         return 2
     doc = result.report
-    text = json.dumps(doc, ensure_ascii=False, indent=1) + "\n"
+    text = json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n"  # compact: 1-2 MB of places
     (ROOT / "fixtures" / NAME).write_text(text, encoding="utf-8")
     (ROOT / "src" / "smoke_path" / NAME).write_text(text, encoding="utf-8")
     MAP_HTML.write_text(embed_sample(MAP_HTML.read_text(encoding="utf-8"), doc, FIRE_WATCH_BLOCK), encoding="utf-8")

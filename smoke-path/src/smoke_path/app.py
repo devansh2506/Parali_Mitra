@@ -10,6 +10,8 @@ Returns a GeoJSON FeatureCollection. 400 for bad input or a start time
 outside the forecast, 502 only if the wind forecast itself fails.
 """
 
+import base64
+import gzip
 import json
 import logging
 import math
@@ -27,6 +29,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 CACHE_TTL_S = 30 * 60
+GZIP_MIN_BYTES = 50_000  # fire watch replies are often 1-2 MB and shrink about 10x
 SAMPLE_PATH = Path(__file__).with_name("sample_response.json")
 FIRE_SAMPLE_PATH = Path(__file__).with_name("fire_watch_sample.json")
 
@@ -171,13 +174,26 @@ def _dump(doc):
     return json.dumps(doc, ensure_ascii=False, separators=(",", ":"))
 
 
-def _response(status, body_text):
-    return {
-        "statusCode": status,
-        "headers": dict(HEADERS),
-        "body": body_text if body_text is not None else "",
-        "isBase64Encoded": False,
-    }
+def _response(status, body_text, gzip_ok=False):
+    """API Gateway reply. Large bodies are gzipped (base64) when the client accepts gzip."""
+    body_text = body_text if body_text is not None else ""
+    headers = dict(HEADERS)
+    if gzip_ok and len(body_text) >= GZIP_MIN_BYTES:
+        packed = gzip.compress(body_text.encode("utf-8"), compresslevel=6)
+        headers.update({"Content-Encoding": "gzip", "Vary": "Accept-Encoding"})
+        return {
+            "statusCode": status,
+            "headers": headers,
+            "body": base64.b64encode(packed).decode("ascii"),
+            "isBase64Encoded": True,
+        }
+    return {"statusCode": status, "headers": headers, "body": body_text, "isBase64Encoded": False}
+
+
+def _accepts_gzip(event):
+    headers = event.get("headers") or {}
+    value = next((v for k, v in headers.items() if str(k).lower() == "accept-encoding"), "")
+    return "gzip" in str(value).lower()
 
 
 def _error(status, message):
@@ -221,12 +237,13 @@ def handle(event, api=None, cache=None, now=None, sample_path=SAMPLE_PATH, fire_
     if method != "GET":
         return _error(405, "Use GET.")
     params = event.get("queryStringParameters") or {}
+    gz = _accepts_gzip(event)
     if _path(event).endswith("/fires"):
-        return handle_fires(params, api, cache, now, fire_sample_path)
+        return handle_fires(params, api, cache, now, fire_sample_path, gz)
 
     if _flag(params.get("sample")):
         try:
-            return _response(200, load_sample_body(sample_path))
+            return _response(200, load_sample_body(sample_path), gz)
         except FileNotFoundError:
             return _error(404, "No sample saved yet. Run scripts/save_fixtures.py first.")
 
@@ -240,7 +257,7 @@ def handle(event, api=None, cache=None, now=None, sample_path=SAMPLE_PATH, fire_
     key = cache_key(req, level)
     cached = cache.get(key)
     if cached is not None:
-        return _response(200, cached)
+        return _response(200, cached, gz)
 
     try:
         result = run(req, api or LiveApi.from_env(), level=level, now=now)
@@ -255,14 +272,14 @@ def handle(event, api=None, cache=None, now=None, sample_path=SAMPLE_PATH, fire_
     body = _dump(result.report)
     if result.cacheable:
         cache.put(key, body)
-    return _response(200, body)
+    return _response(200, body, gz)
 
 
-def handle_fires(params, api, cache, now, sample_path):
+def handle_fires(params, api, cache, now, sample_path, gz=False):
     """GET /fires: fire watch for the whole region."""
     if _flag(params.get("sample")):
         try:
-            return _response(200, load_sample_body(sample_path))
+            return _response(200, load_sample_body(sample_path), gz)
         except FileNotFoundError:
             return _error(404, "No fire watch sample saved yet. Run scripts/save_fire_watch_sample.py first.")
     try:
@@ -273,7 +290,7 @@ def handle_fires(params, api, cache, now, sample_path):
     key = ("fires", req.hours, level)
     cached = cache.get(key)
     if cached is not None:
-        return _response(200, cached)
+        return _response(200, cached, gz)
     try:
         result = firewatch.run(req, api or LiveApi.from_env(), level=level, now=now)
     except firewatch.NoFiresKey as err:
@@ -286,7 +303,7 @@ def handle_fires(params, api, cache, now, sample_path):
     body = _dump(result.report)
     if result.cacheable:
         cache.put(key, body)
-    return _response(200, body)
+    return _response(200, body, gz)
 
 
 def lambda_handler(event, context=None):

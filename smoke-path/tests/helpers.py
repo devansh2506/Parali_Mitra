@@ -94,7 +94,7 @@ class FakeApi:
         self.places_delay = places_delay
         self.calls = []
 
-    def forecast(self, points, days, level, past_days=0):
+    def forecast(self, points, days, level, past_days=0, timeout=None):
         self.calls.append(("forecast", list(points)))
         self.past_days = past_days
         if self.fail_wind:

@@ -12,6 +12,8 @@ Fires use FIRMS_MAP_KEY from smoke-path/.env (or your shell).
 """
 
 import argparse
+import base64
+import gzip
 import logging
 import os
 import sys
@@ -30,7 +32,7 @@ MAP_HTML = ROOT / "frontend" / "map.html"
 TEXT = {"Content-Type": "text/plain; charset=utf-8"}
 
 
-def make_event(method, path, query):
+def make_event(method, path, query, headers=None):
     """A minimal API Gateway HTTP API (payload v2) event."""
     params = {}
     for key, value in parse_qsl(query, keep_blank_values=True):
@@ -42,24 +44,32 @@ def make_event(method, path, query):
         "rawPath": path,
         "rawQueryString": query,
         "queryStringParameters": params or None,
+        "headers": {str(k).lower(): v for k, v in (headers or {}).items()},
         "requestContext": {"http": {"method": method, "path": path}},
     }
 
 
-def route(method, target):
+def route(method, target, headers=None):
     """(status, headers, body bytes) for one request. No sockets, so tests can call it."""
     parts = urlsplit(target)
     path = parts.path or "/"
+    accepts_gzip = "gzip" in str((headers or {}).get("Accept-Encoding", "")).lower()
     if path in ("/smoke", "/fires"):
-        resp = lambda_handler(make_event(method, path, parts.query))
-        return resp["statusCode"], resp["headers"], resp["body"].encode("utf-8")
+        resp = lambda_handler(make_event(method, path, parts.query, headers))
+        body = resp["body"]
+        data = base64.b64decode(body) if resp.get("isBase64Encoded") else body.encode("utf-8")
+        return resp["statusCode"], resp["headers"], data
     if method not in ("GET", "HEAD"):
         return 405, TEXT, b"Method not allowed"
     if path == "/":
         return 302, {"Location": "/map.html?api=/smoke"}, b""
     if path == "/map.html":
-        headers = {"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store"}
-        return 200, headers, MAP_HTML.read_bytes()
+        out = {"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store"}
+        page = MAP_HTML.read_bytes()
+        if accepts_gzip:  # the page carries ~2 MB of sample data
+            out.update({"Content-Encoding": "gzip", "Vary": "Accept-Encoding"})
+            page = gzip.compress(page, compresslevel=6)
+        return 200, out, page
     return 404, TEXT, b"Not found"
 
 
@@ -68,7 +78,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _serve(self, method):
         try:
-            status, headers, body = route(method, self.path)
+            status, headers, body = route(method, self.path, dict(self.headers))
         except Exception:  # noqa: BLE001 - show the error in the terminal, keep serving
             logging.exception("request failed")
             status, headers, body = 500, TEXT, b"Internal error (see terminal)"

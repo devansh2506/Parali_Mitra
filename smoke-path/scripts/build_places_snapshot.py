@@ -171,7 +171,9 @@ def download(tiles, fetch=fetch_tile, sleep=time.sleep, status=fetch_status, fet
             except (ApiError, ValueError, KeyError) as err:
                 print(f"  {label}{' (as 4 quarters)' if split else ''}: {err}")
                 continue
-            cache_file(i, j).write_bytes(raw)
+            tmp = cache_file(i, j).with_suffix(".part")
+            tmp.write_bytes(raw)
+            tmp.replace(cache_file(i, j))  # never leave a half-written tile behind
             print(f"  {label}: ok{' (as 4 quarters)' if split else ''}, {len(raw) // 1024} KB in {time.monotonic() - t0:.1f} s")
             break
         else:
@@ -190,7 +192,10 @@ def build(tiles, out=SNAPSHOT_PATH):
         path = cache_file(i, j)
         if not path.exists():
             continue
-        data = json.loads(path.read_bytes())
+        try:
+            data = json.loads(path.read_bytes())
+        except ValueError:
+            continue  # being written by a running download right now; the next build picks it up
         used.append([i, j])
         stamp = (data.get("osm3s") or {}).get("timestamp_osm_base")
         if stamp and (osm_base is None or stamp < osm_base):

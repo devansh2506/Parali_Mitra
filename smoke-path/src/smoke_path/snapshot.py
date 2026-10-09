@@ -79,6 +79,8 @@ class Snapshot:
         self.osm_base = doc.get("osm_base")
         self.created = doc.get("created")
         self.rows = [tuple(r) for r in doc["places"]]  # (lat, lon, type, name, name_local, osm)
+        # Flat projection around each place (as the map page does), so both get the same distances.
+        self.coslat = [math.cos(math.radians(r[0])) for r in self.rows]
         # One lookup grid per search distance, so each segment only looks as far as it must.
         self.grids = {}
         for i, row in enumerate(self.rows):
@@ -111,7 +113,6 @@ class Snapshot:
         segments = list(zip(line, line[1:])) or [(line[0], line[0])]
         for s_idx, ((la1, lo1), (la2, lo2)) in enumerate(segments):
             mid = (la1 + la2) / 2
-            coslat = math.cos(math.radians(mid))
             for radius, grid in self.grids.items():
                 dlat, dlon = _pad_deg(mid, radius)
                 i0 = math.floor((min(la1, la2) - dlat) / GRID_DEG)
@@ -122,6 +123,7 @@ class Snapshot:
                     for j in range(j0, j1 + 1):
                         for idx in grid.get((i, j), ()):
                             lat, lon = self.rows[idx][0], self.rows[idx][1]
+                            coslat = self.coslat[idx]
                             d, f = _segment_distance(
                                 (lo1 - lon) * KM_PER_DEG * coslat,
                                 (la1 - lat) * KM_PER_DEG,

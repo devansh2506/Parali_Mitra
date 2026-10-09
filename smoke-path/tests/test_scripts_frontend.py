@@ -38,6 +38,17 @@ class LocalServerTests(unittest.TestCase):
         self.assertEqual(headers["Access-Control-Allow-Origin"], "*")
         self.assertIn("lat", json.loads(body)["error"])
 
+    def test_page_and_api_are_gzipped_when_asked(self):
+        import gzip
+
+        status, headers, body = local_server.route("GET", "/map.html", {"Accept-Encoding": "gzip"})
+        self.assertEqual(headers["Content-Encoding"], "gzip")
+        self.assertIn(b'id="sample-data"', gzip.decompress(body))
+        status, headers, body = local_server.route("GET", "/smoke?sample=true", {"Accept-Encoding": "gzip"})
+        self.assertEqual(status, 200)
+        data = gzip.decompress(body) if headers.get("Content-Encoding") == "gzip" else body
+        self.assertTrue(json.loads(data)["sample"])
+
     def test_unknown_path(self):
         self.assertEqual(local_server.route("GET", "/secrets.env")[0], 404)
 
@@ -155,6 +166,20 @@ class EnvFileTests(unittest.TestCase):
                 self.assertEqual(os.environ["WIND_LEVEL"], "80m")
                 self.assertEqual(os.environ["OVERPASS_URL"], "from-shell")
             self.assertEqual(_env.load_env(Path(tmp) / "missing.env"), [])
+
+
+class FireWatchSampleTests(unittest.TestCase):
+    def test_fire_watch_sample_matches_everywhere(self):
+        fixture_path = ROOT / "fixtures" / "fire_watch_sample.json"
+        if not fixture_path.exists():
+            self.skipTest("no fire watch sample yet: run scripts/save_fire_watch_sample.py")
+        fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+        packaged = json.loads((ROOT / "src" / "smoke_path" / "fire_watch_sample.json").read_text(encoding="utf-8"))
+        self.assertEqual(fixture, packaged, "src/smoke_path/fire_watch_sample.json is out of date")
+        self.assertEqual(save_fixtures.embedded_sample(MAP, "fire-watch-sample"), fixture, "map.html fire watch sample is out of date")
+        self.assertEqual(fixture["view"], "fires")
+        kinds = {f["properties"]["kind"] for f in fixture["features"]}
+        self.assertTrue({"fire", "fire_path"} <= kinds)
 
 
 class MapPageTests(unittest.TestCase):

@@ -26,7 +26,7 @@ from .net import ApiError
 from .pipeline import WindUnavailable
 from .places import SENSITIVE_TYPES
 from .report import fmt_day, fmt_time, iso, round_5min
-from .trajectory import CONE_GROWTH, CONE_START_KM, KM_PER_DEG, WindGrid, flat_km, hourly, trace
+from .trajectory import CONE_GROWTH, CONE_START_KM, KM_PER_DEG, PathPoint, WindGrid, flat_km, hourly, trace
 from .wind import OutsideForecast, forecast_days_needed, past_days_needed, wind_level
 
 log = logging.getLogger(__name__)
@@ -40,7 +40,9 @@ CLUSTER_HOURS = 3
 MAX_FIRES = 2000
 MAX_ARRIVALS_PER_PLACE = 5
 TOP_PLACES = 3
+NEAR_TOWN_KM = 25  # to tell apart villages with the same name ("Rampura, near Barnala")
 BUDGET_S = 25
+GRID_TIMEOUT_S = 15  # the 289-point wind reply is ~650 KB, so it gets longer than the usual 8 s
 SHIPPED = object()  # "use the places snapshot shipped with the app"
 
 CONFIDENCE_RANK = {"low": 0, "nominal": 1, "high": 2}
@@ -198,6 +200,7 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
         fires = sorted(fires, key=lambda f: -(f["frp_max"] or 0))[:MAX_FIRES]
         fires.sort(key=lambda f: (f["seen_at"], f["lat"], f["lon"]))
     for n, fire in enumerate(fires, 1):
+        fire["n"] = n  # ties in arrival time are listed by fire number (F2 before F10)
         fire["id"] = f"F{n}"
         near = snap.nearest(fire["lat"], fire["lon"]) if snap is not None else None
         fire["near"] = near["name"] if near else ""
@@ -212,7 +215,7 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
         days = max(1, forecast_days_needed(max(starts) + timedelta(hours=req.hours), today))
         points = WindGrid.points(GRID["south"], GRID["west"], GRID["step"], GRID["rows"], GRID["cols"])
         try:
-            series = api.forecast(points, days, level, past)
+            series = api.forecast(points, days, level, past, timeout=GRID_TIMEOUT_S)
         except ApiError as err:
             raise WindUnavailable(str(err)) from None
         grid = WindGrid(GRID["south"], GRID["west"], GRID["step"], GRID["rows"], GRID["cols"], series)
@@ -222,7 +225,7 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
         leaves_saved_area = False
         for fire, start in zip(fires, starts):
             try:
-                path = hourly(trace(grid.at, fire["lat"], fire["lon"], start, req.hours))
+                path = _as_sent(hourly(trace(grid.at, fire["lat"], fire["lon"], start, req.hours)))
             except OutsideForecast:
                 untraced += 1
                 fire["path"] = None
@@ -239,7 +242,7 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
             for idx, (dist, seg, f) in snap.near_segments(line).items():
                 a, b = path[seg], path[min(seg + 1, len(path) - 1)]
                 if dist <= CONE_START_KM + CONE_GROWTH * (a.km + (b.km - a.km) * f):
-                    reached.setdefault(idx, []).append((a.t + (b.t - a.t) * f, fire["id"]))
+                    reached.setdefault(idx, []).append((a.t + (b.t - a.t) * f, fire["n"], fire["id"]))
                     count += 1
             fire["places_reached"] = count
         if untraced:
@@ -252,6 +255,11 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
 
     doc = build(fires, reached, snap, req, now, notes, level, places_checked, len(detections))
     return Result(report=doc, cacheable=cacheable)
+
+
+def _as_sent(path):
+    """The path exactly as the reply carries it, so the map page's checks give the same answers."""
+    return [PathPoint(p.t, round(p.lat, 5), round(p.lon, 5), round(p.km, 3)) for p in path]
 
 
 # ---- report ----------------------------------------------------------------------------------
@@ -269,7 +277,7 @@ def build(fires, reached, snap, req, now, notes, level, places_checked, n_detect
     features = []
     for fire in fires:
         path = fire.get("path")
-        props = {k: v for k, v in fire.items() if k not in ("lat", "lon", "path")}
+        props = {k: v for k, v in fire.items() if k not in ("lat", "lon", "path", "n")}
         props.update(kind="fire", traced=path is not None)
         features.append(_feature(_point(fire["lat"], fire["lon"]), props))
         if path:
@@ -280,7 +288,7 @@ def build(fires, reached, snap, req, now, notes, level, places_checked, n_detect
                         "kind": "fire_path",
                         "fire_id": fire["id"],
                         "times": [iso(p.t) for p in path],
-                        "km": [round(p.km, 1) for p in path],
+                        "km": [p.km for p in path],
                     },
                 )
             )
@@ -289,7 +297,15 @@ def build(fires, reached, snap, req, now, notes, level, places_checked, n_detect
     for idx, arrivals in reached.items():
         arrivals.sort()
         place = snap.place(idx)
-        place.update(fires=len(arrivals), first=arrivals[0][0], arrivals=arrivals[:MAX_ARRIVALS_PER_PLACE])
+        town = None
+        if place["place_type"] not in ("town", "city"):
+            town = snap.nearest(place["lat"], place["lon"], types=("town", "city"), max_km=NEAR_TOWN_KM)
+        place.update(
+            fires=len(arrivals),
+            first=arrivals[0][0],
+            arrivals=[(t, fid) for t, _, fid in arrivals[:MAX_ARRIVALS_PER_PLACE]],
+            near_town=town["name"] if town else "",
+        )
         places.append(place)
     places.sort(key=lambda p: (-p["fires"], p["place_type"] not in SENSITIVE_TYPES, p["first"], p["name"]))
     counts = {}
@@ -303,9 +319,9 @@ def build(fires, reached, snap, req, now, notes, level, places_checked, n_detect
                     "name": p["name"],
                     "name_local": p["name_local"],
                     "place_type": p["place_type"],
+                    "near_town": p["near_town"],
                     "fires": p["fires"],
                     "first_arrival": iso(p["first"]),
-                    "first_arrival_text": when_text(p["first"], now),
                     "arrivals": [[fid, iso(t)] for t, fid in p["arrivals"]],
                 },
             )
