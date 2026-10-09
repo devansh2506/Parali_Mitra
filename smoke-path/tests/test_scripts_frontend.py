@@ -92,6 +92,8 @@ class AdoptCaptureTests(unittest.TestCase):
         root = Path(self.tmp.name)
         self.new, self.fix = root / "_new", root / "fixtures"
         self.meta = {"lat": 30.2, "lon": 75.8, "start": "2026-10-10T14:00+05:30", "hours": 24, "saved_at": "NEW"}
+        self.ok_meta = dict(self.meta, places_checked=True)
+        self.bad_meta = dict(self.meta, places_checked=False)
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -103,24 +105,35 @@ class AdoptCaptureTests(unittest.TestCase):
     def test_complete_new_capture_replaces_everything(self):
         self.old_capture(COMPLETE)
         make_capture(self.new, COMPLETE, "new")
-        self.assertEqual(save_fixtures.adopt(self.new, self.fix, self.meta), "all")
+        self.assertEqual(save_fixtures.adopt(self.new, self.fix, self.ok_meta), "all")
         self.assertEqual((self.fix / "forecast_field.json").read_text(), "new")
         self.assertEqual(json.loads((self.fix / "meta.json").read_text())["saved_at"], "NEW")
 
     def test_busy_osm_keeps_old_path_and_places_but_takes_new_fires(self):
         self.old_capture(COMPLETE)
         make_capture(self.new, CUT_SHORT, "new")
-        self.assertEqual(save_fixtures.adopt(self.new, self.fix, self.meta), "fires_only")
+        self.assertEqual(save_fixtures.adopt(self.new, self.fix, self.bad_meta), "fires_only")
         self.assertEqual((self.fix / "forecast_field.json").read_text(), "old")
         self.assertEqual((self.fix / "overpass.json").read_text(), COMPLETE)
         self.assertTrue((self.fix / "firms_VIIRS_SNPP_NRT.csv").read_text().endswith("new"))
         meta = json.loads((self.fix / "meta.json").read_text())
         self.assertEqual((meta["saved_at"], meta["fires_saved_at"]), ("OLD", "NEW"))
 
+    def test_old_meta_without_flag_falls_back_to_overpass_check(self):
+        self.old_capture(COMPLETE)  # old meta has no places_checked: overpass.json decides (complete)
+        make_capture(self.new, CUT_SHORT, "new")
+        self.assertEqual(save_fixtures.adopt(self.new, self.fix, self.bad_meta), "fires_only")
+
+    def test_snapshot_places_count_as_checked_without_overpass_file(self):
+        self.old_capture(COMPLETE)
+        make_capture(self.new, CUT_SHORT, "new")
+        (self.new / "overpass.json").unlink()  # places came from the saved snapshot, no live reply
+        self.assertEqual(save_fixtures.adopt(self.new, self.fix, self.ok_meta), "all")
+
     def test_no_good_old_capture_takes_the_new_one(self):
         make_capture(self.new, CUT_SHORT, "new")
         self.fix.mkdir()
-        self.assertEqual(save_fixtures.adopt(self.new, self.fix, self.meta), "all")
+        self.assertEqual(save_fixtures.adopt(self.new, self.fix, self.bad_meta), "all")
         self.assertEqual((self.fix / "forecast_field.json").read_text(), "new")
         self.assertFalse(save_fixtures.places_complete(self.fix))
 
@@ -160,10 +173,14 @@ class MapPageTests(unittest.TestCase):
         self.assertIn("Hours after burning", MAP)
         self.assertIn("function esc(", MAP)
         self.assertIn("Sample data", MAP)
-        # OSM names only reach HTML through esc() or textContent.
-        for m in re.finditer(r"p\.name\b", MAP):
+        self.assertIn("Fire watch", MAP)
+        self.assertIn("Is smoke coming to my village or school?", MAP)
+        self.assertIn('id="fire-watch-sample"', MAP)
+        # OSM names only reach HTML through esc(); textContent and input values are safe as they are.
+        for m in re.finditer(r"p\.name(_local)?\b", MAP):
             line = MAP[MAP.rfind("\n", 0, m.start()) : MAP.find("\n", m.end())]
-            self.assertIn("esc(", line, f"unescaped name in: {line.strip()}")
+            if "<" in line:  # builds HTML
+                self.assertIn("esc(" + m.group(0), line, f"unescaped name in: {line.strip()}")
 
 
 if __name__ == "__main__":

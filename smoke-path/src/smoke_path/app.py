@@ -1,4 +1,7 @@
-"""AWS Lambda handler for GET /smoke (API Gateway HTTP API, payload v2).
+"""AWS Lambda handler for GET /smoke and GET /fires (API Gateway HTTP API, payload v2).
+
+GET /fires?hours=24   Fire watch: every fire NASA saw in and around Punjab and Haryana,
+                      its smoke path, and the villages, schools and hospitals it reaches.
 
 GET /smoke?lat=30.245&lon=75.844&start=2026-10-10T14:00&hours=24&uncertainty=cone
 GET /smoke?lat=30.605&lon=74.999&start=2026-10-09T12:37&origin=fire   (a fire seen by satellite)
@@ -15,7 +18,7 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from . import IST
+from . import IST, firewatch
 from .apis import LiveApi
 from .pipeline import SmokeRequest, WindUnavailable, run
 from .wind import MAX_FORECAST_DAYS, MAX_PAST_DAYS, OutsideForecast, forecast_days_needed, wind_level
@@ -25,6 +28,7 @@ log.setLevel(logging.INFO)
 
 CACHE_TTL_S = 30 * 60
 SAMPLE_PATH = Path(__file__).with_name("sample_response.json")
+FIRE_SAMPLE_PATH = Path(__file__).with_name("fire_watch_sample.json")
 
 HEADERS = {
     "Content-Type": "application/json; charset=utf-8",
@@ -203,7 +207,12 @@ def _method(event):
     return (http.get("method") or event.get("httpMethod") or "GET").upper()
 
 
-def handle(event, api=None, cache=None, now=None, sample_path=SAMPLE_PATH):
+def _path(event):
+    http = (event.get("requestContext") or {}).get("http") or {}
+    return (event.get("rawPath") or http.get("path") or event.get("path") or "/smoke").rstrip("/")
+
+
+def handle(event, api=None, cache=None, now=None, sample_path=SAMPLE_PATH, fire_sample_path=FIRE_SAMPLE_PATH):
     """The real handler, with hooks for tests (fake API, own cache, fixed clock)."""
     cache = CACHE if cache is None else cache
     method = _method(event)
@@ -212,6 +221,8 @@ def handle(event, api=None, cache=None, now=None, sample_path=SAMPLE_PATH):
     if method != "GET":
         return _error(405, "Use GET.")
     params = event.get("queryStringParameters") or {}
+    if _path(event).endswith("/fires"):
+        return handle_fires(params, api, cache, now, fire_sample_path)
 
     if _flag(params.get("sample")):
         try:
@@ -241,6 +252,37 @@ def handle(event, api=None, cache=None, now=None, sample_path=SAMPLE_PATH):
         log.exception("smoke path failed")
         return _error(500, "Something went wrong while building the smoke path.")
 
+    body = _dump(result.report)
+    if result.cacheable:
+        cache.put(key, body)
+    return _response(200, body)
+
+
+def handle_fires(params, api, cache, now, sample_path):
+    """GET /fires: fire watch for the whole region."""
+    if _flag(params.get("sample")):
+        try:
+            return _response(200, load_sample_body(sample_path))
+        except FileNotFoundError:
+            return _error(404, "No fire watch sample saved yet. Run scripts/save_fire_watch_sample.py first.")
+    try:
+        req = firewatch.FireWatchRequest(hours=parse_hours(params.get("hours")))
+    except BadRequest as err:
+        return _error(400, str(err))
+    level = wind_level()
+    key = ("fires", req.hours, level)
+    cached = cache.get(key)
+    if cached is not None:
+        return _response(200, cached)
+    try:
+        result = firewatch.run(req, api or LiveApi.from_env(), level=level, now=now)
+    except firewatch.NoFiresKey as err:
+        return _error(503, str(err))
+    except (firewatch.FiresUnavailable, WindUnavailable) as err:
+        return _error(502, str(err) if isinstance(err, firewatch.FiresUnavailable) else f"Wind forecast unavailable: {err}")
+    except Exception:  # noqa: BLE001 - log it, never leak internals
+        log.exception("fire watch failed")
+        return _error(500, "Something went wrong while building the fire watch.")
     body = _dump(result.report)
     if result.cacheable:
         cache.put(key, body)

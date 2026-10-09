@@ -66,10 +66,12 @@ PACKAGE_SAMPLE = ROOT / "src" / "smoke_path" / SAMPLE
 MAP_HTML = ROOT / "frontend" / "map.html"
 DEMO_FIELD = ("30.245", "75.844")
 
-SAMPLE_BLOCK = re.compile(
-    r'(<script id="sample-data" type="application/json">)(.*?)(</script>)',
-    re.DOTALL,
-)
+def _block(block_id):
+    return re.compile(r'(<script id="' + block_id + r'" type="application/json">)(.*?)(</script>)', re.DOTALL)
+
+
+SAMPLE_BLOCK = _block("sample-data")  # the "What if I burn?" sample
+FIRE_WATCH_BLOCK = "fire-watch-sample"  # the fire watch sample
 
 
 def json_for_html(doc):
@@ -78,17 +80,18 @@ def json_for_html(doc):
     return text.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
 
 
-def embed_sample(html, doc):
-    """Put `doc` inside the sample-data block of map.html."""
-    if not SAMPLE_BLOCK.search(html):
-        raise SystemExit('map.html has no <script id="sample-data" type="application/json"> block')
+def embed_sample(html, doc, block_id="sample-data"):
+    """Put `doc` inside a sample block of map.html."""
+    pattern = _block(block_id)
+    if not pattern.search(html):
+        raise SystemExit(f'map.html has no <script id="{block_id}" type="application/json"> block')
     payload = json_for_html(doc)
-    return SAMPLE_BLOCK.sub(lambda m: m.group(1) + payload + m.group(3), html, count=1)
+    return pattern.sub(lambda m: m.group(1) + payload + m.group(3), html, count=1)
 
 
-def embedded_sample(html):
+def embedded_sample(html, block_id="sample-data"):
     """The sample currently embedded in map.html (or None)."""
-    m = SAMPLE_BLOCK.search(html)
+    m = _block(block_id).search(html)
     return json.loads(m.group(2)) if m else None
 
 
@@ -105,21 +108,21 @@ def places_complete(folder=FIXTURES):
 
 
 def retry_places(doc, api, retries, wait_s=20):
-    """Overpass is often busy. Retry just the places call a few times (saved by RecordingApi)."""
+    """Overpass is often busy. Retry just the places lookup a few times (live replies are saved)."""
     path = next(f for f in doc["features"] if f["properties"]["kind"] == "path")
     line = [(lat, lon) for lon, lat in path["geometry"]["coordinates"][::4]]  # hourly points
     for attempt in range(1, retries + 1):
         print(f"Places missing or incomplete; retrying OpenStreetMap in {wait_s} s (attempt {attempt}/{retries}) ...")
         time.sleep(wait_s)
         try:
-            api.places_raw(line, 120)
+            _, note = api.places(line, 120)
         except ApiError as err:
             print(f"  still failing: {err}")
             continue
-        if places_complete(api.folder):
-            print("  OpenStreetMap answered with a complete list.")
+        if note is None:
+            print("  Places complete.")
             return True
-        print("  OpenStreetMap answered, but the search was cut short.")
+        print(f"  still incomplete: {note}")
     return False
 
 
@@ -134,8 +137,9 @@ def adopt(new_dir, fixtures_dir, meta):
     incomplete, so the previous wind + places were kept and only fires moved).
     """
     new_dir, fixtures_dir = Path(new_dir), Path(fixtures_dir)
-    if not places_complete(new_dir) and places_complete(fixtures_dir) and (fixtures_dir / META).exists():
-        old_meta = load_meta(fixtures_dir)
+    old_meta = load_meta(fixtures_dir) if (fixtures_dir / META).exists() else None
+    old_ok = bool(old_meta) and old_meta.get("places_checked", places_complete(fixtures_dir))
+    if not meta.get("places_checked", places_complete(new_dir)) and old_ok:
         moved = False
         for source in FIRE_SOURCES:  # fires do not depend on the path, so they can be swapped in
             src = new_dir / firms_file(source)
@@ -174,8 +178,9 @@ def record(req, places_retries=2):
         live_req = SmokeRequest(req.lat, req.lon, req.start, req.hours, "ensemble")
         # Not behind API Gateway, so wait longer for a busy Overpass server.
         result = run(live_req, api, budget_s=150, places_timeout_s=120)
-        if not places_complete(NEW_CAPTURE) and places_retries:
-            retry_places(result.report, api, places_retries)
+        places_ok = result.places_checked
+        if not places_ok and places_retries:
+            places_ok = retry_places(result.report, api, places_retries)
         meta = {
             "lat": req.lat,
             "lon": req.lon,
@@ -184,6 +189,7 @@ def record(req, places_retries=2):
             "wind_level": wind_level(),
             "saved_at": datetime.now(IST).isoformat(timespec="seconds"),
             "live_notes": result.report["notes"],
+            "places_checked": places_ok,
         }
         adopted = adopt(NEW_CAPTURE, FIXTURES, meta)
     finally:
@@ -193,7 +199,7 @@ def record(req, places_retries=2):
         print("\nOpenStreetMap was busy, so the new list of places was incomplete.")
         print("Kept the previous wind + places (they belong together) and updated only the fires.")
         print("Run this script again later for a completely new capture.")
-    elif not places_complete():
+    elif not places_ok:
         print("\nWARNING: no complete list of places was saved. Run this script again later.")
     print("\nSaved replies:")
     for name in raw_fixture_names():

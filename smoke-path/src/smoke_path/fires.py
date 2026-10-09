@@ -39,8 +39,24 @@ def area(lat, lon, half=BOX_HALF_DEG):
 
 
 def fetch_fires_raw(source, lat, lon, key, timeout=FIRMS_TIMEOUT_S):
-    """Raw CSV text for one satellite source. Raises ApiError (never shows the key)."""
-    url = FIRMS_URL.format(key=key, source=source, area=area(lat, lon), days=DAY_RANGE)
+    """Raw CSV text for one satellite source, about 1 degree around a field."""
+    return _fetch(source, area(lat, lon), key, DAY_RANGE, timeout)
+
+
+def box_area(box):
+    """'west,south,east,north' for a (south, west, north, east) box."""
+    south, west, north, east = box
+    return f"{west:.2f},{south:.2f},{east:.2f},{north:.2f}"
+
+
+def fetch_fires_box_raw(source, box, key, days=DAY_RANGE, timeout=FIRMS_TIMEOUT_S):
+    """Raw CSV text for one satellite source over a whole region box (south, west, north, east)."""
+    return _fetch(source, box_area(box), key, days, timeout)
+
+
+def _fetch(source, area_text, key, days, timeout):
+    """Raises ApiError (never shows the key) unless FIRMS sends fire CSV."""
+    url = FIRMS_URL.format(key=key, source=source, area=area_text, days=days)
     try:
         body = request(url, timeout, name=f"NASA FIRMS {source}")
     except ApiError as err:

@@ -128,6 +128,12 @@ class FakeApi:
     def fires_available(self):
         return self.fires_key
 
+    def fires_box(self, source, box, days):
+        self.calls.append(("fires_box", source))
+        if self.fail_fires:
+            raise ApiError(f"NASA FIRMS {source} answered HTTP 400: Invalid MAP_KEY.")
+        return [dict(f, source=source) for f in self._fires if f.get("source", source) == source]
+
     def fires(self, source, lat, lon):
         self.calls.append(("fires", source))
         if self.fail_fires:

@@ -1,9 +1,11 @@
 """Villages, towns, schools and hospitals along the smoke path (OpenStreetMap).
 
-One Overpass query uses the hourly path points as a line for the `around`
-filter. For every place we find the closest point on the path (checking each
-path segment, not just the vertices), interpolate the arrival time there, and
-mark it `in_band` if it is within the band radius at that time.
+Places come first from the saved snapshot (snapshot.py, Option B); only parts
+of the path outside the saved area go to live Overpass, in one query that uses
+the hourly path points as a line for the `around` filter. For every place we
+find the closest point on the path (checking each path segment, not just the
+vertices), interpolate the arrival time there, and mark it `in_band` if it is
+within the band radius at that time.
 """
 
 import math
@@ -122,6 +124,7 @@ def parse_overpass(data):
                 "named": bool(name),
                 "lat": pos[0],
                 "lon": pos[1],
+                "osm": f"{str(el.get('type', '?'))[:1]}{el.get('id', '')}",  # e.g. n807827478, w165067725
             }
         )
     return _dedupe(places)
@@ -162,6 +165,28 @@ def decode_places(body):
     if not data.get("elements"):
         raise ApiError("OpenStreetMap (Overpass) search timed out (server busy)")
     return found, "The list of places may be incomplete (OpenStreetMap search was cut short)."
+
+
+def find_places(line, timeout, fetch_raw, snap):
+    """(places, note or None) for a line of hourly path points.
+
+    Saved snapshot first. Only the part of the path the snapshot does not cover
+    is sent to live Overpass (`fetch_raw(line, timeout)` -> raw bytes). Without a
+    snapshot everything goes to Overpass, as before.
+    """
+    if snap is None:
+        return decode_places(fetch_raw(line, timeout))
+    found = snap.near(line)
+    first_out = next((i for i, (lat, lon) in enumerate(line) if not snap.covers(lat, lon)), None)
+    if first_out is None:
+        return found, None
+    rest = line[max(0, first_out - 1) :]  # from the last covered point, so no gap at the edge
+    try:
+        live, note = decode_places(fetch_raw(rest, timeout))
+    except ApiError as err:
+        return found, f"Places outside the saved area could not be checked ({str(err).rstrip('.')})."
+    seen = {p["osm"] for p in found}
+    return found + [p for p in live if p["osm"] not in seen], note
 
 
 def closest_point(lat, lon, path):

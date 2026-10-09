@@ -64,6 +64,12 @@ Resources:
             ApiId: !Ref SmokeApi
             Path: /smoke
             Method: GET
+        GetFires:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SmokeApi
+            Path: /fires
+            Method: GET
 
 Outputs:
   SmokeApiUrl:

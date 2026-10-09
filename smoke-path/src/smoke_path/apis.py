@@ -13,7 +13,7 @@ replies go through exactly the same code as live ones.
 import json
 from pathlib import Path
 
-from . import fires, places, wind
+from . import fires, places, snapshot, wind
 from .net import ApiError
 
 FIRE_SOURCES = fires.SOURCES
@@ -41,6 +41,9 @@ class LiveApi:
     def fires_raw(self, source, lat, lon):
         return fires.fetch_fires_raw(source, lat, lon, self.firms_key)
 
+    def fires_box_raw(self, source, box, days):
+        return fires.fetch_fires_box_raw(source, box, self.firms_key, days)
+
     def fires_available(self):
         return bool(self.firms_key)
 
@@ -56,11 +59,18 @@ class LiveApi:
         return wind.decode_ensemble(self.ensemble_raw(lat, lon, days, past_days))
 
     def places(self, line, timeout):
-        """(places, note or None)."""
-        return places.decode_places(self.places_raw(line, timeout))
+        """(places, note or None): saved snapshot first, live Overpass only outside it."""
+        return places.find_places(line, timeout, self.places_raw, snapshot.get())
 
     def fires(self, source, lat, lon):
         text = self.fires_raw(source, lat, lon)
+        if not fires.looks_like_firms_csv(text):
+            raise ApiError(f"NASA FIRMS {source} did not send fire data")
+        return fires.parse_fires_csv(text, source)
+
+    def fires_box(self, source, box, days):
+        """Every detection from one satellite source in a region box (fire watch)."""
+        text = self.fires_box_raw(source, box, days)
         if not fires.looks_like_firms_csv(text):
             raise ApiError(f"NASA FIRMS {source} did not send fire data")
         return fires.parse_fires_csv(text, source)

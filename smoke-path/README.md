@@ -1,7 +1,18 @@
 # Smoke Path Map (Parali Mitra, Feature 6)
 
-A farmer picks his field on a map and a time he might burn the paddy straw.
-The app shows where the smoke would **likely** travel over the next 24 or 48 hours,
+Farmers who burn do not report it, so the main screen starts from what NASA satellites see.
+
+**Fire watch (first tab).** Every fire NASA satellites saw in and around Punjab and Haryana in the
+last day, where each fire's smoke is likely going, and which villages, towns, schools and hospitals
+it will reach, and roughly when:
+
+* the region summary: how many fires, how many villages, schools and hospitals get smoke, and the
+  most affected places ("Shared Village: smoke from 2 fires, from about 3:30 pm");
+* **"Is smoke coming to my village or school?"**: type a place, or tap any spot on the map;
+* tap a fire for every satellite detail and "Show this fire's smoke in detail".
+
+**What if I burn? (second tab).** A farmer picks his field and a time he might burn the paddy
+straw. The app shows where the smoke would **likely** travel over the next 24 or 48 hours,
 using real wind forecasts:
 
 1. a dashed **path** from the field that follows the forecast wind,
@@ -26,12 +37,15 @@ standard library. The frontend is one HTML file with Leaflet and OpenStreetMap t
 ```
 smoke-path/
   src/smoke_path/
-    app.py          Lambda handler, request checks, 30-minute cache, sample=true
+    app.py          Lambda handler (/smoke and /fires), request checks, 30-minute cache, sample=true
+    firewatch.py    fire watch: NASA fires -> merged fires -> smoke paths -> places reached
     pipeline.py     runs one request: 2 wind calls, band, places + fires in parallel
     wind.py         Open-Meteo forecast + ensemble, wind vectors, time interpolation
     trajectory.py   15-minute RK2 path tracing, refine sites, cone band (puffs)
     ensemble.py     optional ensemble band (ICON-EPS members)
-    places.py       Overpass query, closest point on the path, arrival times
+    places.py       snapshot-first place lookup, Overpass query, closest point, arrival times
+    snapshot.py     the saved copy of OpenStreetMap places around Punjab and Haryana
+    data/places_snapshot.json.gz   that saved copy (made by build_places_snapshot.py)
     fires.py        NASA FIRMS fetch + CSV parsing
     report.py       GeoJSON response + summary text
     apis.py         live / recording / saved-fixture access to the APIs
@@ -43,6 +57,8 @@ smoke-path/
     try_live.py       calls the real APIs once, prints the summary, saves smoke.geojson
     save_fixtures.py  saves real replies into fixtures/ and rebuilds the sample
     local_server.py   serves the handler + map on localhost, no Docker needed
+    build_places_snapshot.py   downloads the places snapshot once (resumable)
+    save_fire_watch_sample.py  saves a real fire watch reply as its sample
   frontend/map.html  the map page
   template.yaml      AWS SAM template
 ```
@@ -65,13 +81,33 @@ smoke-path/
    With `uncertainty=ensemble` the band width comes from 40 ICON-EPS ensemble members instead: each
    hour, radius = 90th percentile distance of the members from their mean position (at least 1 km).
    The band stays centred on the main path (see "Limits" for why); the members are drawn as faint lines.
-5. **Places.** OpenStreetMap (Overpass) finds towns within 15 km, villages within 5 km and schools,
-   colleges, hospitals and clinics within 3 km of the path. For each place we find the closest point
-   on the path, the time the smoke is there, and whether it is inside the band at that time.
+5. **Places.** Towns within 15 km, villages within 5 km and schools, colleges, hospitals and clinics
+   within 3 km of the path, from OpenStreetMap. They come from a **saved copy** shipped with the app
+   (`data/places_snapshot.json.gz`, lat 27.5-33, lon 72.5-78.5: Punjab, Haryana, Delhi, north Rajasthan,
+   south Himachal, Jammu, east Pakistan Punjab), so the lookup takes milliseconds and cannot fail.
+   Only a part of the path that leaves the saved area is sent to the live Overpass API. For each place
+   we find the closest point on the path, the time the smoke is there, and whether it is inside the
+   band at that time.
 6. **Fires.** NASA FIRMS VIIRS detections (S-NPP, NOAA-20, NOAA-21) in about 1° around the field, last day.
    Each fire has the minute the satellite saw it (`acq_date` + `acq_time`, UTC). Tracing a fire
    (`origin=fire`) runs steps 1-5 from the fire's position starting at that time; because that time is
    in the past, the wind request adds Open-Meteo's `past_days` (up to 3 days back).
+
+### Fire watch
+
+1. NASA FIRMS detections from the three VIIRS satellites in the box lat 27.6-32.6, lon 73.8-77.6
+   (Punjab, Haryana and the edges of Rajasthan, Himachal, Delhi, Uttar Pradesh and Pakistan Punjab).
+2. Detections within 1 km and 3 hours of each other are one fire (several satellites, or several
+   pixels of one field). Its position is the FRP-weighted centre; its start time is when it was first seen.
+3. ONE Open-Meteo request gives the 120 m wind on a 0.75° grid (17 × 17 points, lat 24-36,
+   lon 69.75-81.75), including past hours. Wind between grid points is interpolated.
+4. Each fire is traced with the same 15-minute midpoint steps, from the minute it was first seen.
+5. A saved place is "reached" if the path passes within its distance (towns 15 km, villages 5 km,
+   schools and hospitals 3 km) and it is inside the cone band there (1 km + 0.25 km per km). The map
+   checks a tapped spot with the same rule, treating it like a village (5 km).
+
+The overview uses gridded wind, so a fire's overview line can differ a little from its detailed path
+("Show this fire's smoke in detail"), which samples the wind along that fire's own path.
 
 ---
 
@@ -119,13 +155,37 @@ This saves the raw replies in `fixtures/`, rebuilds the demo response from them 
 and copies it to `src/smoke_path/sample_response.json` and into `frontend/map.html`.
 If an API is down during the demo, `?sample=true` (or the map without `?api=`) still works.
 
+## The saved places (Option B)
+
+The public Overpass server is often overloaded (on 9 Oct 2026 it failed in almost every live run), and
+villages do not move, so places are downloaded once and shipped with the Lambda:
+
+```bash
+python3.12 scripts/build_places_snapshot.py               # downloads 132 tiles of 0.5°, resumable
+python3.12 scripts/build_places_snapshot.py --build-only  # rebuild the file from .snapshot_cache/
+```
+
+It fetches tiles nearest Punjab first, waits and retries when the server is busy, and keeps finished
+tiles in `.snapshot_cache/` (git-ignored), so you can stop it and run it again to continue. Tiles that
+never finish are left out; paths that reach them use live Overpass. Re-run it every few months to pick
+up new OpenStreetMap edits.
+
+## Fire watch sample
+
+```bash
+python3.12 scripts/save_fire_watch_sample.py
+```
+
+Saves a real fire watch reply (`fixtures/fire_watch_sample.json`, the Lambda copy, and the map),
+used by `/fires?sample=true` and by the map when it has no `?api=`.
+
 ## Run locally (no Docker)
 
 ```bash
 python3.12 scripts/local_server.py
 ```
 
-* http://127.0.0.1:8000/ is the live map (calls the real APIs through the local server).
+* http://127.0.0.1:8000/ is the live map (fire watch first; calls the real APIs through the local server).
 * http://127.0.0.1:8000/map.html is the saved sample, with no API calls.
 * http://127.0.0.1:8000/smoke?lat=30.245&lon=75.844&hours=24 is the raw GeoJSON.
 
@@ -165,6 +225,18 @@ Later deploys are just `sam build && sam deploy`. To remove everything: `sam del
 ---
 
 ## API
+
+### `GET /fires?hours=24` (fire watch)
+
+`hours` is 1-48 (default 24); `sample=true` returns the saved sample. The reply is a GeoJSON
+FeatureCollection with `kind` = `fire` (one per merged fire: `id`, `seen_at`, `seen_text`,
+`detections`, `frp_max`, `strength`, `satellites`, `confidence`, `near`, `places_reached`, `traced`,
+`details` with every detection), `fire_path` (hourly line with `times` and `km`) and `reached`
+(`name`, `name_local`, `place_type`, `fires`, `first_arrival`, `first_arrival_text`, `arrivals`
+= up to 5 `[fire id, time]`). Top level: `summary`, `stats`, `notes`, `generated_at`, `region`.
+Errors: 503 without a FIRMS key, 502 if NASA FIRMS or the wind forecast fails.
+
+### `GET /smoke` (one smoke path)
 
 `GET /smoke?lat=30.245&lon=75.844&start=2026-10-10T14:00&hours=24&uncertainty=cone`
 
@@ -211,9 +283,11 @@ Settings (Lambda environment variables): `FIRMS_MAP_KEY` (from the `FirmsMapKey`
   ECMWF 100 m: 24 of 48). A band that does not contain its own path would confuse farmers, so only
   the width comes from the ensemble.
 * "In band" uses the distance from the place to the path and the band radius at the arrival time.
-* Places come from the public Overpass server, which is sometimes overloaded (it was on 9 Oct 2026).
-  Then the reply still comes back, with the note "Places unavailable", and the summary says places could
-  not be checked. Set `OverpassUrl` to another Overpass server if the main one stays down.
+* Places come from a saved OpenStreetMap copy (see "The saved places"), so new villages or schools added
+  to OpenStreetMap after the download are missing until it is rebuilt. Outside the saved area the live
+  Overpass server is used; it is sometimes overloaded, and then the reply still comes back with a note
+  and the summary never claims that no place is affected. Set `OverpassUrl` to another Overpass server
+  if the main one stays down.
 * Places come from OpenStreetMap, which is incomplete in rural areas; a missing school is not a safe school.
 * Fires are satellite detections from the last day. Clouds hide fires, and small fires can be missed.
 * A fire's time is when the satellite passed over (VIIRS passes Punjab around 1:30 am and 1:30 pm), not
@@ -222,7 +296,9 @@ Settings (Lambda environment variables): `FIRMS_MAP_KEY` (from the `FirmsMapKey`
 ## Data sources and terms
 
 * Wind: [Open-Meteo](https://open-meteo.com/) (CC BY 4.0, free for non-commercial use).
-* Places: © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors (ODbL), via the
-  [Overpass API](https://overpass-api.de/). Please keep request volumes low.
+* Places: © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, via the
+  [Overpass API](https://overpass-api.de/). The saved copy in `src/smoke_path/data/` and the replies in
+  `fixtures/` are OpenStreetMap data, available under the
+  [Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/).
 * Fires: [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/) VIIRS active fire data (free MAP_KEY).
 * Map tiles: OpenStreetMap (attribution shown on the map).

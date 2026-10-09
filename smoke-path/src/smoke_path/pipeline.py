@@ -54,6 +54,7 @@ class SmokeRequest:
 class Result:
     report: dict
     cacheable: bool  # False when something optional failed for a reason that may pass
+    places_checked: bool = True  # False when places failed or are incomplete
 
 
 def run(
@@ -188,4 +189,4 @@ def run(
         places_checked=places_checked,
         origin=req.origin,
     )
-    return Result(report=doc, cacheable=cacheable)
+    return Result(report=doc, cacheable=cacheable, places_checked=places_checked)

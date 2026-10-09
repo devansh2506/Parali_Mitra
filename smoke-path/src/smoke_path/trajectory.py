@@ -119,3 +119,38 @@ def radius_at(puffs, t):
             f = 0.0 if span <= 0 else (t - a.t).total_seconds() / span
             return a.radius_km + f * (b.radius_km - a.radius_km)
     return puffs[-1].radius_km
+
+
+class WindGrid:
+    """Wind on a regular lat/lon grid (one WindSeries per node), for tracing many fires at once.
+
+    Space: bilinear between the 4 surrounding nodes. Time: linear (WindSeries.at). Points
+    outside the grid use the nearest edge.
+    """
+
+    def __init__(self, south, west, step, rows, cols, series):
+        if rows < 2 or cols < 2 or len(series) != rows * cols:
+            raise ValueError("WindGrid needs rows*cols series and at least 2x2 nodes")
+        self.south, self.west, self.step = south, west, step
+        self.rows, self.cols = rows, cols
+        self.series = series  # row-major: index = r * cols + c
+
+    @staticmethod
+    def points(south, west, step, rows, cols):
+        """Grid node (lat, lon) list in the same row-major order as `series`."""
+        return [(south + r * step, west + c * step) for r in range(rows) for c in range(cols)]
+
+    def at(self, t, lat, lon):
+        y = min(max((lat - self.south) / self.step, 0.0), self.rows - 1)
+        x = min(max((lon - self.west) / self.step, 0.0), self.cols - 1)
+        r0 = min(int(y), self.rows - 2)
+        c0 = min(int(x), self.cols - 2)
+        fy, fx = y - r0, x - c0
+        s = self.series
+        u00, v00 = s[r0 * self.cols + c0].at(t)
+        u01, v01 = s[r0 * self.cols + c0 + 1].at(t)
+        u10, v10 = s[(r0 + 1) * self.cols + c0].at(t)
+        u11, v11 = s[(r0 + 1) * self.cols + c0 + 1].at(t)
+        u = (1 - fy) * ((1 - fx) * u00 + fx * u01) + fy * ((1 - fx) * u10 + fx * u11)
+        v = (1 - fy) * ((1 - fx) * v00 + fx * v01) + fy * ((1 - fx) * v10 + fx * v11)
+        return u, v

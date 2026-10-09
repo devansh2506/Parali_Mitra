@@ -4,6 +4,7 @@
     python3.12 scripts/local_server.py --port 9000
 
 GET /smoke?...   -> turned into an API Gateway (HTTP API v2) event for the handler
+GET /fires?...   -> fire watch, same handler
 GET /map.html    -> frontend/map.html (sample data when there is no ?api=)
 GET /            -> redirects to /map.html?api=/smoke (live, through this server)
 
@@ -49,7 +50,7 @@ def route(method, target):
     """(status, headers, body bytes) for one request. No sockets, so tests can call it."""
     parts = urlsplit(target)
     path = parts.path or "/"
-    if path == "/smoke":
+    if path in ("/smoke", "/fires"):
         resp = lambda_handler(make_event(method, path, parts.query))
         return resp["statusCode"], resp["headers"], resp["body"].encode("utf-8")
     if method not in ("GET", "HEAD"):

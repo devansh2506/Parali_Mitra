@@ -14,3 +14,6 @@ __pycache__/
 
 # Local secrets (never commit)
 .env
+
+# Tile cache of scripts/build_places_snapshot.py
+.snapshot_cache/
