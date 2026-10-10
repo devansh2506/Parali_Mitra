@@ -137,7 +137,7 @@ class FireWatchRunTests(unittest.TestCase):
     def test_one_wind_request_for_all_fires_with_past_hours(self):
         forecasts = [c for c in self.api.calls if c[0] == "forecast"]
         self.assertEqual(len(forecasts), 1)
-        self.assertEqual(len(forecasts[0][1]), 289)
+        self.assertEqual(len(forecasts[0][1]), 529)
         self.assertEqual(self.api.past_days, 1)  # the first fire was seen yesterday
         self.assertEqual(self.api.count("fires_box"), 3)  # one per satellite
 
@@ -164,7 +164,7 @@ class FireWatchRunTests(unittest.TestCase):
         self.assertEqual(
             [line for line in self.doc["summary"] if not line.startswith(("What was burning", "While burning", "Most smoke", "Worst air"))],
             [
-                "NASA satellites saw 2 fires in Delhi, Punjab, Haryana and Rajasthan in the last day (3 satellite detections).",
+                "NASA satellites saw 2 fires in India in the last day (3 satellite detections).",
                 "Their smoke will likely reach 2 villages, 1 town and 1 school or college.",
                 "Shared Village (village): smoke from 2 fires, since about 3:30 pm (9 Oct).",
                 "Big Town (town): smoke from 2 fires, since about 4:30 pm (9 Oct).",
@@ -206,7 +206,7 @@ class SameAnswerAsTheMapTests(unittest.TestCase):
 class FireWatchProblemTests(unittest.TestCase):
     def test_no_fires(self):
         result, api = run(FakeApi(wind=wind(), fires=[]))
-        self.assertEqual(result.report["summary"], ["No fires were seen by NASA satellites in Delhi, Punjab, Haryana and Rajasthan in the last day."])
+        self.assertEqual(result.report["summary"], ["No fires were seen by NASA satellites in India in the last day."])
         self.assertEqual(api.count("forecast"), 0)  # no wind needed
 
     def test_no_key(self):

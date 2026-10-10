@@ -2,7 +2,7 @@
 
 The website has two tabs.
 
-**1. Fires.** Every fire NASA satellites saw in Delhi, Punjab, Haryana and Rajasthan (India only, by state outline) in the last day:
+**1. Fires.** Every fire NASA satellites saw in India (inside its border outline) in the last day:
 
 * **what was burning:** farm, industrial / brick kiln, landfill, built-up area, forest or grass;
 * **its toxicity:** what it gives off per hour while burning (PM2.5, total particles, black carbon,
@@ -40,7 +40,7 @@ smoke-path/
     places.py       snapshot-first place lookup, Overpass query, closest point, arrival times
     snapshot.py     the saved copy of OpenStreetMap places (villages, schools, hospitals around Punjab and
                     Haryana; cities and towns for all of India from data/towns_india.json.gz)
-    region.py       is a point inside Delhi, Punjab, Haryana, Rajasthan or Chandigarh
+    region.py       is a point inside India
     data/places_snapshot.json.gz   that saved copy (made by build_places_snapshot.py)
     fires.py        NASA FIRMS fetch + CSV parsing
     landuse.py      what was burning: land cover, mapped industry, all-year heat sources
@@ -103,9 +103,9 @@ smoke-path/
 
 ### Fire watch
 
-1. NASA FIRMS detections from the three VIIRS satellites in the box lat 24.5-32.6, lon 69.5-78, kept
-   when they are inside Delhi, Punjab, Haryana, Rajasthan or Chandigarh (`data/region.json.gz`, state
-   outlines from OpenStreetMap, `scripts/build_region.py`); fires in Pakistan or other states are dropped.
+1. NASA FIRMS detections from the three VIIRS satellites in the box lat 6-37.5, lon 67-98, kept when
+   they are inside India (`data/region.json.gz`, the outline from OpenStreetMap, `scripts/build_region.py`);
+   fires in Pakistan, Nepal, Bangladesh and the other neighbours are dropped.
    FIRMS counts whole UTC days, so two days are fetched and only the last 24 hours kept.
 2. Detections within 1 km and 3 hours of each other are one fire (several satellites, or several
    pixels of one field). Its position is the FRP-weighted centre; its start time is when it was first seen.
@@ -168,9 +168,9 @@ Example: a 5 MW farm fire burns ~6.6 t of straw an hour and gives off ~41 kg PM2
 ### Air quality
 
 **Forecast (CAMS).** Open-Meteo serves the CAMS global forecast free and without a key: PM2.5, PM10,
-CO, NO2, SO2, ozone and dust, hourly, 0.4° (~45 km). We fetch it for all of India on a 1.2° (~130 km) grid of 27 × 27 points (lat 6-37.2,
-lon 67.2-98.4; Open-Meteo counts each point as a call against its 10,000 a day) from one day back to three days
-ahead, in 4 parallel requests, and reuse it for 3 hours.
+CO, NO2, SO2, ozone and dust, hourly, 0.4° (~45 km). We fetch it for all of India on a 1.5° (~165 km) grid of 22 × 22 points (lat 6-37.5,
+lon 67.2-98.7; Open-Meteo counts each point as a call: 600 a minute, 10,000 a day) from one day back to three days
+ahead, in 3 parallel requests, and reuse it for 6 hours.
 Nothing is added or corrected: the values are CAMS's own.
 
 **Measured (stations).** CPCB's real-time feed on data.gov.in (about 500 stations, hourly, all
@@ -462,7 +462,7 @@ Settings (Lambda environment variables): `FIRMS_MAP_KEY` (from the `FirmsMapKey`
 | Data | Area |
 |---|---|
 | Measured air quality (CPCB / OpenAQ), forecast map | all of India |
-| Fires, what was burning, toxicity, smoke paths | Delhi, Punjab, Haryana, Rajasthan |
+| Fires, what was burning, toxicity, smoke paths | all of India (wind on a 1.5° grid, 529 points) |
 | Land cover for "what was burning" | 100 m around Punjab and Haryana, 450 m for all of India (`landcover_india.bin.gz`, `build_landcover.py --national`) |
-| Factories, kilns, all-year heat sources | Punjab and Haryana only (the all-India versions were not built); elsewhere a fire is labelled from land cover alone |
+| Factories, kilns, all-year heat sources | Punjab and Haryana only (the all-India versions were not built); elsewhere a fire is labelled from land cover alone, so industrial fires there show as farm, built-up or unknown |
 | Villages, schools, hospitals on a smoke path | around Punjab and Haryana; cities and towns elsewhere |

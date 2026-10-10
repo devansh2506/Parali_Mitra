@@ -1,11 +1,10 @@
-"""Fire watch: every fire NASA satellites saw in Delhi, Punjab, Haryana and Rajasthan, where its
-smoke is likely going, and which towns (and, around Punjab and Haryana, villages, schools and
-hospitals) it will reach.
+"""Fire watch: every fire NASA satellites saw in India, where its smoke is likely going, and
+which towns (and, around Punjab and Haryana, villages, schools and hospitals) it will reach.
 
-1. NASA FIRMS detections from the three VIIRS satellites in the region, last day.
+1. NASA FIRMS detections from the three VIIRS satellites over India, last day.
 2. Detections of the same fire (within 1 km and 3 hours of each other) become one fire.
-3. ONE Open-Meteo request gives the wind on a 0.75 degree grid (17 x 17 points) around the
-   region, including the past hours (the fires were seen earlier).
+3. A few Open-Meteo requests give the wind on a 1.5 degree grid (23 x 23 points) over India,
+   including the past hours (the fires were seen earlier).
 4. Each fire is traced from the minute it was first seen, with the same 15-minute midpoint
    steps as the smoke path, using wind interpolated from the grid.
 5. Saved OpenStreetMap places (snapshot.py) near each path are checked: a place is reached
@@ -33,20 +32,20 @@ from .wind import OutsideForecast, forecast_days_needed, past_days_needed, wind_
 
 log = logging.getLogger(__name__)
 
-REGION = "in Delhi, Punjab, Haryana and Rajasthan"
-FIRE_BOX = (24.5, 69.5, 32.6, 78.0)  # south, west, north, east: Rajasthan up to Punjab and Delhi
-GRID = {"south": 24.0, "west": 69.75, "step": 0.75, "rows": 17, "cols": 17}  # 289 wind points
+REGION = "in India"
+FIRE_BOX = (6.0, 67.0, 37.5, 98.0)  # south, west, north, east: all of India (the border outline removes the neighbours)
+GRID = {"south": 5.0, "west": 66.0, "step": 1.5, "rows": 23, "cols": 23}  # 529 wind points (lat 5-38, lon 66-99): under Open-Meteo's 600 a minute
 FIRMS_DAYS = 2  # FIRMS counts whole UTC days: "1" is only today so far, so ask for 2 and keep the last 24 h
 FIRE_WINDOW_H = 24
 CLUSTER_KM = 1.0
 CLUSTER_HOURS = 3
-MAX_FIRES = 2000
+MAX_FIRES = 3000
 MAX_ARRIVALS_PER_PLACE = 5
 TOP_PLACES = 3
 NEAR_TOWN_KM = 25  # to tell apart villages with the same name ("Rampura, near Barnala")
 BUDGET_S = 25
-GRID_TIMEOUT_S = 15  # the 289-point wind reply is ~650 KB, so it gets longer than the usual 8 s
-WIND_TTL_S = 3 * 3600  # reuse the wind grid between fire watch refreshes
+GRID_TIMEOUT_S = 20  # the 529-point wind reply (3 requests in parallel, ~1.2 MB) gets longer than the usual 8 s
+WIND_TTL_S = 6 * 3600  # reuse the wind grid between refreshes (Open-Meteo: 10,000 point-calls a day, 529 per fetch)
 SHIPPED = object()  # "use the places snapshot shipped with the app"
 
 CONFIDENCE_RANK = {"low": 0, "nominal": 1, "high": 2}
@@ -211,7 +210,7 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
     # Only the last FIRE_WINDOW_H hours (FIRMS returned whole UTC days).
     since = (now - timedelta(hours=FIRE_WINDOW_H)).isoformat()
     detections = [d for d in detections if (d.get("seen_at") or "") >= since]
-    outline = region.get()  # leave out fires across the border and in other states
+    outline = region.get()  # leave out fires across the border (Pakistan, Nepal, Bangladesh ...)
     detections = [d for d in detections if region.contains(d["lat"], d["lon"], outline)]
 
     # 2. One fire per cluster of detections, numbered by the time first seen.
@@ -251,7 +250,7 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
         days = max(1, forecast_days_needed(max(starts) + timedelta(hours=req.hours), today))
         points = WindGrid.points(GRID["south"], GRID["west"], GRID["step"], GRID["rows"], GRID["cols"])
         try:
-            # The 289-point grid is kept for WIND_TTL_S (Open-Meteo counts each point as a call).
+            # The 529-point grid is kept for WIND_TTL_S (Open-Meteo counts each point as a call).
             series = air.cached(("wind", level, today.isoformat(), past, days),
                                 lambda: api.forecast(points, days, level, past, timeout=GRID_TIMEOUT_S), WIND_TTL_S, clock)
         except ApiError as err:
@@ -298,7 +297,7 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
             notes.append(f"{_plural(untraced, 'fire')} could not be traced (outside the wind forecast).")
         if snap is not None and snap.towns_all_india and any(not snap.detailed_at(f["lat"], f["lon"]) for f in fires):
             notes.append("Around Punjab and Haryana smoke paths list villages, schools and hospitals; "
-                         "elsewhere (south and west Rajasthan) they list cities and towns only.")
+                         "elsewhere in India they list cities and towns only.")
         if snap is None:
             notes.append("Villages, schools and hospitals could not be checked (no saved places).")
         elif leaves_saved_area:

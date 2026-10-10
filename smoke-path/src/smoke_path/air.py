@@ -1,8 +1,8 @@
 """Predicted air quality: the CAMS forecast exactly as Open-Meteo serves it, as India's AQI.
 
 No model of our own is added: no fire plumes, no station correction. The grid covers
-all of India (lat 6-37.2, lon 67.2-98.4) every 1.2 degrees (729 points; CAMS itself is 0.4
-degrees, and Open-Meteo counts each point as a call against its free daily limit),
+all of India (lat 6-37.5, lon 67.2-98.7) every 1.5 degrees (484 points; CAMS itself is 0.4
+degrees, and Open-Meteo counts each point as a call against its free limits: 600 a minute, 10,000 a day),
 from one day back (for 24 hour averages) to 3 days ahead, and is reused for AQ_TTL_S.
 """
 
@@ -12,10 +12,10 @@ from datetime import timedelta
 from . import airquality
 from .net import ApiError
 
-REGION_GRID = {"south": 6.0, "west": 67.2, "step": 1.2, "rows": 27, "cols": 27}
+REGION_GRID = {"south": 6.0, "west": 67.2, "step": 1.5, "rows": 22, "cols": 22}
 PAST_DAYS = 1
 FORECAST_DAYS = 3
-AQ_TTL_S = 3 * 3600  # CAMS updates twice a day; Open-Meteo counts each grid point as a call
+AQ_TTL_S = 6 * 3600  # CAMS updates twice a day; Open-Meteo counts each grid point as a call
 OVERLAY_STEP_H = 3
 OUTLOOK_HOURS = 48
 

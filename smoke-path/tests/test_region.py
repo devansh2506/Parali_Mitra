@@ -1,4 +1,4 @@
-"""The fire watch keeps only fires inside Delhi, Punjab, Haryana, Rajasthan and Chandigarh."""
+"""The fire watch keeps only fires inside India."""
 
 import unittest
 
@@ -18,7 +18,10 @@ class RegionTests(unittest.TestCase):
         self.assertIsNotNone(r)
         self.assertTrue(region.contains(31.63, 74.87, r))  # Amritsar
         self.assertFalse(region.contains(31.55, 74.34, r))  # Lahore, across the border
-        self.assertFalse(region.contains(31.10, 77.17, r))  # Shimla, another state
+        self.assertTrue(region.contains(31.10, 77.17, r))  # Shimla: another state, still India
+        self.assertTrue(region.contains(34.08, 74.80, r))  # Srinagar
+        self.assertFalse(region.contains(27.70, 85.30, r))  # Kathmandu
+        self.assertFalse(region.contains(23.81, 90.41, r))  # Dhaka
         self.assertTrue(region.contains(28.61, 77.21, r))  # Delhi
         self.assertTrue(region.contains(26.92, 70.90, r))  # Jaisalmer
 

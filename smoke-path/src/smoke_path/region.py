@@ -1,7 +1,7 @@
-"""Is a point inside Delhi, Punjab, Haryana, Rajasthan or Chandigarh (India)?
+"""Is a point inside India?
 
-The outlines are saved by scripts/build_region.py (data/region.json.gz). The fire watch
-uses this to leave out fires across the border and in other states. If the file is
+The outline is saved by scripts/build_region.py (data/region.json.gz). The fire watch
+uses this to leave out fires across the border (Pakistan, Nepal, Bangladesh ...). If the file is
 missing, every point counts as inside (the fire box still limits the area).
 """
 
@@ -14,7 +14,7 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 REGION_PATH = Path(__file__).with_name("data") / "region.json.gz"
-STATES = ("Delhi", "Punjab", "Haryana", "Rajasthan", "Chandigarh")
+AREAS = ("India",)
 
 
 def _inside_ring(lat, lon, ring):
