@@ -238,7 +238,8 @@ textarea.input { min-height: 140px; resize: vertical; line-height: 1.5; }
 .badge-live { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--r-pill); font-size: 12px; font-weight: 600; background: var(--ok-soft); color: var(--ok); white-space: nowrap; }
 .badge-live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: pulse-dot 2s infinite; }
 .badge-live.sample { background: var(--warn-soft); color: var(--warn); }
-.badge-live.sample::before { animation: none; }
+.badge-live.sample::before, .badge-live.mixed::before { animation: none; }
+.badge-live.mixed { background: var(--info-soft); color: var(--info); }
 .sidebar { position: sticky; top: var(--topbar-h); align-self: start; height: calc(100dvh - var(--topbar-h)); padding: var(--s4) var(--s3); border-right: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; gap: 2px; overflow: auto; }
 .nav-link { display: flex; align-items: center; gap: var(--s3); min-height: 44px; padding: 0 var(--s3); border-radius: var(--r2); color: var(--muted); font-weight: 600; text-decoration: none; position: relative; }
 .nav-link:hover { background: var(--raised); color: var(--ink); }

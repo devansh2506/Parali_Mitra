@@ -5,7 +5,28 @@
   "use strict";
   var U = PM.U;
   var SAMPLE = function () { return window.PM_SAMPLE || {}; };
-  var state = { mode: PM.config.live ? "live" : "sample", fell: null, cache: {}, model: null, updated: null };
+  // src = where each kind of data really came from: {kind: "live" | "sample", at: when the data was made (ms), why: text if it fell back}
+  var state = { mode: PM.config.live ? "live" : "sample", fell: null, cache: {}, model: null, updated: null, src: {} };
+  function mark(name, kind, doc, why) {
+    var at = doc && Date.parse(doc.generated_at);
+    state.src[name] = { kind: kind, at: isNaN(at) ? null : at, why: why || "" };
+    if (PM.updateBadge) PM.updateBadge();
+  }
+  /** Ask the server; if it cannot be reached, use the saved sample and remember that, so the badge tells the truth. */
+  async function liveOrSample(name, path) {
+    var sample = SAMPLE()[name];
+    if (state.mode === "live") {
+      try { var doc = await request("GET", path); mark(name, "live", doc); return doc; }
+      catch (e) {
+        if (!sample) throw e;
+        mark(name, "sample", sample, e.message);
+        return sample;
+      }
+    }
+    if (!sample) throw new Error("No saved sample is available.");
+    mark(name, "sample", sample);
+    return sample;
+  }
   var TTL = { fires: 10 * 60e3, stations: 10 * 60e3, forecast: 30 * 60e3 };
 
   function authHeaders() {
@@ -97,9 +118,18 @@
     fellBack: function () { return state.fell; },
     /** {kind: 'live'|'sample', text}: what to show in the corner badge. */
     badge: function () {
-      if (state.mode === "live") return { kind: "live", text: PM.t("badge.live", { time: state.updated ? U.clock(state.updated) : "…" }) };
-      var gen = state.model ? state.model.generated : null;
-      return { kind: "sample", text: PM.t("badge.sample", { time: gen ? U.when(gen, gen) : "" }) };
+      var names = Object.keys(state.src), live = names.filter(function (n) { return state.src[n].kind === "live"; });
+      var fires = state.src.fires, sample = SAMPLE().fires;
+      var at = (fires && fires.at) || (names.map(function (n) { return state.src[n].at; }).filter(Boolean).sort()[0]) || null;
+      var lines = names.map(function (n) {
+        var x = state.src[n], when = x.at ? U.when(x.at, x.at) : "";
+        return PM.t("badge.src_" + n) + ": " + (x.kind === "live" ? PM.t("badge.src_live", { time: when }) : PM.t("badge.src_sample", { time: when })) + (x.why ? " (" + x.why + ")" : "");
+      });
+      var title = lines.join("\n");
+      if (names.length && live.length === names.length) return { kind: "live", title: title, text: PM.t("badge.live", { time: at ? U.clock(at) : "…" }) };
+      if (live.length) return { kind: "mixed", title: title, text: PM.t("badge.mixed") };
+      var gen = at || (sample && Date.parse(sample.generated_at)) || null;
+      return { kind: "sample", title: title, text: PM.t("badge.sample", { time: gen ? U.when(gen, gen) : "" }) };
     },
 
     fires: function () {
@@ -112,8 +142,12 @@
             state.mode = "sample"; state.fell = e.message;  // the whole app now shows the saved sample, and says so
           }
         }
-        if (!doc) doc = SAMPLE().fires;
-        if (!doc) throw new Error("No saved sample is available.");
+        if (doc) mark("fires", "live", doc);
+        else {
+          doc = SAMPLE().fires;
+          if (!doc) throw new Error("No saved sample is available.");
+          mark("fires", "sample", doc, state.fell);
+        }
         state.model = buildModel(doc);
         if (state.mode === "sample") PM.setSampleNow(state.model.nowMs);
         if (PM.updateBadge) PM.updateBadge();
@@ -121,24 +155,18 @@
       });
     },
     stations: function () {
-      return cached("stations", async function () {
-        if (state.mode === "live") return request("GET", "/stations");
-        if (!SAMPLE().stations) throw new Error("No saved sample is available.");
-        return SAMPLE().stations;
-      });
+      return cached("stations", function () { return liveOrSample("stations", "/stations"); });
     },
     forecast: function () {
-      return cached("forecast", async function () {
-        if (state.mode === "live") return request("GET", "/forecast");
-        if (!SAMPLE().forecast) throw new Error("No saved sample is available.");
-        return SAMPLE().forecast;
-      });
+      return cached("forecast", function () { return liveOrSample("forecast", "/forecast"); });
     },
     /** The 48 hour outlook at a spot: [{t (ms), aqi, ...}]. From the server, or read off the saved forecast grid. */
     spot: async function (lat, lon) {
       if (state.mode === "live") {
-        var d = await request("GET", "/air?lat=" + lat.toFixed(4) + "&lon=" + lon.toFixed(4));
-        return { outlook: (d.outlook || []).map(function (o) { return Object.assign({}, o, { ms: Date.parse(o.t) }); }), source: d.source, approx: false };
+        try {
+          var d = await request("GET", "/air?lat=" + lat.toFixed(4) + "&lon=" + lon.toFixed(4));
+          return { outlook: (d.outlook || []).map(function (o) { return Object.assign({}, o, { ms: Date.parse(o.t) }); }), source: d.source, approx: false };
+        } catch (e) { /* fall through to the forecast map below, which says whether it is live or saved */ }
       }
       var g = await api.forecast();
       return { outlook: PM.gridOutlook(g, lat, lon), source: g.source, approx: true };

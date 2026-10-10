@@ -166,7 +166,7 @@
     var s = PM.api.badge();
     b.className = "badge-live " + s.kind;
     b.textContent = s.text;
-    b.title = PM.api.fellBack() ? t("badge.fell", { why: PM.api.fellBack() }) : "";
+    b.title = (PM.api.fellBack() ? t("badge.fell", { why: PM.api.fellBack() }) + "\n" : "") + (s.title || "");
   }
   setInterval(updateBadge, 30000);
   PM.updateBadge = updateBadge;
