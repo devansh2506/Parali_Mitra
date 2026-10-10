@@ -110,7 +110,7 @@
     appEl.innerHTML = '<div class="shell"><header class="topbar"><a class="brand" href="#/' + (role === "authority" ? "authority/dashboard" : "citizen/home") + '"><span class="mark">' + U.icon("flame") + "</span><span>" + esc(t("app.name")) + "</span></a>" +
       (role === "citizen" ? '<a class="chip place-chip hide-sm" href="#/citizen/setup" aria-label="' + esc(t("cz.change_area")) + '">' + U.icon("pin", "sm") + '<span class="truncate">' + esc(home ? home.name : t("cz.pick_area")) + "</span></a>"
         : '<span class="pill hide-sm">' + U.icon("shield", "sm") + esc(t("role.authority_label")) + "</span>") +
-      '<span class="grow"></span><span class="badge-live" data-badge></span>' +
+      '<span class="grow"></span><span class="now-clock hide-sm" data-clock title="' + esc(t("badge.now_title")) + '"></span><span class="badge-live" data-badge></span>' +
       (role === "citizen" ? '<div class="seg" role="group" aria-label="Language"><button data-lang="en" aria-pressed="' + (PM.store.lang() === "en") + '">EN</button><button data-lang="hi" aria-pressed="' + (PM.store.lang() === "hi") + '">हि</button></div>' : "") +
       '<button class="btn ghost icon-only" data-theme aria-label="' + esc(t("btn.theme")) + '">' + U.icon(PM.store.theme(role) === "dark" ? "sun" : "moon") + "</button>" +
       (role === "citizen" ? '<a class="btn ghost icon-only bell" href="#/citizen/alerts" aria-label="' + esc(t("nav.alerts")) + '">' + U.icon("bell") + '<span class="nav-count" data-unread hidden></span></a>' : "") +
@@ -160,7 +160,12 @@
   PM.on("home", function () { shellRole = null; });  // the chip in the top bar shows the area
   PM.on("alerts", function () { refreshBell(); });
 
+  function updateClock() {
+    var c = U.$("[data-clock]");
+    if (c) c.textContent = U.dayText(Date.now()) + ", " + U.clock(Date.now() - 30000, 60000) + " IST";  // the real time, whatever data is shown
+  }
   function updateBadge() {
+    updateClock();
     var b = U.$("[data-badge]");
     if (!b) return;
     var s = PM.api.badge();
@@ -168,7 +173,7 @@
     b.textContent = s.text;
     b.title = (PM.api.fellBack() ? t("badge.fell", { why: PM.api.fellBack() }) + "\n" : "") + (s.title || "");
   }
-  setInterval(updateBadge, 30000);
+  setInterval(updateBadge, 15000);
   PM.updateBadge = updateBadge;
 
   /** Number of alerts the citizen has not opened. */

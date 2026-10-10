@@ -6,7 +6,7 @@
   var EN = {
     "app.name": "Parali Mitra",
     "app.aws": "Built for AWS: Lambda, API Gateway, DynamoDB. Amazon Cognito sign-in and SNS email are prepared, off by default.",
-    "badge.live": "Live · data from {time}", "badge.mixed": "Part live, part saved",
+    "badge.live": "Live · data from {time}", "badge.mixed": "Part live, part saved", "badge.now_title": "The time right now in India. The badge next to it says how old the data is.",
     "badge.src_fires": "Fires", "badge.src_stations": "Air stations", "badge.src_forecast": "Forecast",
     "badge.src_live": "live, data from {time}", "badge.src_sample": "saved sample from {time}",
     "badge.sample": "Saved sample · {time}",
@@ -113,7 +113,7 @@
 
   var HI = {
     "app.name": "पराली मित्र",
-    "badge.live": "लाइव · {time} का डेटा", "badge.mixed": "कुछ लाइव, कुछ सहेजा हुआ",
+    "badge.live": "लाइव · {time} का डेटा", "badge.mixed": "कुछ लाइव, कुछ सहेजा हुआ", "badge.now_title": "भारत में अभी का समय। उसके पास का बैज बताता है कि डेटा कितना पुराना है।",
     "badge.src_fires": "आग", "badge.src_stations": "हवा स्टेशन", "badge.src_forecast": "पूर्वानुमान",
     "badge.src_live": "लाइव, {time} का डेटा", "badge.src_sample": "{time} का सहेजा नमूना", "badge.sample": "सहेजा हुआ नमूना · {time}",
     "rel.in": "{x} में", "rel.ago": "{x} पहले",
