@@ -220,12 +220,12 @@ class StationTests(unittest.TestCase):
         self.assertEqual(row["pollutants"]["co"]["avg"], 1.5)  # CPCB feed shape: CO in mg/m³
         self.assertEqual(row["pollutants"]["no2"]["avg"], 40)
 
-    def test_late_readings_up_to_three_days(self):
+    def test_late_readings_up_to_five_days(self):
         loc = stations.parse_locations(self.locations(), self.NOW)[0]
         two_days = {"results": [{"datetime": {"utc": "2026-10-07T12:00:00Z"}, "value": 70, "sensorsId": 11}]}
-        four_days = {"results": [{"datetime": {"utc": "2026-10-05T12:00:00Z"}, "value": 70, "sensorsId": 11}]}
+        four_days = {"results": [{"datetime": {"utc": "2026-10-02T12:00:00Z"}, "value": 70, "sensorsId": 11}]}
         self.assertEqual(stations.parse_latest(two_days, loc, self.NOW)["pm2_5"], 70.0)  # OpenAQ's CPCB copy lags ~2 days
-        self.assertIsNone(stations.parse_latest(four_days, loc, self.NOW))
+        self.assertIsNone(stations.parse_latest(four_days, loc, self.NOW))  # older than 5 days: not used
 
     def test_key_is_never_shown(self):
         from unittest import mock

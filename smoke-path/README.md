@@ -302,7 +302,7 @@ Nothing is added or corrected: the values are CAMS's own.
 
 **Measured (stations).** CPCB's real-time feed on data.gov.in (about 500 stations, hourly, all
 pollutants, each with CPCB's own averages). Without a data.gov.in key, or when it is down, OpenAQ is
-used instead: PM2.5, PM10, NO2, SO2, CO and ozone (no NH3), often ~2 days late, so the AQI is marked indicative and every
+used instead: PM2.5, PM10, NO2, SO2, CO and ozone (no NH3), often 2-4 days late, so the AQI is marked indicative and every
 reading shows its age.
 
 **India's AQI (CPCB).** Each pollutant gets a sub-index from CPCB's breakpoints (24 hour averages for
@@ -541,7 +541,7 @@ Settings (Lambda environment variables): `FIRMS_MAP_KEY` (from the `FirmsMapKey`
   Industrial fires are not estimated (the factors are for burning vegetation).
 * The forecast is CAMS's (~45 km cells, so it cannot see one village next to one field). CAMS
   sometimes forecasts strong desert dust over Punjab, Haryana and Rajasthan; the page says so.
-* Measured values come from CPCB stations; through OpenAQ they are often ~2 days late (shown).
+* Measured values come from CPCB stations; through OpenAQ they are often 2-4 days late (shown).
 * Fire type: land cover is from 2021 and judged within 400 m; OpenStreetMap misses many brick kilns;
   a field next to a kiln can be labelled either way (the confidence says so).
 * It uses one height (120 m). Real smoke spreads across many heights with different winds.

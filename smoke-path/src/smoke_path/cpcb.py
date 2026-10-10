@@ -195,7 +195,12 @@ def live(now=None):
     if not oa_key:
         raise ApiError("No live station source: add DATA_GOV_IN_API_KEY (or OPENAQ_API_KEY).")
     found = openaq_fallback(oa_key, now)
-    doc = summarise(found, now, "OpenAQ (fallback; CPCB readings arrive there about 2 days late)", indicative=True)
+    doc = summarise(found, now, "OpenAQ (fallback; CPCB readings arrive there days late)", indicative=True)
+    ages = sorted((now - (r["updated"] if isinstance(r["updated"], datetime) else datetime.fromisoformat(r["updated"]))).total_seconds() / 3600
+                  for r in found if r.get("updated"))
+    if ages:
+        notes.append(f"These OpenAQ readings are {ages[len(ages) // 2]:.0f} hours old (middle value; the oldest is {ages[-1]:.0f} hours). "
+                     "The live CPCB feed gives current values when it can be reached.")
     notes.append("Showing OpenAQ readings instead (PM2.5, PM10, NO2, SO2, CO and ozone where a station has them; no NH3), "
                  "and each reading's age is shown. "
                  "AQI from these is indicative (one reading, not CPCB's 24 hour average).")
