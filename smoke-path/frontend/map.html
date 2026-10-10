@@ -374,7 +374,6 @@
 
   // ---- settings ---------------------------------------------------------------------
   var REGION_BOX = [[24.5, 69.5], [32.6, 78.0]];
-  var SENSITIVE = { school: 1, college: 1, hospital: 1, clinic: 1 };
   var REACH_KM = { city: 15, town: 15, village: 5, school: 3, college: 3, hospital: 3, clinic: 3 };  // same rule as the server
   var KM_PER_DEG = 111.32;
   var IST_MS = 5.5 * 3600 * 1000;
@@ -601,17 +600,6 @@
       '<button type="button" class="ctlbtn" data-scroll="fireDetail" style="margin-top:8px;width:100%;justify-content:center">Full details ↓</button></div>';
   }
 
-  function placePopup(p) {
-    var lines = (p.arrivals || []).map(function (a) {
-      var f = fires[a[0]] || {};
-      return "<li>Fire " + esc(a[0]) + (f.near ? " near " + esc(f.near) : "") + ": " + esc(whenText(Date.parse(a[1]), watchNow)) + "</li>";
-    }).join("");
-    var more = p.fires > (p.arrivals || []).length ? "<li>… and " + (p.fires - p.arrivals.length) + " more</li>" : "";
-    return '<div class="pop"><div class="pt">' + esc(p.name) + "</div>" + (p.name_local ? '<div class="muted small">' + esc(p.name_local) + "</div>" : "") +
-      '<div class="small">' + esc(p.place_type) + (p.near_town ? " near " + esc(p.near_town) : "") + " · smoke from " + plural(p.fires, "fire") + "</div>" +
-      '<ul style="margin:6px 0 0;padding-left:1.1em">' + lines + more + "</ul></div>";
-  }
-
   // Same rule as the server: the path passes within the place's distance AND the place is inside
   // the band (1 km + 0.25 km per km travelled) where the smoke is closest.
   function reaches(path, lat, lon, maxKm) {
@@ -631,7 +619,7 @@
     return { t: t0 + best.f * (t1 - t0) };
   }
 
-  // A picked fire: its path drawn bold, the places on it, and its full details under the map.
+  // A picked fire: its path drawn bold, and its full details (with the places on the path) under the map.
   function pickFire(id, openPopup) {
     pickLayer.clearLayers();
     pickedId = id;
@@ -645,12 +633,7 @@
         var hit = reaches(path, ll[0], ll[1], REACH_KM[q.place_type] || 5);
         if (!hit) return;
         onPath.push({ name: q.name, type: q.place_type, t: hit.t });
-        var sensitive = !!SENSITIVE[q.place_type];
-        L.circleMarker(ll, {
-          radius: sensitive ? 6 : 4.5, color: sensitive ? "#2563eb" : "#ffffff", weight: sensitive ? 2.5 : 1.2,
-          fillColor: "#7f1d1d", fillOpacity: 0.95
-        }).addTo(pickLayer).bindPopup(placePopup(q), { maxWidth: 300 }).bindTooltip(esc(q.name));
-        count++;
+        count++;  // places are listed in the fire's details, not drawn as dots (they clutter the map)
       });
     }
     if (p) {
