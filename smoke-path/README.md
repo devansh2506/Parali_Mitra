@@ -73,6 +73,133 @@ smoke-path/
 
 ---
 
+## How the data flows, start to finish (plain English)
+
+### 1. The big picture
+
+The app answers three questions:
+1. Where are fires burning right now?
+2. Where will their smoke go?
+3. How bad is the air, now and for the next 2 days?
+
+Each question has its own data source. The app never creates data. It collects it, does some arithmetic, and draws it.
+
+### 2. Fires
+
+**Where it comes from:** NASA satellites (the "VIIRS" instruments) look for heat from space. NASA publishes every hot spot through a service called FIRMS. We ask it for India's hot spots.
+
+**What we get for each hot spot:**
+- exact location
+- the time the satellite saw it
+- how strong the heat is, called "fire radiative power" (FRP)
+- how sure the satellite is that it's a real fire
+
+**Timeline:**
+- Satellites pass over a few times a day, and NASA posts each pass about 3 hours later. So a fire is never "live" to the second.
+- We ask for the last 2 days, then keep only the last 24 hours. NASA counts whole calendar days, so asking for "1 day" returned nothing.
+- Hot spots outside India's border are dropped.
+- The server remembers the result for a short while, and the web page also remembers it for a few minutes. This keeps the calls to NASA low.
+
+**Which state and nearest town:** we compare the fire's location against a state-boundary file and a list of towns that ships with the app.
+
+**What was burning:** a satellite only sees heat, not the cause. We guess the cause from the ground under the fire, checking these in order:
+1. **A known permanent heat source** such as a kiln or factory. This is only possible around Delhi, Punjab and Haryana, because that's the only place we have factory data.
+2. **Industry mapped on OpenStreetMap**, also only in that same area.
+3. **Land cover** from the European Space Agency's satellite map, which says whether the ground is farmland, forest, grassland or built-up. We look at it at about 100 m detail in Punjab and Haryana, and about 450 m for the rest of India.
+
+This is why a factory fire in, say, Gujarat shows up as "farm", "built-up" or "unknown". The app says this on the Factory chip with the "*" note. The result is labelled with a reason and a confidence.
+
+### 3. How "toxic" a fire is
+
+This is arithmetic, not machine learning.
+1. The fire's heat strength tells us roughly how much plant material is burning per hour. We use a standard science formula: 0.368 kg per megajoule.
+2. Each kind of burning (crop, grass, forest) releases known amounts of smoke particles and gases per kilo burned. We use published tables for these.
+3. We then ask how much clean air that smoke would spoil per hour. The answer is shown in cubic kilometres of air per hour, then grouped into Low, Moderate, High and Very high.
+
+Factory and landfill fires are not estimated, because those tables don't apply to them. The app shows "Not estimated" for them.
+
+This number is a comparison between fires. It is not a prediction of the air quality at your house.
+
+### 4. Wind
+
+**Where it comes from:** Open-Meteo, a free weather service.
+
+**What we get:** wind speed and direction, on a grid of points about 165 km apart covering all of India. That's roughly 530 points. The data includes both the recent past and the next few days.
+
+**Timeline:** it's refreshed every 6 hours. The free service has daily and per-minute limits, so we fetch the points in chunks and cache them.
+
+### 5. How the smoke path is made
+
+Think of dropping a leaf into a river at the fire and watching where it goes.
+1. Start at the fire's location.
+2. Look up the wind at that spot and time, blending the nearby grid points.
+3. Move the "leaf" in the direction of the wind, for one hour's worth of distance.
+4. Repeat hour after hour. Walking backwards in time with the past wind shows where the smoke already went. Walking forward with the forecast shows where it's heading.
+5. The result is a line with a timestamp at each step. That's the line you see on the map, with the clock ticks along it.
+
+**Which places the smoke reaches:** we check which places lie within a few kilometres of that line, and note the time the line passes them. This gives "smoke reaches Bisoi at about 9 pm".
+
+Places are listed by type:
+- Cities and towns are listed for all of India.
+- Villages, schools and hospitals are only listed for the north-west (Punjab and Haryana), because that's the only region where we downloaded them.
+- They are listed but not drawn as dots, to keep the map clean.
+
+Honest limit: this is a simple wind-carry line. It doesn't model smoke spreading out, rising, or thinning. It tells you the direction and timing, not how thick the smoke will be.
+
+### 6. Air quality
+
+#### Measured now
+- **Source:** the government's CPCB stations, through data.gov.in. If that fails, we fall back to OpenAQ.
+- **Caveat 1:** the author's network can't reach the data.gov.in server, so the CPCB route was not tested. The code for it is unverified.
+- **Caveat 2:** the OpenAQ readings in the saved sample were about 2–3 days old, and the app says so.
+- **What we get per station:** PM2.5, PM10, NO₂, SO₂, ozone and CO (some stations lack some of these).
+- **AQI:** we calculate it ourselves with the official Indian formula. Each pollutant gets its own score, and the **worst score is the AQI**. The pollutant that gave it is shown as the "main pollutant". The colours are the official CPCB colours.
+
+#### Forecast for 48 hours
+- **Source:** the CAMS atmosphere model (a European air-quality forecast), through Open-Meteo.
+- **Detail:** it's a coarse grid, about 165 km apart in our setup. We smooth between the points so the map looks like a gradient rather than squares.
+- **Refresh:** every 6 hours.
+- **Limits:** it can't see a single village's stubble fire. It sometimes shows very high values when there's desert dust. Bathinda can hit 500 ("Severe"), and we don't cap that.
+- **No fire adjustment:** the earlier model that added fire smoke on top was removed. So the forecast and the fires are two separate views.
+
+### 7. Alerts and cases
+
+1. An authority picks a fire, chooses who to warn (farmer, factory owner, municipal body), and edits the English or Hindi message.
+2. They can also alert the people on the smoke path.
+3. Each fire becomes a **case** with a status (new, warning sent, acknowledged, resolved, dismissed) and a timeline.
+4. A citizen sees an alert if it's within about 15 km of their saved home.
+5. In **demo mode** all of this is saved in your browser, and the button says "Sent (demo)". Nobody is really contacted, and the demo contacts are obviously fake.
+6. In **live mode** it goes to the server's store. On AWS that would be DynamoDB, with optional email by SNS. That's prepared in the template but not deployed.
+
+### 8. How it's shown
+
+- **Demo mode** (the page opened without `?api=`): uses saved samples that ship with the app. It works offline, and the clock is frozen at the time the sample was taken. The badge says "Saved sample".
+- **Live mode:** the page asks the server, which fetches fresh data. The badge says "Live". If fires can't be fetched, it falls back to the sample and says so.
+- **Map dots:**
+  - Fire dot size shows how toxic the fire is.
+  - Colour is the toxicity level, or the fire type once you pick a type chip.
+  - The chips are one-at-a-time, so you only see the fires that type stands for.
+- **Smoke path:** the line with time ticks, animated when you open a fire.
+- **Forecast:** the smooth coloured gradient.
+- **Citizen home:** nearest station's AQI and pollutants, a 48-hour strip, health advice, and "smoke coming" if a path will pass your home.
+
+### 9. A quick timeline
+
+| Data | How fresh | Refreshed |
+|---|---|---|
+| Fires | 3 hours behind the satellite pass | every few minutes on screen, about half an hour on the server |
+| Wind | recent past plus the next few days | every 6 hours |
+| AQI forecast | next 48 hours | every 6 hours |
+| Measured AQI | live if CPCB works, otherwise about 2–3 days old (OpenAQ) | every 10 minutes on screen |
+| Towns, land cover, states | shipped with the app | only when rebuilt |
+
+### 10. What's real and what isn't
+
+- **Real, computed:** fire locations, wind, the AQI calculation, the path, the toxicity arithmetic.
+- **Estimated:** fire type (a guess from the ground) and the toxicity number.
+- **Not tested:** the CPCB feed, and anything on AWS (Cognito, DynamoDB, SNS), because none of it is deployed.
+- **Demo only:** contacts, "Sent (demo)" alerts, and the 10 Oct sample story (Bisoi and Jharkhand/Odisha fires, because that sample has no Punjab fires).
+
 ## How the model works
 
 1. **Wind.** Open-Meteo gives hourly wind speed and direction at 120 m above ground
@@ -535,3 +662,16 @@ API address could send alerts. Use that only for a private demo.
 
 AWS services used: Lambda, API Gateway (HTTP API), DynamoDB. Prepared and off by default: Cognito, SNS.
 `template.yaml` was checked for YAML syntax and references only; `sam validate` was not available here.
+
+## Put the website on Vercel (demo mode, free)
+
+The website in `frontend/` is plain files with no build step, so Vercel can host it as is. Opened without `?api=`, it runs in **demo mode** on the saved samples and needs no server and no keys. The badge says "Saved sample". Live data needs the backend (AWS Lambda, see "Deploy to AWS"), which Vercel does not run.
+
+1. Go to https://vercel.com/new and sign in with GitHub.
+2. Import the `Parali_Mitra` repository.
+3. Set **Root Directory** to `smoke-path/frontend`.
+4. Set **Framework Preset** to `Other`. Leave Build Command and Output Directory empty.
+5. Click **Deploy**. Do not add any environment variables; the website needs none.
+6. Open the `.vercel.app` link. To use it as the production site, make sure `main` is the Production Branch under Settings, Git.
+
+To show live data later, deploy the backend to AWS, then open `https://<your-site>.vercel.app/?api=<ApiBaseUrl>`. Never put the FIRMS, OpenAQ or data.gov.in keys on Vercel or in the website; they belong only in the AWS Lambda environment.
