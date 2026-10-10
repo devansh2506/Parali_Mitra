@@ -1,9 +1,10 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >-
-  Parali Mitra, Feature 6 (Smoke Path Map). GET /smoke returns the likely smoke
-  path from a field as GeoJSON, using Open-Meteo wind forecasts, OpenStreetMap
-  places and NASA FIRMS fires. A simple wind model, not a dispersion model.
+  Parali Mitra (Feature 6): fires, smoke paths and air quality for India, with alerts and cases for
+  authorities. API Gateway HTTP API + one Lambda (Python 3.12) + DynamoDB. Amazon Cognito sign-in and
+  SNS email are optional and OFF by default (see the parameters). Not deployed by Claude: you run
+  `sam deploy` yourself (see README, "Deploy it yourself").
 
 Parameters:
   FirmsMapKey:
@@ -30,30 +31,190 @@ Parameters:
     Type: String
     Default: https://overpass-api.de/api/interpreter
     Description: Overpass API endpoint for places. Change only if the main server is down.
+  EnableAuth:
+    Type: String
+    Default: "false"
+    AllowedValues: ["true", "false"]
+    Description: >-
+      "true" creates an Amazon Cognito user pool (groups citizen and authority) and makes POST /alerts, GET /activity,
+      GET /cases and PATCH /cases/{id} require a signed-in authority. "false" (default) leaves those routes OPEN:
+      anyone with the URL could send alerts. Use "false" only for a private demo.
+  CognitoDomainPrefix:
+    Type: String
+    Default: ""
+    Description: >-
+      Only with EnableAuth=true. A globally unique word for the sign-in page address
+      (<prefix>.auth.<region>.amazoncognito.com), for example parali-mitra-yourname.
+  AppUrl:
+    Type: String
+    Default: http://localhost:8000/index.html
+    Description: >-
+      Only with EnableAuth=true. Where the web app is served (Cognito sends people back here after sign-in).
+      It must be https, except for localhost. Add your CloudFront or S3 address when you host the app.
+  EnableEmail:
+    Type: String
+    Default: "false"
+    AllowedValues: ["true", "false"]
+    Description: >-
+      "true" also emails every alert through Amazon SNS (to AlertsEmail). SMS is not used: sending SMS in India needs
+      DLT registration. The in-app inbox is always the main channel.
+  AlertsEmail:
+    Type: String
+    Default: ""
+    Description: Only with EnableEmail=true. An address that receives a copy of every alert (it must confirm the SNS subscription).
+
+Rules:
+  AuthNeedsADomain:
+    RuleCondition: !Equals [!Ref EnableAuth, "true"]
+    Assertions:
+      - Assert: !Not [!Equals [!Ref CognitoDomainPrefix, ""]]
+        AssertDescription: Set CognitoDomainPrefix (a unique word) when EnableAuth is true.
+
+Conditions:
+  UseAuth: !Equals [!Ref EnableAuth, "true"]
+  NoAuth: !Equals [!Ref EnableAuth, "false"]
+  UseEmail: !Equals [!Ref EnableEmail, "true"]
+  HasAlertsEmail: !And
+    - !Equals [!Ref EnableEmail, "true"]
+    - !Not [!Equals [!Ref AlertsEmail, ""]]
 
 Resources:
   SmokeApi:
     Type: AWS::Serverless::HttpApi
     Properties:
-      Description: Parali Mitra smoke path API
+      Description: Parali Mitra API
       CorsConfiguration:
         AllowOrigins:
           - "*"
         AllowMethods:
           - GET
+          - POST
+          - PATCH
           - OPTIONS
         AllowHeaders:
           - Content-Type
+          - Authorization
         MaxAge: 600
       DefaultRouteSettings:
         # Protects the free upstream APIs (and your FIRMS key quota) from floods.
         ThrottlingBurstLimit: 20
         ThrottlingRateLimit: 5
 
+  # ---- storage: alerts and cases (on-demand billing, nothing to size) ---------------------------------------
+  AlertsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      SSESpecification:
+        SSEEnabled: true
+
+  # ---- optional: email copy of alerts ---------------------------------------------------------------------------
+  AlertsTopic:
+    Type: AWS::SNS::Topic
+    Condition: UseEmail
+    Properties:
+      DisplayName: Parali Mitra alerts
+
+  AlertsSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasAlertsEmail
+    Properties:
+      TopicArn: !Ref AlertsTopic
+      Protocol: email
+      Endpoint: !Ref AlertsEmail
+
+  # ---- optional: sign-in with Amazon Cognito -----------------------------------------------------------------------
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Condition: UseAuth
+    Properties:
+      UserPoolName: parali-mitra
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 10
+          RequireLowercase: true
+          RequireUppercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Condition: UseAuth
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: parali-mitra-web
+      GenerateSecret: false
+      SupportedIdentityProviders:
+        - COGNITO
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - implicit
+      AllowedOAuthScopes:
+        - openid
+        - email
+      CallbackURLs:
+        - !Ref AppUrl
+      LogoutURLs:
+        - !Ref AppUrl
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Condition: UseAuth
+    Properties:
+      UserPoolId: !Ref UserPool
+      Domain: !Ref CognitoDomainPrefix
+
+  CitizenGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Condition: UseAuth
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: citizen
+      Description: People who read alerts
+
+  AuthorityGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Condition: UseAuth
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: authority
+      Description: Officers who may warn sources, send alerts and manage cases
+
+  JwtAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Condition: UseAuth
+    Properties:
+      ApiId: !Ref SmokeApi
+      AuthorizerType: JWT
+      Name: cognito
+      IdentitySource:
+        - $request.header.Authorization
+      JwtConfiguration:
+        Audience:
+          - !Ref UserPoolClient
+        Issuer: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
+
+  # ---- the function ---------------------------------------------------------------------------------------------------
   SmokePathFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Description: Likely smoke path from a burning field (Parali Mitra feature 6)
+      Description: "Parali Mitra: fires, smoke paths, air quality, alerts and cases"
       CodeUri: src/
       Handler: smoke_path.app.lambda_handler
       Runtime: python3.12
@@ -61,6 +222,14 @@ Resources:
         - arm64
       Timeout: 29
       MemorySize: 256
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AlertsTable
+        - !If
+          - UseEmail
+          - SNSPublishMessagePolicy:
+              TopicName: !GetAtt AlertsTopic.TopicName
+          - !Ref AWS::NoValue
       Environment:
         Variables:
           # API key consumed by smoke_path/fires.py (NASA FIRMS). Comes from the NoEcho parameter.
@@ -71,6 +240,10 @@ Resources:
           DATA_GOV_IN_API_KEY: !Ref DataGovInApiKey
           WIND_LEVEL: !Ref WindLevel
           OVERPASS_URL: !Ref OverpassUrl
+          ALERTS_TABLE: !Ref AlertsTable
+          # "true": the code checks that the caller is in the Cognito group "authority" (API Gateway has verified the token).
+          REQUIRE_AUTHORITY: !If [UseAuth, "true", "false"]
+          ALERTS_SNS_TOPIC: !If [UseEmail, !Ref AlertsTopic, ""]
       Events:
         GetSmoke:
           Type: HttpApi
@@ -102,10 +275,105 @@ Resources:
             ApiId: !Ref SmokeApi
             Path: /air
             Method: GET
+        # The citizen inbox: public by design (it only returns public alerts for an area).
+        GetAlerts:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SmokeApi
+            Path: /alerts
+            Method: GET
+
+  # ---- authority routes: written out by hand so they can be open (EnableAuth=false) or JWT-protected (true) ---------
+  AuthorityIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref SmokeApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt SmokePathFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  AuthorityInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SmokePathFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SmokeApi}/*/*/*
+
+  PostAlertsOpen:
+    Type: AWS::ApiGatewayV2::Route
+    Condition: NoAuth
+    Properties:
+      ApiId: !Ref SmokeApi
+      RouteKey: POST /alerts
+      Target: !Sub integrations/${AuthorityIntegration}
+  PostAlertsAuth:
+    Type: AWS::ApiGatewayV2::Route
+    Condition: UseAuth
+    Properties:
+      ApiId: !Ref SmokeApi
+      RouteKey: POST /alerts
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+      Target: !Sub integrations/${AuthorityIntegration}
+
+  GetActivityOpen:
+    Type: AWS::ApiGatewayV2::Route
+    Condition: NoAuth
+    Properties:
+      ApiId: !Ref SmokeApi
+      RouteKey: GET /activity
+      Target: !Sub integrations/${AuthorityIntegration}
+  GetActivityAuth:
+    Type: AWS::ApiGatewayV2::Route
+    Condition: UseAuth
+    Properties:
+      ApiId: !Ref SmokeApi
+      RouteKey: GET /activity
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+      Target: !Sub integrations/${AuthorityIntegration}
+
+  GetCasesOpen:
+    Type: AWS::ApiGatewayV2::Route
+    Condition: NoAuth
+    Properties:
+      ApiId: !Ref SmokeApi
+      RouteKey: GET /cases
+      Target: !Sub integrations/${AuthorityIntegration}
+  GetCasesAuth:
+    Type: AWS::ApiGatewayV2::Route
+    Condition: UseAuth
+    Properties:
+      ApiId: !Ref SmokeApi
+      RouteKey: GET /cases
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+      Target: !Sub integrations/${AuthorityIntegration}
+
+  PatchCaseOpen:
+    Type: AWS::ApiGatewayV2::Route
+    Condition: NoAuth
+    Properties:
+      ApiId: !Ref SmokeApi
+      RouteKey: PATCH /cases/{fire_id}
+      Target: !Sub integrations/${AuthorityIntegration}
+  PatchCaseAuth:
+    Type: AWS::ApiGatewayV2::Route
+    Condition: UseAuth
+    Properties:
+      ApiId: !Ref SmokeApi
+      RouteKey: PATCH /cases/{fire_id}
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+      Target: !Sub integrations/${AuthorityIntegration}
 
 Outputs:
+  ApiBaseUrl:
+    Description: The API address. Open the web app with index.html?api=<this URL> (no trailing slash).
+    Value: !Sub "https://${SmokeApi}.execute-api.${AWS::Region}.amazonaws.com"
   SmokeApiUrl:
-    Description: The smoke path endpoint. Open the map with map.html?api=<this URL>
+    Description: The smoke path endpoint
     Value: !Sub "https://${SmokeApi}.execute-api.${AWS::Region}.amazonaws.com/smoke"
   SampleUrl:
     Description: Saved demo response (no external calls)
@@ -113,3 +381,22 @@ Outputs:
   FunctionName:
     Description: Lambda function name (for logs in CloudWatch)
     Value: !Ref SmokePathFunction
+  AlertsTableName:
+    Description: DynamoDB table holding alerts and cases
+    Value: !Ref AlertsTable
+  UserPoolId:
+    Condition: UseAuth
+    Description: Cognito user pool. Add people to the groups citizen and authority (see README).
+    Value: !Ref UserPool
+  UserPoolClientId:
+    Condition: UseAuth
+    Description: Put this in the cognito block of frontend/index.html (clientId).
+    Value: !Ref UserPoolClient
+  CognitoDomain:
+    Condition: UseAuth
+    Description: Put this in the cognito block of frontend/index.html (domain).
+    Value: !Sub "${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com"
+  AlertsTopicArn:
+    Condition: UseEmail
+    Description: SNS topic that emails a copy of every alert
+    Value: !Ref AlertsTopic

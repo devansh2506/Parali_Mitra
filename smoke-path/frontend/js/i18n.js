@@ -60,7 +60,7 @@
     "auth.warn_btn": "Warn {who}", "auth.alert_btn": "Alert people ({n} places)", "auth.set_status": "Set status:", "auth.no_actions": "Nothing done yet. Warn the source or alert the people on the path.", "auth.add_note": "Add a note to this case",
     "auth.dismiss_why": "Why is this fire dismissed? (for example: licensed brick kiln)", "auth.status_set": "Status set to {s}.",
     "auth.warn_title": "Warn the {who}", "auth.fire_label": "Fire", "auth.send_to": "Send to", "auth.demo_registry": "Demo registry", "auth.type_contact": "Type a contact", "auth.name": "Name", "auth.contact": "Phone or email", "auth.message": "Message",
-    "auth.lookup_note": "Owner lookup from land records is not connected yet. Demo contacts are made up. Type a real contact if you have one.", "auth.replace_text": "Replace your edited message with the template?",
+    "auth.lookup_note": "Owner lookup from land records is not connected yet. Demo contacts are made up. Type a real contact if you have one.", "auth.kept_edit": "Your edited message was kept. Use 'Reset to template' to switch language.", "auth.reset_text": "Reset to template", "auth.dismiss_need": "Please write a reason.",
     "auth.send_warning": "Send warning", "auth.send_warning_to": "Send warning to {who}", "auth.need_contact": "Add a name and a phone or email first.",
     "auth.sent_ok": "Warning sent to {who}.", "auth.sent_demo": "Warning sent (demo) to {who}. It is saved in this browser.",
     "auth.alert_title": "Alert the people on the smoke path", "auth.who_gets": "Who gets the alert", "auth.places_count": "{n} places will be alerted, earliest smoke first",

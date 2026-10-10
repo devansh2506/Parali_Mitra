@@ -144,7 +144,7 @@
         '<div data-pane="typed"' + (mode === "typed" ? "" : " hidden") + ' class="row wrap"><div class="field grow"><label for="w-name">' + esc(t("auth.name")) + '</label><input id="w-name" class="input" data-name maxlength="100"></div>' +
         '<div class="field grow"><label for="w-contact">' + esc(t("auth.contact")) + '</label><input id="w-contact" class="input" data-contact maxlength="120" placeholder="+91… or name@example.com"></div></div>' +
         whoNote() +
-        '<div class="field"><label for="w-msg">' + esc(t("auth.message")) + '</label><textarea id="w-msg" class="input" data-msg maxlength="1200">' + esc(sourceText(f, lang)) + "</textarea></div>" +
+        '<div class="field"><label for="w-msg">' + esc(t("auth.message")) + '</label><textarea id="w-msg" class="input" data-msg maxlength="1200">' + esc(sourceText(f, lang)) + '</textarea><button type="button" class="btn ghost sm" data-reset-text style="align-self:flex-start">' + esc(t("auth.reset_text")) + "</button></div>" +
         '<p class="small muted" data-err style="color:var(--bad)" role="alert"></p>',
       footer: '<button class="btn" data-close>' + esc(t("btn.cancel")) + '</button><button class="btn fire" data-send>' + U.icon("send") + '<span data-send-label></span></button>',
     });
@@ -160,7 +160,8 @@
       if (l) {
         lang = l.getAttribute("data-lang");
         el.querySelectorAll("[data-lang]").forEach(function (b) { b.setAttribute("aria-pressed", String(b === l)); });
-        if (!edited || confirm(t("auth.replace_text"))) { $("[data-msg]").value = sourceText(f, lang); edited = false; }
+        if (!edited) $("[data-msg]").value = sourceText(f, lang);
+        else U.toast(t("auth.kept_edit"));
       }
       if (md) {
         mode = md.getAttribute("data-mode");
@@ -168,6 +169,7 @@
         el.querySelectorAll("[data-pane]").forEach(function (p) { p.hidden = p.getAttribute("data-pane") !== mode; });
         label();
       }
+      if (e.target.closest("[data-reset-text]")) { $("[data-msg]").value = sourceText(f, lang); edited = false; }
       if (e.target.closest("[data-send]")) send();
     });
     el.addEventListener("input", function (e) { if (e.target.matches("[data-msg]")) edited = true; label(); });
@@ -211,7 +213,7 @@
           return '<button type="button" class="chip" data-g="' + g[0] + '" aria-pressed="true">' + esc(t("grp." + g[0])) + " " + counts[g[0]] + "</button>";
         }).join("") + "</div></div>" +
         '<div><div class="label" data-count></div><div class="places" data-places style="margin-top:6px"></div></div>' +
-        '<div class="field"><label for="a-msg">' + esc(t("auth.message")) + '</label><textarea id="a-msg" class="input" data-msg maxlength="1200"></textarea></div>' +
+        '<div class="field"><label for="a-msg">' + esc(t("auth.message")) + '</label><textarea id="a-msg" class="input" data-msg maxlength="1200"></textarea><button type="button" class="btn ghost sm" data-reset-text style="align-self:flex-start">' + esc(t("auth.reset_text")) + "</button></div>" +
         '<div class="note">' + U.icon("info") + "<span>" + esc(t("auth.alert_note")) + "</span></div>" +
         '<p class="small" data-err style="color:var(--bad)" role="alert"></p>',
       footer: '<button class="btn" data-close>' + esc(t("btn.cancel")) + '</button><button class="btn fire" data-send>' + U.icon("send") + '<span data-send-label></span></button>',
@@ -233,8 +235,9 @@
       if (l) {
         lang = l.getAttribute("data-lang");
         el.querySelectorAll("[data-lang]").forEach(function (b) { b.setAttribute("aria-pressed", String(b === l)); });
-        if (!edited || confirm(t("auth.replace_text"))) { edited = false; paint(); }
+        if (!edited) paint(); else U.toast(t("auth.kept_edit"));
       }
+      if (e.target.closest("[data-reset-text]")) { edited = false; paint(); }
       if (e.target.closest("[data-send]")) send();
     });
     el.addEventListener("input", function (e) { if (e.target.matches("[data-msg]")) edited = true; });
@@ -252,6 +255,19 @@
         done && done();
       } catch (e2) { err.textContent = e2.message; btn.disabled = false; }
     }
+  }
+
+  function dismissDialog(apply) {
+    var m = U.modal({
+      title: t("btn.status.dismissed"),
+      body: '<div class="field"><label for="d-why">' + esc(t("auth.dismiss_why")) + '</label><textarea id="d-why" class="input" data-why maxlength="300" style="min-height:90px"></textarea></div><p class="small" data-err style="color:var(--bad)" role="alert"></p>',
+      footer: '<button class="btn" data-close>' + esc(t("btn.cancel")) + '</button><button class="btn danger" data-go>' + esc(t("btn.status.dismissed")) + "</button>",
+    });
+    m.el.querySelector("[data-go]").addEventListener("click", async function () {
+      var why = m.el.querySelector("[data-why]").value.trim();
+      if (!why) { m.el.querySelector("[data-err]").textContent = t("auth.dismiss_need"); return; }
+      if (await apply(why)) m.close();
+    });
   }
 
   // ---- fire detail ----------------------------------------------------------------------------------------------------------
@@ -348,10 +364,12 @@
       if (e.target.closest("[data-alert]")) alertDialog(f, model, reload);
       var st = e.target.closest("[data-status-to]");
       if (st) {
-        var to = st.getAttribute("data-status-to"), note = "";
-        if (to === "dismissed") { note = prompt(t("auth.dismiss_why")) || ""; if (!note.trim()) return; }
-        try { await PM.api.patchCase(f.key, { status: to, note: note, fire: fireContext(f) }); U.toast(t("auth.status_set", { s: t("status." + to) })); reload(); }
-        catch (err) { U.toast(err.message, "err"); }
+        var to = st.getAttribute("data-status-to");
+        var apply = async function (note) {
+          try { await PM.api.patchCase(f.key, { status: to, note: note, fire: fireContext(f) }); U.toast(t("auth.status_set", { s: t("status." + to) })); reload(); return true; }
+          catch (err) { U.toast(err.message, "err"); return false; }
+        };
+        if (to === "dismissed") dismissDialog(apply); else apply("");
       }
       if (e.target.closest("[data-addnote]")) {
         var inp = box.querySelector("[data-note]");
@@ -462,9 +480,12 @@
       }
       paintDetail(true);
     }
+    function onEsc(e) { if (e.key === "Escape" && ctl.selected && !document.querySelector(".overlay")) PM.go("#/authority/dashboard"); }
+    document.addEventListener("keydown", onEsc);
     ctl.update = function (a) { if (model) select(a && a.key); else args = a; };
     ctl.destroy = function () {
       ctl.destroyed = true;
+      document.removeEventListener("keydown", onEsc);
       if (ctl.smoke) ctl.smoke.destroy();
       if (ctl.fireLayer) ctl.fireLayer.destroy();
       if (ctl.mapc) ctl.mapc.destroy();

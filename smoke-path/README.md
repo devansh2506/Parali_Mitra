@@ -67,7 +67,7 @@ smoke-path/
     build_landcover.py         one-time: ESA WorldCover -> data/landcover.bin.gz (needs rasterio, see below)
     build_industry.py          one-time: OpenStreetMap industry -> data/industry.json.gz
     build_static_sources.py    one-time: a year of NASA VIIRS archive -> data/static_sources.json.gz
-  frontend/map.html  the map page
+  frontend/index.html + css/ js/ data/   the web app (citizen and authority); map.html only redirects to it
   template.yaml      AWS SAM template
 ```
 
@@ -292,7 +292,7 @@ python3.12 scripts/local_server.py
 ```
 
 * http://127.0.0.1:8000/ is the live map (fire watch first; calls the real APIs through the local server).
-* http://127.0.0.1:8000/map.html is the saved sample, with no API calls.
+* http://127.0.0.1:8000/index.html is the saved sample, with no API calls.
 * http://127.0.0.1:8000/smoke?lat=30.245&lon=75.844&hours=24 is the raw GeoJSON.
 
 ---
@@ -466,3 +466,72 @@ Settings (Lambda environment variables): `FIRMS_MAP_KEY` (from the `FirmsMapKey`
 | Land cover for "what was burning" | 100 m around Punjab and Haryana, 450 m for all of India (`landcover_india.bin.gz`, `build_landcover.py --national`) |
 | Factories, kilns, all-year heat sources | Punjab and Haryana only (the all-India versions were not built); elsewhere a fire is labelled from land cover alone, so industrial fires there show as farm, built-up or unknown |
 | Villages, schools, hospitals on a smoke path | around Punjab and Haryana; cities and towns elsewhere |
+
+## The web app: two roles
+
+Open `frontend/index.html` (a plain static site: no build step, no framework; Leaflet from cdnjs).
+
+| Role | What they see | What they can do |
+|---|---|---|
+| **Citizen** | My area (air now, next 48 h, smoke coming, health advice), calm map, air forecast, alerts inbox, health tips. English and Hindi. | Read only. |
+| **Authority** | Dashboard (KPIs, fire queue, map), fire detail with animated smoke path, fires table, cases board, alerts sent, air quality. | Warn the source of a fire, alert the people on its smoke path, track each fire as a case (new, warning sent, acknowledged, resolved or dismissed, with a timeline). |
+
+**Demo mode (default).** No `?api=`: the app uses saved samples (`frontend/data/sample-*.js`, made by
+`scripts/save_frontend_samples.py`) and keeps alerts and cases in this browser (`localStorage`). Every action says
+"(demo)". It works with no server and no internet except map tiles and fonts. The login is a demo login: no password,
+not secure. "Demo: switch role" in the account menu swaps citizen and authority in one click.
+
+**Live mode.** `index.html?api=/` through `scripts/local_server.py` (or `?api=https://<your API>` on AWS). Fires, air and
+alerts come from the server; alerts and cases are kept by the server (memory locally, DynamoDB on AWS).
+
+**What is demo and what is real**
+* Real: fires, smoke paths, toxicity, what was burning, air quality (OpenAQ now; CPCB when the feed is reachable), forecast.
+* Demo: the login, the contact registry (made-up names, `+91-00000-…` numbers, `@example.com` addresses), sample data.
+* Not connected: owner lookup from land records or factory licences. A real contact has to be typed in.
+* Not verified: the CPCB feed parsing (the data.gov.in server refuses connections from my network), Cognito sign-in
+  against a real user pool, SNS email, DynamoDB on AWS (the store is tested with a fake table).
+* Delivery: the in-app inbox is the main channel. SMS in India needs DLT registration, so it is not used.
+* Map tiles: Esri "Canvas" light and dark (no key); CARTO now asks for a key. OpenStreetMap is the fallback.
+* Population is not shown (we have no population data): the dashboard counts places, not people.
+
+### New endpoints
+
+| Call | Who | What |
+|---|---|---|
+| `POST /alerts` | authority | `{fire_id, kind: source_warning or public_alert, target, message, language, fire}`; saves it, updates the case |
+| `GET /alerts?lat&lon&radius_km` | anyone | public alerts with a place near that spot (the citizen inbox); never returns warnings to sources |
+| `GET /activity` | authority | every alert sent |
+| `GET /cases`, `PATCH /cases/{fire_id}` | authority | the cases; set status (`new`, `warning_sent`, `acknowledged`, `resolved`, `dismissed`) or add a note |
+
+Each fire has a stable `key` (spot + day first seen, e.g. `30.20_75.80_20261010`) and a `state`; the key is the case id.
+
+### Deploy it yourself (I never run these)
+
+Nothing here has been deployed. With the defaults (`EnableAuth=false`) the authority routes are **open**: anyone with the
+API address could send alerts. Use that only for a private demo.
+
+1. Build and deploy (replace the placeholders; keys are asked for as hidden parameters):
+   ```
+   cd smoke-path
+   sam build
+   sam deploy --guided --stack-name parali-mitra --region ap-south-1
+   ```
+   At the prompts give `FirmsMapKey`, `DataGovInApiKey`, `OpenAqApiKey` (`<YOUR_KEY_HERE>`), leave `EnableAuth` as `false` first.
+2. Note `ApiBaseUrl` from the outputs. Open the app with `index.html?api=<ApiBaseUrl>`.
+3. Host the app (optional): create a bucket and a CloudFront distribution for the `frontend/` folder, then
+   `aws s3 sync frontend/ s3://<YOUR_BUCKET>/ --delete`.
+4. Turn on sign-in with Amazon Cognito:
+   ```
+   sam deploy --parameter-overrides EnableAuth=true CognitoDomainPrefix=<unique-word> AppUrl=https://<your app address>/index.html
+   ```
+   Then put `domain` (output `CognitoDomain`) and `clientId` (output `UserPoolClientId`) in the `cognito` block of
+   `frontend/index.html` and open the app with `?auth=cognito`. Create people and add officers to the group:
+   ```
+   aws cognito-idp admin-create-user --user-pool-id <UserPoolId> --username <email>
+   aws cognito-idp admin-add-user-to-group --user-pool-id <UserPoolId> --username <email> --group-name authority
+   ```
+   Citizens use the group `citizen`. API Gateway checks the token on the authority routes and the Lambda checks the group.
+5. Email copies of alerts (optional): `EnableEmail=true AlertsEmail=<address>`, then confirm the SNS subscription email.
+
+AWS services used: Lambda, API Gateway (HTTP API), DynamoDB. Prepared and off by default: Cognito, SNS.
+`template.yaml` was checked for YAML syntax and references only; `sam validate` was not available here.
