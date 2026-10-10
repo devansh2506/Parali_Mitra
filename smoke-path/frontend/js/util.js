@@ -96,8 +96,8 @@
     var all = '<button type="button" class="chip" data-ftype="all" aria-pressed="' + !any + '">' + U.esc(PM.t("filter.all")) + " " + total + "</button>";
     return all + ["farm", "industrial", "waste", "settlement", "forest", "grassland", "unknown"].filter(function (k) { return counts[k]; }).map(function (k) {
       return '<button type="button" class="chip" data-ftype="' + k + '" aria-pressed="' + !!on[k] + '"><i class="dot" style="background:' + U.FIRE_TYPES[k].color + '"></i>' +
-        U.esc(PM.t("type." + k)) + " " + counts[k] + "</button>";
-    }).join("");
+        U.esc(PM.t("type." + k)) + (k === "industrial" ? "*" : "") + " " + counts[k] + "</button>";
+    }).join("") + '<span class="tiny muted typenote">' + U.esc(PM.t("filter.industry_note")) + "</span>";
   };
   /** Turn a chip click into the new choice: {type: true} for that type only, or {} for all. */
   U.toggleType = function (on, key) {
@@ -106,6 +106,10 @@
     Object.keys(on).forEach(function (k) { on[k] = false; });
     if (key !== "all" && !wasOn) on[key] = true;
   };
+
+  /** Where factory and kiln fires can be recognised (the server says so; this is the same box as a fallback). */
+  U.industryBox = function () { return PM.industryBox || [27.6, 73.8, 32.6, 77.6]; };
+  U.insideIndustryBox = function (lat, lon) { var b = U.industryBox(); return lat >= b[0] && lat <= b[2] && lon >= b[1] && lon <= b[3]; };
 
   // ---- icons: small inline SVGs (24 px grid, drawn with strokes) -------------------------------------
   var ICONS = {

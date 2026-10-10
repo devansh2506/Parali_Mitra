@@ -169,6 +169,9 @@ class FireWatchRunTests(unittest.TestCase):
                 self.assertEqual(p["key"].split("_")[0], f"{lat:.2f}")
                 self.assertIn("state", p)
 
+    def test_the_report_says_where_factory_fires_can_be_recognised(self):
+        self.assertEqual(self.doc["industry_box"], [27.6, 73.8, 32.6, 77.6])
+
     def test_summary(self):
         self.assertEqual(
             [line for line in self.doc["summary"] if not line.startswith(("What was burning", "While burning", "Most smoke", "Worst air"))],

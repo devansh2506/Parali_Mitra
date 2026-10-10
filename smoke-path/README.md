@@ -464,7 +464,7 @@ Settings (Lambda environment variables): `FIRMS_MAP_KEY` (from the `FirmsMapKey`
 | Measured air quality (CPCB / OpenAQ), forecast map | all of India |
 | Fires, what was burning, toxicity, smoke paths | all of India (wind on a 1.5° grid, 529 points) |
 | Land cover for "what was burning" | 100 m around Punjab and Haryana, 450 m for all of India (`landcover_india.bin.gz`, `build_landcover.py --national`) |
-| Factories, kilns, all-year heat sources | Punjab and Haryana only (the all-India versions were not built); elsewhere a fire is labelled from land cover alone, so industrial fires there show as farm, built-up or unknown |
+| Factories, kilns, all-year heat sources | Punjab and Haryana only (the all-India versions were not built); elsewhere a fire is labelled from land cover alone, so industrial fires there show as farm, built-up or unknown. The report carries `industry_box`, and the app marks the Factory or kiln chip with * and says so |
 | Villages, schools, hospitals on a smoke path | around Punjab and Haryana; cities and towns elsewhere |
 
 ## The web app: two roles

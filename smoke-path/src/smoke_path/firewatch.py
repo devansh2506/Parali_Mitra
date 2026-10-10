@@ -405,6 +405,7 @@ def build(fires, reached, snap, req, now, notes, level, places_checked, n_detect
         "disclaimer": DISCLAIMER,
         "region": REGION,
         "fire_box": list(FIRE_BOX),
+        "industry_box": list(landuse.INDUSTRY_BOX),  # the only area where factory and kiln fires can be recognised
         "hours": req.hours,
         "summary": summary(fires, places, counts, places_checked, n_detections, now, types),
         "stats": {"fires": len(fires), "detections": n_detections, "reached": counts, "fire_types": types},

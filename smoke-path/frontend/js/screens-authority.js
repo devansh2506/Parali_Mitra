@@ -58,8 +58,8 @@
     var anyOn = TYPE_ORDER.some(function (k) { return F.types[k]; });
     var chips = '<button class="chip" data-type="all" aria-pressed="' + !anyOn + '">' + esc(t("filter.all")) + " " + model.fires.length + "</button>" + TYPE_ORDER.filter(function (k) { return counts[k]; }).map(function (k) {
       return '<button class="chip" data-type="' + k + '" aria-pressed="' + !!F.types[k] + '"><i class="dot" style="background:' + U.FIRE_TYPES[k].color + '"></i>' +
-        esc(t("type." + k)) + " " + counts[k] + "</button>";
-    }).join("");
+        esc(t("type." + k)) + (k === "industrial" ? "*" : "") + " " + counts[k] + "</button>";
+    }).join("") + '<span class="tiny muted typenote">' + esc(t("filter.industry_note")) + "</span>";
     var stateOpts = '<option value="">' + esc(t("auth.all_states")) + "</option>" + Object.keys(states).sort().map(function (s) {
       return '<option value="' + esc(s) + '"' + (F.state === s ? " selected" : "") + ">" + esc(s) + " (" + states[s] + ")</option>";
     }).join("");
@@ -291,6 +291,11 @@
     return '<div class="stackbar" role="img" aria-label="Land cover">' + keys.map(function (k) { return '<span style="width:' + c[k] + "%;background:" + (COVER_COLORS[k] || "#999") + '" title="' + esc(k + " " + c[k] + "%") + '"></span>'; }).join("") + "</div>" +
       '<div class="row wrap small muted" style="gap:4px 12px;margin-top:6px">' + keys.map(function (k) { return '<span><i class="dot" style="background:' + (COVER_COLORS[k] || "#999") + '"></i> ' + esc(k) + " " + c[k] + "%</span>"; }).join("") + "</div>";
   }
+  /** A fire outside the factory/kiln data area: say that a factory fire there could be labelled as something else. */
+  function outsideNote(f) {
+    if (f.p.fire_type === "industrial" || U.insideIndustryBox(f.lat, f.lon)) return "";
+    return '<div class="note" style="margin-top:10px">' + U.icon("info") + "<span>" + esc(t("auth.outside_note")) + "</span></div>";
+  }
   function toxBlock(f, openAll) {
     var e = f.p.emissions;
     if (!e || !e.toxicity) return '<div class="note">' + U.icon("info") + "<span>" + esc(t("auth.tox_none")) + "</span></div>";
@@ -330,7 +335,7 @@
       '<div class="detail-body">' +
       '<section class="block"><h4>' + esc(t("auth.what_burning")) + '</h4><div class="row" style="margin-bottom:6px"><b>' + esc(p.fire_type_label || U.typeName(p)) + "</b>" +
       '<span class="row" style="gap:3px" title="' + esc(t("auth.confidence")) + ": " + esc(p.fire_type_confidence || "") + '" aria-label="' + esc(t("auth.confidence")) + " " + esc(p.fire_type_confidence || "") + '">' + [1, 2, 3].map(function (i) { return '<i style="width:18px;height:6px;border-radius:3px;background:' + (i <= conf ? "var(--brand)" : "var(--line)") + '"></i>'; }).join("") + '</span><span class="small muted">' + esc(p.fire_type_confidence || "") + "</span></div>" +
-      '<p class="small">' + esc(p.fire_type_reason || "") + "</p><div style=\"margin-top:10px\">" + coverBar(p) + "</div></section>" +
+      '<p class="small">' + esc(p.fire_type_reason || "") + "</p><div style=\"margin-top:10px\">" + coverBar(p) + "</div>" + outsideNote(f) + "</section>" +
       '<section class="block"><h4>' + esc(t("auth.toxicity")) + "</h4>" + toxBlock(f) + "</section>" +
       '<section class="block"><h4>' + esc(t("auth.smoke_path")) + "</h4>" +
       (f.path ? '<p class="small" style="margin-bottom:8px">' + esc(t("auth.path_text", { dir: t("dir." + U.heading(f.path.coords)), km: U.num(km, 0), n: places.length })) + (countText ? " <span class=\"muted\">(" + esc(countText) + ")</span>" : "") + "</p>" +
@@ -638,6 +643,6 @@
     return { destroy: function () { ctl.destroyed = true; off(); } };
   }
 
-  A.toxBlock = toxBlock; A.coverBar = coverBar; A.where = where; A.toxPill = toxPill;
+  A.outsideNote = outsideNote; A.toxBlock = toxBlock; A.coverBar = coverBar; A.where = where; A.toxPill = toxPill;
   A.dashboard = dashboard; A.fires = firesPage; A.cases = casesPage; A.activity = activityPage;
 })((window.PM = window.PM || {}));

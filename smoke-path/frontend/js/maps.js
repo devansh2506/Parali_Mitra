@@ -203,7 +203,7 @@
       var icon = L.divIcon({ className: "", iconSize: [30, 30], iconAnchor: [15, 15],
         html: '<div style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:700 11px var(--font-display);background:' +
           U.aqiColor(k) + ";color:" + U.aqiInk(k) + ';border:2px solid var(--surface);box-shadow:0 1px 6px rgba(0,0,0,.45)">' + Math.round(s.aqi) + "</div>" });
-      var m = L.marker([s.lat, s.lon], { icon: icon, riseOnHover: true, keyboard: true, title: s.name + " · AQI " + Math.round(s.aqi) }).addTo(group);
+      var m = L.marker([s.lat, s.lon], { icon: icon, riseOnHover: true, keyboard: true, title: s.name + " · AQI " + Math.round(s.aqi) + ["pm2_5", "pm10", "no2", "so2", "o3", "co"].filter(function (k) { return s.pollutants && s.pollutants[k]; }).map(function (k) { return " · " + (U.POLLUTANTS[k] || k) + " " + U.num(s.pollutants[k].avg, s.pollutants[k].avg < 10 ? 1 : 0); }).join("") }).addTo(group);
       m.on("click", function () { onPick && onPick(s); });
       pins[s.id] = m;
     });

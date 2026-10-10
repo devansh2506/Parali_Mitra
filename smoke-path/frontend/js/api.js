@@ -48,6 +48,7 @@
       else if (p.kind === "fire_path") paths[p.fire_id] = { coords: c, times: p.times.map(Date.parse), km: p.km };
       else if (p.kind === "reached") reached.push({ name: p.name, name_local: p.name_local, type: p.place_type, lat: c[1], lon: c[0], near_town: p.near_town, fires: p.fires });
     });
+    PM.industryBox = doc.industry_box || null;
     var nowMs = Date.parse(doc.generated_at) || Date.now();
     fires.forEach(function (f) {
       var p = f.p, tox = p.emissions && p.emissions.toxicity;

@@ -36,6 +36,29 @@
     var first = items[0].ms, last = items[items.length - 1].ms, mid = items[Math.floor(items.length / 2)].ms;
     return '<div class="strip" role="img" aria-label="' + esc(t("air.strip_label")) + '">' + bars + '</div><div class="strip-axis"><span>' + esc(t("air.now_label")) + "</span><span>" + esc(U.when(mid, nowMs)) + "</span><span>" + esc(U.when(last, nowMs)) + "</span></div>";
   };
+  /** The header and body of one station: AQI, category, main pollutant, age, every pollutant with its sub-index. */
+  Air.stationHead = function (s, closeAttr) {
+    return '<div class="detail-head"><div class="row"><div class="grow"><div class="eyebrow" style="margin:0">' + esc(t("air.station")) + "</div><h3>" + esc(s.name) + '</h3><p class="small muted">' + esc([s.city, s.state].filter(Boolean).join(", ")) + "</p></div>" +
+      '<button class="btn ghost icon-only sm" ' + closeAttr + ' aria-label="' + esc(t("btn.close")) + '">' + U.icon("x") + "</button></div></div>";
+  };
+  Air.stationBody = function (s, doc) {
+    var k = U.aqiKey(s.aqi), pol = s.pollutants || {};
+    return '<div class="row" style="gap:16px">' + U.aqiBadge(s.aqi, true) + '<div><div class="num" style="font-size:22px;font-weight:700">' + esc(t("aqi." + k)) + '</div><div class="small muted">' + esc(t("air.main_pollutant", { p: U.POLLUTANTS[s.dominant] || "–" })) + "</div></div></div>" +
+      '<p class="small muted">' + esc(t("air.reading_age", { when: s.updated ? U.when(U.parse(s.updated) || 0, PM.now()) : "?", h: s.age_h == null ? "?" : U.num(s.age_h, 0) })) + "</p>" +
+      '<section class="block"><h4>' + esc(t("air.pollutants")) + '</h4><div class="stack" style="gap:10px">' + Object.keys(pol).map(function (p) {
+        var v = pol[p], sub = v.sub == null ? 0 : v.sub, sk = U.aqiKey(sub);
+        var range = v.min != null && v.max != null ? ' <span class="faint tiny">' + esc(t("air.range", { lo: U.num(v.min, v.min < 10 ? 1 : 0), hi: U.num(v.max, v.max < 10 ? 1 : 0) })) + "</span>" : "";
+        return '<div><div class="row spread small"><span>' + esc(U.POLLUTANTS[p] || p) + range + "</span><b>" + U.num(v.avg, v.avg < 10 ? 1 : 0) + ' <span class="muted">' + esc(U.UNITS[p] || "") + '</span></b></div><div class="meter" style="margin-top:3px"><i style="width:' + Math.min(100, sub / 4) + "%;background:" + U.aqiColor(sk) + '"></i></div><div class="tiny faint">' + esc(t("air.subindex", { n: sub })) + "</div></div>";
+      }).join("") + "</div></section>" +
+      '<p class="tiny muted">' + esc(t("air.source_line", { src: (doc && doc.source) || "" })) + "</p>" +
+      (doc && doc.indicative ? '<div class="note">' + U.icon("info") + "<span>" + esc(t("air.indicative")) + "</span></div>" : "");
+  };
+  Air.pollutantTiles = function (s) {
+    var pol = (s && s.pollutants) || {};
+    return Object.keys(pol).map(function (p) {
+      return '<span class="pol"><span class="tiny muted">' + esc(U.POLLUTANTS[p] || p) + "</span><b>" + U.num(pol[p].avg, pol[p].avg < 10 ? 1 : 0) + ' <span class="tiny muted">' + esc(U.UNITS[p] || "") + "</span></b></span>";
+    }).join("");
+  };
   Air.scaleLegend = function () {
     var labels = ["0", "50", "100", "200", "300", "400", "500"];
     return '<div class="scale" role="img" aria-label="CPCB AQI colours">' + U.AQI.map(function (c) { return '<i style="background:' + U.aqiColor(c.key) + '"></i>'; }).join("") + "</div>" +
@@ -127,17 +150,8 @@
     }
     function pick(s, fly) {
       if (mapc && fly) mapc.map.setView([s.lat, s.lon], Math.max(mapc.map.getZoom(), 9));
-      var k = U.aqiKey(s.aqi), pol = s.pollutants || {};
       side.className = "panel sheet slide-in";
-      side.innerHTML = '<div class="sheet-handle"></div><div class="detail-head"><div class="row"><div class="grow"><div class="eyebrow" style="margin:0">' + esc(t("air.station")) + "</div><h3>" + esc(s.name) + '</h3><p class="small muted">' + esc([s.city, s.state].filter(Boolean).join(", ")) + "</p></div>" +
-        '<button class="btn ghost icon-only sm" data-back aria-label="' + esc(t("btn.close")) + '">' + U.icon("x") + "</button></div></div>" +
-        '<div class="detail-body"><div class="row" style="gap:16px">' + U.aqiBadge(s.aqi, true) + '<div><div class="num" style="font-size:22px;font-weight:700">' + esc(t("aqi." + k)) + '</div><div class="small muted">' + esc(t("air.main_pollutant", { p: U.POLLUTANTS[s.dominant] || "–" })) + "</div></div></div>" +
-        '<p class="small muted">' + esc(t("air.reading_age", { when: s.updated ? U.when(U.parse(s.updated) || 0, PM.now()) : "?", h: s.age_h == null ? "?" : U.num(s.age_h, 0) })) + "</p>" +
-        '<section class="block"><h4>' + esc(t("air.pollutants")) + '</h4><div class="stack" style="gap:10px">' + Object.keys(pol).map(function (p) {
-          var v = pol[p], sub = v.sub == null ? 0 : v.sub, sk = U.aqiKey(sub);
-          return '<div><div class="row spread small"><span>' + esc(U.POLLUTANTS[p] || p) + "</span><b>" + U.num(v.avg, v.avg < 10 ? 1 : 0) + ' <span class="muted">' + esc(U.UNITS[p] || "") + '</span></b></div><div class="meter" style="margin-top:3px"><i style="width:' + Math.min(100, sub / 4) + "%;background:" + U.aqiColor(sk) + '"></i></div></div>';
-        }).join("") + "</div></section>" +
-        (doc.indicative ? '<div class="note">' + U.icon("info") + "<span>" + esc(t("air.indicative")) + "</span></div>" : "") + "</div>";
+      side.innerHTML = '<div class="sheet-handle"></div>' + Air.stationHead(s, "data-back") + '<div class="detail-body">' + Air.stationBody(s, doc) + "</div>";
       U.sheetDrag(side);
     }
     ctl.destroy = function () { ctl.destroyed = true; if (layer) layer.destroy(); if (mapc) mapc.destroy(); };

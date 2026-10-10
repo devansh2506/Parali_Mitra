@@ -466,3 +466,11 @@ table.t tr.click { cursor: pointer; } table.t tr.click:hover td { background: va
   .typebar .row { flex-wrap: nowrap; }
   .floatpanel { position: fixed; right: 0; top: auto; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); width: auto; max-width: none; }
 }
+
+.typenote { flex-basis: 100%; line-height: 1.35; max-width: 520px; }
+.pol-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.pol { display: inline-flex; flex-direction: column; padding: 6px 12px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 70%, transparent); border: 1px solid var(--line); min-width: 84px; }
+.pol b { font-family: var(--font-display); font-size: 16px; }
+
+.typebar .typenote { flex: 0 0 100%; }
+@media (max-width: 860px) { .typebar .typenote { display: none; } .typebar .row { flex-wrap: nowrap !important; } }

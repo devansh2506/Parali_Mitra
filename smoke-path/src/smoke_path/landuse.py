@@ -46,6 +46,9 @@ INDEX_DEG = 0.05
 COVER = {1: "trees", 2: "shrubs", 3: "grass", 4: "cropland", 5: "built-up", 6: "bare ground",
          7: "snow", 8: "water", 9: "wetland", 10: "mangroves", 11: "moss"}
 
+# Factories, kilns and year-round heat spots were only collected for this box (south, west, north, east):
+# Delhi, Punjab and Haryana. Elsewhere a factory or kiln fire cannot be recognised and shows as farm, built-up or unknown.
+INDUSTRY_BOX = (27.6, 73.8, 32.6, 77.6)
 CATEGORIES = ("farm", "industrial", "waste", "settlement", "forest", "grassland", "unknown")
 LABELS = {
     "farm": "Farm fire",

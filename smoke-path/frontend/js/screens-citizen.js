@@ -106,7 +106,7 @@
       } else {
         var k = catKey(aqi);
         $("[data-hero]").innerHTML = '<div class="hero-aqi fade-in" style="--c:var(--aqi-' + k + ')"><div><div class="eyebrow">' + esc(t("cz.air_now")) + '</div><div class="big-num num" data-n>0</div></div><div><div class="cat" style="color:var(--ink)"><span class="dot" style="background:var(--aqi-' + k + ');width:14px;height:14px"></span> ' + esc(t("aqi." + k)) + "</div>" +
-          '<p class="say">' + esc(t("cz.say." + k)) + '</p><p class="small muted" style="margin-top:10px">' + esc(src) + "</p></div></div>";
+          '<p class="say">' + esc(t("cz.say." + k)) + '</p><p class="small muted" style="margin-top:10px">' + esc(src) + "</p>" + (useStation ? '<div class="pol-grid">' + PM.air.pollutantTiles(near.s) + "</div>" : "") + "</div></div>";
         U.countUp($("[data-n]"), aqi, 600);
         advice(k);
       }
@@ -178,7 +178,7 @@
     var types = {};  // fire types switched on (none on = show all)
     root.innerHTML = '<div class="map-screen"><div class="mapwrap"><div class="map" id="cmap"></div><div class="float tl glass typebar" style="flex-direction:column;align-items:flex-start" role="group" aria-label="Layers">' +
       '<div class="row" style="gap:6px"><button class="chip" data-layer="fires" aria-pressed="true">' + U.icon("flame", "sm") + esc(t("cz.layer_fires")) + '</button><button class="chip" data-layer="air" aria-pressed="false">' + U.icon("wind", "sm") + esc(t("cz.layer_air")) + "</button></div>" +
-      '<div class="row" style="gap:6px" data-typechips></div></div><section class="panel sheet floatpanel" data-fire hidden></section></div></div>';
+      '<div class="row" style="gap:6px;flex-wrap:wrap" data-typechips></div></div><section class="panel sheet floatpanel" data-fire hidden></section></div></div>';
     if (!PM.maps.available()) { root.innerHTML = PM.maps.noMapHtml(); return ctl; }
     var mapc = PM.maps.create(root.querySelector("#cmap"), { theme: document.documentElement.getAttribute("data-theme"), center: [home.lat, home.lon], zoom: 7 });
     var smoke = PM.maps.smokeLayer(mapc.map), model = null, stations = null, popup = null;
@@ -190,6 +190,12 @@
       return '<div style="min-width:200px"><b>' + esc(t("cz.fire_line", { type: U.typeName(f.p), near: f.near || t("cz.unknown_place"), km: U.num(d, 0) })) + '</b><div class="small" style="margin-top:4px">' +
         esc(hit ? (hit.t > PM.now() ? t("cz.smoke_you", { when: U.when(hit.t, PM.now()), rel: U.rel(hit.t, PM.now()) }) : t("cz.smoke_here1", { when: U.when(hit.t, PM.now()) })) : t("cz.smoke_not_you")) + '</div><div class="small muted" style="margin-top:4px">' + esc(f.p.fire_type_reason || "") + "</div></div>";
     }
+    function showStation(st) {
+      var box = root.querySelector("[data-fire]");
+      box.hidden = false;
+      box.innerHTML = '<div class="sheet-handle"></div>' + PM.air.stationHead(st, "data-fclose") + '<div class="detail-body">' + PM.air.stationBody(st, stations) + "</div>";
+      U.sheetDrag(box);
+    }
     function showFire(f) {
       var box = root.querySelector("[data-fire]"), A = PM.authority, p = f.p, places = model.placesOn(f);
       var d = U.distKm(home.lat, home.lon, f.lat, f.lon), hit = f.path ? U.reaches(f.path, home.lat, home.lon, 5) : null;
@@ -198,7 +204,7 @@
       box.innerHTML = '<div class="sheet-handle"></div><div class="detail-head"><div class="row" style="align-items:flex-start">' + U.typeBadge(p) + '<div class="grow"><div class="eyebrow" style="margin:0">' + esc(U.typeName(p)) + "</div><h3>" + esc(f.near || f.state || "Fire") + (f.near && f.state ? ", " + esc(f.state) : "") + '</h3><p class="small muted" style="margin-top:4px">' + esc(t("cz.km_away", { km: U.num(d, 0) })) + " · " + esc(t("auth.first_seen", { when: U.when(f.seenMs, PM.now()), rel: U.rel(f.seenMs, PM.now()) })) + "</p></div>" +
         '<button class="btn ghost icon-only sm" data-fclose aria-label="' + esc(t("btn.close")) + '">' + U.icon("x") + "</button></div></div>" +
         '<div class="detail-body"><div class="note ' + (hit ? "warn" : "") + '">' + U.icon(hit ? "alert" : "check") + "<span>" + esc(you) + "</span></div>" +
-        '<section class="block"><h4>' + esc(t("auth.what_burning")) + "</h4><p><b>" + esc(p.fire_type_label || U.typeName(p)) + '</b></p><p class="small">' + esc(p.fire_type_reason || "") + '</p><div style="margin-top:8px">' + A.coverBar(p) + "</div></section>" +
+        '<section class="block"><h4>' + esc(t("auth.what_burning")) + "</h4><p><b>" + esc(p.fire_type_label || U.typeName(p)) + '</b></p><p class="small">' + esc(p.fire_type_reason || "") + '</p><div style="margin-top:8px">' + A.coverBar(p) + "</div>" + A.outsideNote(f) + "</section>" +
         '<section class="block"><h4>' + esc(t("auth.toxicity")) + "</h4>" + A.toxBlock(f, true) + "</section>" +
         (places.length ? '<section class="block"><h4>' + esc(t("cz.places_on_path")) + '</h4><div class="places">' + places.slice(0, 10).map(function (q) {
           return '<div class="place"><span>' + esc(q.name) + ' <span class="faint small">' + esc(q.type) + '</span></span><span class="t">' + esc(U.when(q.t, PM.now())) + "</span></div>";
@@ -229,7 +235,7 @@
       layers.air = null;
       if (!on.air || !stations) return;
       layers.air = PM.maps.stationLayer(mapc.map, stations.stations.filter(function (s) { return s.aqi != null; }), function (s) {
-        L.popup().setLatLng([s.lat, s.lon]).setContent('<b>' + esc(s.name) + '</b><div style="margin-top:4px">' + U.aqiBadge(s.aqi) + " " + esc(t("aqi." + U.aqiKey(s.aqi))) + "</div>").openOn(mapc.map);
+        smoke.clear(); showStation(s);
       });
     }
     PM.api.fires().then(function (m) { if (!ctl.destroyed) { model = m; paintChips(); paintFires(); } });
