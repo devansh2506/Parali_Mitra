@@ -176,9 +176,7 @@
     if (needHome(root)) return { destroy: function () {} };
     var home = PM.store.home(), ctl = { destroyed: false }, on = { fires: true, air: false }, layers = {};
     var types = {};  // fire types switched on (none on = show all)
-    root.innerHTML = '<div class="map-screen"><div class="mapwrap"><div class="map" id="cmap"></div><div class="float tl glass typebar" style="flex-direction:column;align-items:flex-start" role="group" aria-label="Layers">' +
-      '<div class="row" style="gap:6px"><button class="chip" data-layer="fires" aria-pressed="true">' + U.icon("flame", "sm") + esc(t("cz.layer_fires")) + '</button><button class="chip" data-layer="air" aria-pressed="false">' + U.icon("wind", "sm") + esc(t("cz.layer_air")) + "</button></div>" +
-      '<div class="row" style="gap:6px;flex-wrap:wrap" data-typechips></div></div><section class="panel sheet floatpanel" data-fire hidden></section></div></div>';
+    root.innerHTML = '<div class="map-screen"><div class="mapwrap"><div class="map" id="cmap"></div>' + U.mapBar({ layers: true }) + '<section class="panel sheet floatpanel" data-fire hidden></section></div></div>';
     if (!PM.maps.available()) { root.innerHTML = PM.maps.noMapHtml(); return ctl; }
     var mapc = PM.maps.create(root.querySelector("#cmap"), { theme: document.documentElement.getAttribute("data-theme"), center: [home.lat, home.lon], zoom: 7 });
     var smoke = PM.maps.smokeLayer(mapc.map), model = null, stations = null, popup = null;

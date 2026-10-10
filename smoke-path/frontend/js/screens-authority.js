@@ -439,7 +439,8 @@
       } else wrap.innerHTML = PM.maps.noMapHtml();
       var counts = {};
       model.fires.forEach(function (f) { var k = f.p.fire_type || "unknown"; counts[k] = (counts[k] || 0) + 1; });
-      wrap.insertAdjacentHTML("beforeend", '<div class="float tl glass typebar" role="group" aria-label="' + esc(t("auth.filter_types")) + '">' + U.typeChips(counts, F.types) + "</div>");
+      wrap.insertAdjacentHTML("beforeend", U.mapBar());
+      wrap.querySelector("[data-typechips]").innerHTML = U.typeChips(counts, F.types);
       wrap.addEventListener("click", function (e) {
         var b = e.target.closest("[data-ftype]");
         if (!b) return;

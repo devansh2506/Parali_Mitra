@@ -97,7 +97,20 @@
     return all + ["farm", "industrial", "waste", "settlement", "forest", "grassland", "unknown"].filter(function (k) { return counts[k]; }).map(function (k) {
       return '<button type="button" class="chip" data-ftype="' + k + '" aria-pressed="' + !!on[k] + '"><i class="dot" style="background:' + U.FIRE_TYPES[k].color + '"></i>' +
         U.esc(PM.t("type." + k)) + (k === "industrial" ? "*" : "") + " " + counts[k] + "</button>";
-    }).join("") + '<span class="tiny muted typenote">' + U.esc(PM.t("filter.industry_note")) + "</span>";
+    }).join("");
+  };
+  /** The toolbar on top of a map: optional layer toggles, the fire-type chips (fill [data-typechips]) and the factory note. */
+  U.mapBar = function (opts) {
+    var layers = "";
+    if (opts && opts.layers) {
+      layers = '<div class="mb-group"><span class="mb-label">' + U.esc(PM.t("map.layers")) + '</span><div class="mb-layers">' +
+        '<button type="button" class="mb-toggle" data-layer="fires" aria-pressed="true">' + U.icon("flame", "sm") + "<span>" + U.esc(PM.t("cz.layer_fires")) + "</span></button>" +
+        '<button type="button" class="mb-toggle" data-layer="air" aria-pressed="false">' + U.icon("wind", "sm") + "<span>" + U.esc(PM.t("cz.layer_air")) + "</span></button></div></div>" +
+        '<span class="mb-sep" aria-hidden="true"></span>';
+    }
+    return '<div class="mapbar glass" role="toolbar" aria-label="' + U.esc(PM.t("auth.filter_types")) + '"><div class="mb-row">' + layers +
+      '<div class="mb-group mb-grow"><span class="mb-label">' + U.esc(PM.t("map.fire_type")) + '</span><div class="mb-chips" data-typechips></div></div></div>' +
+      '<div class="mb-note" title="' + U.esc(PM.t("filter.industry_note")) + '">' + U.icon("info", "sm") + "<span>" + U.esc(PM.t("filter.industry_note")) + "</span></div></div>";
   };
   /** Turn a chip click into the new choice: {type: true} for that type only, or {} for all. */
   U.toggleType = function (on, key) {
