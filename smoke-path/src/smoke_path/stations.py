@@ -1,7 +1,6 @@
-"""Measured air quality from monitoring stations (OpenAQ v3: CPCB and other reference monitors).
+"""Measured air quality from monitoring stations (OpenAQ v3, the only station source).
 
-Used as the fallback source of the "Live air" tabs when CPCB's own feed (cpcb.py) is not
-available. OpenAQ often receives CPCB readings about 2 days late; readings up to MAX_AGE_H
+It feeds the "Live air" tabs. OpenAQ often receives the government stations' readings 2-4 days late; readings up to MAX_AGE_H
 old are used and their age is shown.
 
 Needs a free OpenAQ API key (OPENAQ_API_KEY). Without it everything still works,

@@ -15,8 +15,7 @@ toxicity; the table lists every fire, most toxic first.
 
 **2. Air quality**, straight from the APIs (nothing added by us):
 
-* **Now, measured:** the latest readings at monitoring stations (CPCB's live feed on data.gov.in;
-  OpenAQ as a fallback), each station's AQI, rankings (most polluted, cleanest, Delhi / Punjab / Haryana /
+* **Now, measured:** the latest readings at monitoring stations (from OpenAQ), each station's AQI, rankings (most polluted, cleanest, Delhi / Punjab / Haryana /
   Rajasthan) and a city table, for the whole of India.
 * **Forecast, next 48 hours:** the CAMS air-quality forecast (ECMWF, via Open-Meteo) as an AQI map
   with a time slider; tap the map for a spot's hourly AQI and pollutants.
@@ -44,11 +43,11 @@ smoke-path/
     data/places_snapshot.json.gz   that saved copy (made by build_places_snapshot.py)
     fires.py        NASA FIRMS fetch + CSV parsing
     landuse.py      what was burning: land cover, mapped industry, all-year heat sources
-    airquality.py   CAMS forecast (Open-Meteo) on a grid, CPCB AQI, weather for spreading smoke
-    stations.py     OpenAQ monitoring stations: latest readings (fallback for cpcb.py)
+    airquality.py   CAMS forecast (Open-Meteo) on a grid, Indian AQI (CPCB method), weather for spreading smoke
+    stations.py     OpenAQ monitoring stations: latest readings
     emissions.py    what a fire gives off per hour and its toxicity score
     air.py          the CAMS forecast grid, a spot's 48 h outlook and the AQI map layer
-    cpcb.py         live station readings (CPCB via data.gov.in, OpenAQ fallback), cities, rankings
+    station_air.py  station readings turned into AQI, cities, rankings
     data/landcover.bin.gz        ESA WorldCover 2021, ~100 m cells (build_landcover.py)
     data/industry.json.gz        OSM factories, kilns, power plants, landfills (build_industry.py)
     data/static_sources.json.gz  spots burning all year, from NASA's archive (build_static_sources.py)
@@ -149,9 +148,8 @@ Honest limit: this is a simple wind-carry line. It doesn't model smoke spreading
 ### 6. Air quality
 
 #### Measured now
-- **Source:** the government's CPCB stations, through data.gov.in. If that fails, we fall back to OpenAQ.
-- **Caveat 1:** the author's network can't reach the data.gov.in server, so the CPCB route was not tested. The code for it is unverified.
-- **Caveat 2:** the OpenAQ readings in the saved sample were about 2–3 days old, and the app says so.
+- **Source:** OpenAQ, which collects readings from the government's monitoring stations. There is no other station source.
+- **Caveat:** these readings arrive days late (2–4 days when last checked), so the AQI is marked indicative and every reading shows its age.
 - **What we get per station:** PM2.5, PM10, NO₂, SO₂, ozone and CO (some stations lack some of these).
 - **AQI:** we calculate it ourselves with the official Indian formula. Each pollutant gets its own score, and the **worst score is the AQI**. The pollutant that gave it is shown as the "main pollutant". The colours are the official CPCB colours.
 
@@ -190,14 +188,14 @@ Honest limit: this is a simple wind-carry line. It doesn't model smoke spreading
 | Fires | 3 hours behind the satellite pass | every few minutes on screen, about half an hour on the server |
 | Wind | recent past plus the next few days | every 6 hours |
 | AQI forecast | next 48 hours | every 6 hours |
-| Measured AQI | live if CPCB works, otherwise about 2–3 days old (OpenAQ) | every 10 minutes on screen |
+| Measured AQI | 2–4 days old (OpenAQ) | every 10 minutes on screen |
 | Towns, land cover, states | shipped with the app | only when rebuilt |
 
 ### 10. What's real and what isn't
 
 - **Real, computed:** fire locations, wind, the AQI calculation, the path, the toxicity arithmetic.
 - **Estimated:** fire type (a guess from the ground) and the toxicity number.
-- **Not tested:** the CPCB feed, and anything on AWS (Cognito, DynamoDB, SNS), because none of it is deployed.
+- **Not tested:** anything on AWS (Cognito, DynamoDB, SNS), because none of it is deployed.
 - **Demo only:** contacts, "Sent (demo)" alerts, and the 10 Oct sample story (Bisoi and Jharkhand/Odisha fires, because that sample has no Punjab fires).
 
 ## How the model works
@@ -300,9 +298,7 @@ lon 67.2-98.7; Open-Meteo counts each point as a call: 600 a minute, 10,000 a da
 ahead, in 3 parallel requests, and reuse it for 6 hours.
 Nothing is added or corrected: the values are CAMS's own.
 
-**Measured (stations).** CPCB's real-time feed on data.gov.in (about 500 stations, hourly, all
-pollutants, each with CPCB's own averages). Without a data.gov.in key, or when it is down, OpenAQ is
-used instead: PM2.5, PM10, NO2, SO2, CO and ozone (no NH3), often 2-4 days late, so the AQI is marked indicative and every
+**Measured (stations).** OpenAQ is the only source: PM2.5, PM10, NO2, SO2, CO and ozone (no NH3), often 2-4 days late, so the AQI is marked indicative and every
 reading shows its age.
 
 **India's AQI (CPCB).** Each pollutant gets a sub-index from CPCB's breakpoints (24 hour averages for
@@ -329,13 +325,7 @@ OPENAQ_API_KEY=<YOUR_OPENAQ_API_KEY>
 ```
 
 The OpenAQ key is free: sign up at https://explore.openaq.org/register, then copy the key from your
-account settings. It is the fallback for the measured air tab when data.gov.in is unavailable.
-
-```
-DATA_GOV_IN_API_KEY=<YOUR_DATA_GOV_IN_KEY>
-```
-
-The data.gov.in key (free: data.gov.in → My Account → Generate API Key) gives CPCB's live station feed.
+account settings. It feeds the measured air tab.
 
 ## Try it with real data
 
@@ -440,8 +430,7 @@ sam deploy --guided --region ap-south-1
 | Stack Name | `parali-mitra-smoke-path` |
 | AWS Region | `ap-south-1` |
 | Parameter FirmsMapKey | paste your FIRMS MAP_KEY (it is hidden; leave empty to skip fires) |
-| Parameter DataGovInApiKey | paste your data.gov.in key (hidden) |
-| Parameter OpenAqApiKey | paste your OpenAQ key (hidden; fallback for measured air) |
+| Parameter OpenAqApiKey | paste your OpenAQ key (hidden; the measured air tab) |
 | Parameter WindLevel | press Enter (`120m`) |
 | Parameter OverpassUrl | press Enter (main Overpass server) |
 | Confirm changes before deploy | `y` |
@@ -490,10 +479,8 @@ AQI on the CAMS grid every 3 hours for 48 hours: `south`, `west`, `step`, `rows`
 
 ### `GET /stations` (live air at monitoring stations)
 
-Latest readings and the CPCB AQI at every monitoring station, from CPCB's real-time feed on
-data.gov.in (needs `DATA_GOV_IN_API_KEY`: free, data.gov.in → My Account → Generate API Key). Without
-the key, or when data.gov.in is down, OpenAQ readings are used instead (PM2.5, PM10, NO2, SO2, CO, ozone; no NH3; often ~2 days
-late, AQI marked indicative). JSON: `source`, `stations` (name, city, state, lat, lon, updated, age_h,
+Latest readings and the Indian AQI at monitoring stations, from OpenAQ (needs `OPENAQ_API_KEY`; PM2.5, PM10, NO2, SO2, CO,
+ozone; no NH3; often 2-4 days late, AQI marked indicative). JSON: `source`, `stations` (name, city, state, lat, lon, updated, age_h,
 aqi, category, dominant, pollutants with avg/min/max/sub-index), `cities` (average AQI of a city's
 stations, worst station), `rankings` (most polluted, cleanest, most polluted in Delhi/Punjab/Haryana/Rajasthan),
 `notes`. Cached 30 minutes. Used by the "Live air" tabs.
@@ -541,7 +528,7 @@ Settings (Lambda environment variables): `FIRMS_MAP_KEY` (from the `FirmsMapKey`
   Industrial fires are not estimated (the factors are for burning vegetation).
 * The forecast is CAMS's (~45 km cells, so it cannot see one village next to one field). CAMS
   sometimes forecasts strong desert dust over Punjab, Haryana and Rajasthan; the page says so.
-* Measured values come from CPCB stations; through OpenAQ they are often 2-4 days late (shown).
+* Measured values come from OpenAQ and are often 2-4 days late (shown).
 * Fire type: land cover is from 2021 and judged within 400 m; OpenStreetMap misses many brick kilns;
   a field next to a kiln can be labelled either way (the confidence says so).
 * It uses one height (120 m). Real smoke spreads across many heights with different winds.
@@ -577,7 +564,7 @@ Settings (Lambda environment variables): `FIRMS_MAP_KEY` (from the `FirmsMapKey`
   standard-processing archive for the all-year heat sources.
 * Air quality: [Copernicus Atmosphere Monitoring Service](https://atmosphere.copernicus.eu/) (CAMS) global
   forecast via the [Open-Meteo Air Quality API](https://open-meteo.com/en/docs/air-quality-api);
-  stations via [OpenAQ](https://openaq.org/) (CPCB and other reference monitors).
+  stations via [OpenAQ](https://openaq.org/) (government and other reference monitors).
 * Land cover: [ESA WorldCover 2021 v200](https://esa-worldcover.org/), © ESA WorldCover project /
   Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium, CC BY 4.0.
 * Emission factors: GFED4.1 table (van der Werf et al. 2017; Akagi et al. 2011); combustion rate:
@@ -588,7 +575,7 @@ Settings (Lambda environment variables): `FIRMS_MAP_KEY` (from the `FirmsMapKey`
 
 | Data | Area |
 |---|---|
-| Measured air quality (CPCB / OpenAQ), forecast map | all of India |
+| Measured air quality (OpenAQ), forecast map | all of India |
 | Fires, what was burning, toxicity, smoke paths | all of India (wind on a 1.5° grid, 529 points) |
 | Land cover for "what was burning" | 100 m around Punjab and Haryana, 450 m for all of India (`landcover_india.bin.gz`, `build_landcover.py --national`) |
 | Factories, kilns, all-year heat sources | Punjab and Haryana only (the all-India versions were not built); elsewhere a fire is labelled from land cover alone, so industrial fires there show as farm, built-up or unknown. The report carries `industry_box`, and the app marks the Factory or kiln chip with * and says so |
@@ -612,10 +599,10 @@ not secure. "Demo: switch role" in the account menu swaps citizen and authority 
 alerts come from the server; alerts and cases are kept by the server (memory locally, DynamoDB on AWS).
 
 **What is demo and what is real**
-* Real: fires, smoke paths, toxicity, what was burning, air quality (OpenAQ now; CPCB when the feed is reachable), forecast.
+* Real: fires, smoke paths, toxicity, what was burning, air quality (OpenAQ), forecast.
 * Demo: the login, the contact registry (made-up names, `+91-00000-…` numbers, `@example.com` addresses), sample data.
 * Not connected: owner lookup from land records or factory licences. A real contact has to be typed in.
-* Not verified: the CPCB feed parsing (the data.gov.in server refuses connections from my network), Cognito sign-in
+* Not verified: Cognito sign-in
   against a real user pool, SNS email, DynamoDB on AWS (the store is tested with a fake table).
 * Delivery: the in-app inbox is the main channel. SMS in India needs DLT registration, so it is not used.
 * Map tiles: Esri "Canvas" light and dark (no key); CARTO now asks for a key. OpenStreetMap is the fallback.
@@ -632,7 +619,44 @@ alerts come from the server; alerts and cases are kept by the server (memory loc
 
 Each fire has a stable `key` (spot + day first seen, e.g. `30.20_75.80_20261010`) and a `state`; the key is the case id.
 
-### Deploy it yourself (I never run these)
+## Deploy to AWS (one command)
+
+Everything runs on AWS: **S3 + CloudFront** serve the web app and forward the API paths, **API Gateway + Lambda** do the work,
+**DynamoDB** keeps alerts and cases, **S3** also keeps a shared copy of the slow results (fires, wind grid, air forecast), and
+**EventBridge** refreshes that copy every 30 minutes, so visitors never wait for the first fetch. Python 3.12 Lambda, standard library
+only. The region is the one you set in `aws configure` (Mumbai `ap-south-1` if none).
+
+One time:
+1. Install the tools: `brew install awscli aws-sam-cli`
+2. Log in: `aws configure` (an IAM user's access key, region `ap-south-1`).
+3. Put your keys in `smoke-path/.env` (never commit it): `FIRMS_MAP_KEY=...` and `OPENAQ_API_KEY=...`
+
+Deploy (and again after any change):
+```
+cd smoke-path
+bash scripts/deploy_aws.sh
+```
+It builds, deploys the stack `parali-mitra`, uploads the web app, clears the CloudFront cache and fetches the first data. The first run takes
+about 10 minutes (CloudFront is slow to create). At the end it prints the address of your site. The keys go to AWS as hidden stack
+parameters and are never printed or stored in git.
+
+What to check afterwards: open the printed address, pick **Authority** and look for the green "Live" badge; open `<address>/fires` (JSON).
+Logs: `aws logs tail /aws/lambda/<function> --follow` (the script prints the exact line).
+
+Updates: after you change anything, run `bash scripts/deploy_aws.sh` again (it updates the same stack and the site). To make that
+automatic, add four secrets in GitHub (Settings, Secrets and variables, Actions): `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
+`FIRMS_MAP_KEY`, `OPENAQ_API_KEY`. Then every push to `main` that touches `smoke-path/` deploys by itself
+(`.github/workflows/deploy.yml`; you can also press "Run workflow" in the Actions tab).
+
+Things to know:
+* Sign-in is the demo login (no passwords) and the authority routes are **open** to anyone with the address. Fine for a demo; for anything
+  public see the Cognito steps below.
+* Measured air comes from OpenAQ and is often 2-4 days old (shown in the app).
+* Take it all down: empty both buckets, then delete the stack:
+  `aws s3 rm s3://<SiteBucketName> --recursive`, `aws s3 rm s3://<CacheBucketName> --recursive`, `aws cloudformation delete-stack --stack-name parali-mitra`
+  (the bucket names are in the stack's resources in the CloudFormation console).
+
+### Manual steps and optional sign-in and email
 
 Nothing here has been deployed. With the defaults (`EnableAuth=false`) the authority routes are **open**: anyone with the
 API address could send alerts. Use that only for a private demo.
@@ -643,7 +667,7 @@ API address could send alerts. Use that only for a private demo.
    sam build
    sam deploy --guided --stack-name parali-mitra --region ap-south-1
    ```
-   At the prompts give `FirmsMapKey`, `DataGovInApiKey`, `OpenAqApiKey` (`<YOUR_KEY_HERE>`), leave `EnableAuth` as `false` first.
+   At the prompts give `FirmsMapKey`, `OpenAqApiKey` (`<YOUR_KEY_HERE>`), leave `EnableAuth` as `false` first.
 2. Note `ApiBaseUrl` from the outputs. Open the app with `index.html?api=<ApiBaseUrl>`.
 3. Host the app (optional): create a bucket and a CloudFront distribution for the `frontend/` folder, then
    `aws s3 sync frontend/ s3://<YOUR_BUCKET>/ --delete`.
@@ -674,7 +698,7 @@ The website in `frontend/` is plain files with no build step, so Vercel can host
 5. Click **Deploy**. Do not add any environment variables; the website needs none.
 6. Open the `.vercel.app` link. To use it as the production site, make sure `main` is the Production Branch under Settings, Git.
 
-To show live data later, deploy the backend to AWS, then open `https://<your-site>.vercel.app/?api=<ApiBaseUrl>`. Never put the FIRMS, OpenAQ or data.gov.in keys on Vercel or in the website; they belong only in the AWS Lambda environment.
+To show live data later, deploy the backend to AWS, then open `https://<your-site>.vercel.app/?api=<ApiBaseUrl>`. Never put the FIRMS or OpenAQ keys on Vercel or in the website; they belong only in the AWS Lambda environment.
 
 ### Making the Vercel site live (after the AWS backend exists)
 

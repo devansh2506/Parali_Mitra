@@ -15,6 +15,8 @@
   --brand-soft: #dff3ee;
   --fire: #ea580c;
   --fire-soft: #ffedd5;
+  --farm: #a16207;
+  --farm-soft: #fef3c7;
   --ok: #15803d;
   --ok-soft: #dcfce7;
   --warn: #b45309;
@@ -74,6 +76,8 @@
   --brand-soft: #0f2f2a;
   --fire: #fb923c;
   --fire-soft: #3a1d0a;
+  --farm: #d19a1a;
+  --farm-soft: #33270a;
   --ok: #4ade80;
   --ok-soft: #0f2a19;
   --warn: #fbbf24;
@@ -218,11 +222,15 @@ textarea.input { min-height: 140px; resize: vertical; line-height: 1.5; }
 .hero h1 { font-size: clamp(34px, 6vw, 64px); font-weight: 700; margin: var(--s3) 0 var(--s4); }
 .hero h1 em { font-style: normal; color: var(--fire); }
 .hero p.lead { font-size: clamp(16px, 2vw, 20px); color: var(--muted); max-width: 640px; margin: 0 auto var(--s6); }
-.roles { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s4); text-align: left; }
+.roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); text-align: left; }
 .role-card { display: flex; flex-direction: column; gap: var(--s3); padding: var(--s5); border-radius: var(--r4); border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow-2); text-decoration: none; color: inherit; transition: transform var(--t-med) var(--ease), border-color var(--t-med); }
 .role-card:hover { transform: translateY(-3px); border-color: var(--brand); }
 .role-card .badge { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); }
 .role-card.authority .badge { background: var(--fire-soft); color: var(--fire); }
+.role-card.farmer .badge { background: var(--farm-soft); color: var(--farm); }
+.role-card.farmer:hover { border-color: var(--farm); }
+.btn.farmer-btn { background: var(--farm); border-color: var(--farm); color: #fff; }
+.btn.farmer-btn:hover { filter: brightness(1.08); }
 .role-card h2 { font-size: 24px; }
 .facts { display: flex; flex-wrap: wrap; gap: var(--s5); justify-content: center; margin-top: var(--s6); color: var(--muted); font-size: 14px; }
 .facts b { display: block; font-family: var(--font-display); font-size: 26px; color: var(--ink); }
@@ -454,6 +462,8 @@ table.t tr.click { cursor: pointer; } table.t tr.click:hover td { background: va
   .hero-aqi .big-num { font-size: 64px; }
 }
 
+/* the roles stack on narrower screens, 3 cards need room */
+@media (max-width: 980px) { .roles { grid-template-columns: 1fr; } }
 @media (max-width: 860px) {
   .toasts { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 12px); }
 }
@@ -502,3 +512,21 @@ table.t tr.click { cursor: pointer; } table.t tr.click:hover td { background: va
 .mb-group:not(.mb-grow) { flex: none; }
 
 .now-clock { font-size: 12.5px; font-weight: 600; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* ---------- farmer screens ---------- */
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3) var(--s4); }
+.check { gap: 10px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r2); background: var(--surface); cursor: pointer; }
+.check input { margin-top: 3px; accent-color: var(--farm); }
+.check:has(input:checked) { border-color: var(--farm); background: var(--farm-soft); }
+.cert { text-align: center; padding: var(--s5) var(--s4); border: 3px double var(--farm); border-radius: var(--r3); display: flex; flex-direction: column; gap: var(--s3); align-items: center; background: var(--surface); }
+.cert h2 { font-size: 24px; } .cert h3 { font-size: 16px; font-weight: 500; }
+.cert-mark { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--farm-soft); color: var(--farm); }
+.cert-line { font-size: 18px; line-height: 1.5; max-width: 52ch; }
+@media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } }
+@media print {
+  body.print-cert #app { display: none !important; }
+  body.print-cert .overlay { position: static; background: none; backdrop-filter: none; display: block; padding: 0; }
+  body.print-cert .modal { box-shadow: none; max-height: none; width: 100%; border: 0; }
+  body.print-cert .modal header, body.print-cert .modal footer, body.print-cert .toasts { display: none !important; }
+}
+a.btn { text-decoration: none; color: var(--ink); }

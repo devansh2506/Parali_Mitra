@@ -187,6 +187,19 @@
       var s = PM.store.session();
       return { alert: PM.local.createAlert(body, s && s.name), sent: "sent_demo" };
     },
+    /** Warnings sent to farmers about fires near the farm (no phone numbers or emails in them). */
+    farmerWarnings: async function (farm) {
+      if (!farm) return [];
+      if (state.mode === "live") {
+        var d = await request("GET", "/alerts?lat=" + farm.lat.toFixed(4) + "&lon=" + farm.lon.toFixed(4) + "&radius_km=25&kind=farmer_warnings");
+        return d.alerts || [];
+      }
+      return PM.local.warningsNear(farm.lat, farm.lon, 25);
+    },
+    ackWarning: async function (id, name) {
+      if (state.mode === "live") return request("POST", "/alerts/" + encodeURIComponent(id) + "/ack", { name: name });
+      return PM.local.ack(id, name);
+    },
     cases: async function () {
       if (state.mode === "live") return (await request("GET", "/cases")).cases || [];
       var c = PM.local.cases();

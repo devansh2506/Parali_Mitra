@@ -45,6 +45,12 @@
     theme: function (role) { return U.ls.get("pm.theme." + (role || "citizen"), role === "authority" ? "dark" : "light"); },
     setTheme: function (role, t) { U.ls.set("pm.theme." + (role || "citizen"), t); document.documentElement.setAttribute("data-theme", t); PM.emit("theme", t); },
     read: function () { return U.ls.get("pm.read", []); },
+    farm: function () { return U.ls.get("pm.farm", null); },
+    setFarm: function (f) { U.ls.set("pm.farm", f); PM.emit("farm", f); },
+    crops: function () { return U.ls.get("pm.crops", []); },
+    setCrops: function (c) { U.ls.set("pm.crops", c); PM.emit("farm"); },
+    pledges: function () { return U.ls.get("pm.pledges", []); },
+    addPledge: function (p) { var all = PM.store.pledges(); all.unshift(p); U.ls.set("pm.pledges", all.slice(0, 100)); PM.emit("farm"); },
     markRead: function (ids) { var all = PM.store.read(); ids.forEach(function (i) { if (all.indexOf(i) < 0) all.push(i); }); U.ls.set("pm.read", all.slice(-300)); PM.emit("alerts"); },
   };
   PM.applyTheme = function (role) {
@@ -92,6 +98,29 @@
         return Object.assign({}, a, { distance_km: Math.round(best * 10) / 10 });
       }).filter(function (a) { return a.distance_km <= radiusKm; });
     },
+    /** Warnings sent to farmers about a fire within radiusKm of the farm: the same rules as the server's warnings_near. */
+    warningsNear: function (lat, lon, radiusKm) {
+      var cases = Local.cases();
+      return Local.alerts().filter(function (a) {
+        return a.kind === "source_warning" && a.target.role === "farmer" && a.fire && a.fire.lat != null && a.fire.lon != null;
+      }).map(function (a) {
+        var c = cases[a.fire_id];
+        return Object.assign({}, a, { target: { name: a.target.name, role: "farmer" }, distance_km: Math.round(U.distKm(lat, lon, a.fire.lat, a.fire.lon) * 10) / 10, case_status: c ? c.status : "warning_sent", sent_by: undefined, delivery: undefined });
+      }).filter(function (a) { return a.distance_km <= radiusKm; });
+    },
+    /** A farmer says they read a warning: the case becomes acknowledged (only from new or warning_sent). */
+    ack: function (alertId, name) {
+      var a = Local.alerts().filter(function (x) { return x.id === alertId && x.kind === "source_warning"; })[0];
+      if (!a) throw new Error("That warning was not found.");
+      if (!name || !String(name).trim()) throw new Error("name is required.");
+      var cases = Local.cases(), now = PM.nowIso(), c = cases[a.fire_id];
+      if (c && (c.status === "new" || c.status === "warning_sent")) {
+        c.timeline.push({ t: now, event: "status", text: "Status: " + c.status + " → acknowledged. Read by " + String(name).trim() + " (farmer)", by: String(name).trim() });
+        c.status = "acknowledged"; c.updated_at = now; cases[a.fire_id] = c; U.ls.set("pm.local.cases", cases);
+        PM.emit("cases"); PM.emit("alerts");
+      }
+      return c;
+    },
     updateCase: function (id, b, who) {
       var cases = Local.cases(), now = PM.nowIso();
       var c = cases[id] || { fire_id: id, status: "new", created_at: now, updated_at: now, fire: b.fire || {}, timeline: [] };
@@ -112,6 +141,6 @@
       PM.emit("cases");
       return c;
     },
-    reset: function () { U.ls.del("pm.local.alerts"); U.ls.del("pm.local.cases"); U.ls.del("pm.read"); PM.emit("alerts"); PM.emit("cases"); },
+    reset: function () { U.ls.del("pm.local.alerts"); U.ls.del("pm.local.cases"); U.ls.del("pm.read"); U.ls.del("pm.farm"); U.ls.del("pm.crops"); U.ls.del("pm.pledges"); PM.emit("alerts"); PM.emit("cases"); },
   });
 })((window.PM = window.PM || {}));

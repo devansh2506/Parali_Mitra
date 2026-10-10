@@ -244,10 +244,10 @@ class WebAppFilesTests(unittest.TestCase):
             "tox.": ("low", "moderate", "high", "very_high", "none"),
             "status.": ("new", "warning_sent", "acknowledged", "resolved", "dismissed"),
             "btn.status.": ("new", "warning_sent", "acknowledged", "resolved", "dismissed"),
-            "kind.": ("source_warning", "public_alert"), "role.": ("farmer", "owner", "municipal", "other", "citizen_label", "authority_label"),
+            "kind.": ("source_warning", "public_alert"), "role.": ("farmer", "owner", "municipal", "other", "citizen_label", "farmer_label", "authority_label"),
             "grp.": ("village", "town", "school", "hospital"), "grp2.": ("children", "elderly", "asthma"),
-            "login.title_": ("citizen", "authority"), "login.continue_": ("citizen", "authority"), "login.demo_text_": ("citizen", "authority"),
-            "login.other_": ("citizen", "authority"),
+            "login.title_": ("citizen", "farmer", "authority"), "login.continue_": ("citizen", "farmer", "authority"),
+            "login.demo_text_": ("citizen", "farmer", "authority"), "fm.effort_": ("easy", "medium"), "sev.": ("low", "medium", "high"),
             "dir.": ("north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west", ""),
         }
         missing = []
@@ -284,6 +284,72 @@ class WebAppFilesTests(unittest.TestCase):
         out = subprocess.run([node, "-e", "global.window={};global.PM=window.PM={};" + open(FRONT / "js" / "i18n.js", encoding="utf-8").read() + ";process.stdout.write(JSON.stringify(PM.i18n))"],
                              capture_output=True, text=True, check=True).stdout
         return json.loads(out)
+
+    def node(self, code):
+        import shutil
+        import subprocess
+
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("Node is not installed")
+        return subprocess.run([node, "-e", "global.window={};global.PM=window.PM={};" + code], capture_output=True, text=True, check=True).stdout
+
+    def test_farmer_calculator_gives_the_same_numbers_as_the_server_model(self):
+        from smoke_path import emissions
+
+        out = json.loads(self.node((FRONT / "js" / "emissions.js").read_text(encoding="utf-8") +
+                                   ";process.stdout.write(JSON.stringify([2.5, 5, 40].map(a => PM.emissions.fromField(a))))"))
+        for acres, js in zip((2.5, 5, 40), out):
+            py = emissions.from_field(acres)
+            self.assertEqual(js["burned_kg"], py["burned_kg"])
+            self.assertEqual(set(js["kg"]), set(py["kg"]))
+            for k, v in py["kg"].items():
+                self.assertAlmostEqual(js["kg"][k], v, delta=max(0.011, abs(v) * 1e-4), msg=(acres, k))
+            self.assertEqual(js["toxicity"]["level"], py["toxicity"]["level"].replace(" ", "_"))
+            self.assertAlmostEqual(js["toxicity"]["km3"], py["toxicity"]["km3"], delta=0.002)
+            self.assertEqual(js["toxicity"]["worst"], py["toxicity"]["worst"])
+
+    def test_farm_reference_data_is_complete_in_both_languages(self):
+        ref = json.loads(self.node((FRONT / "data" / "farm-ref.js").read_text(encoding="utf-8") + ";process.stdout.write(JSON.stringify(window.PM_FARM))"))
+        symptoms = {s["id"] for s in ref["symptoms"]}
+        for s in ref["symptoms"] + ref["soils"] + ref["irrigation"] + ref["crops"]:
+            self.assertTrue(s["en"] and s["hi"], s["id"])
+        for c in ref["crops"]:
+            self.assertLessEqual(c["min"], c["max"])
+            self.assertIn(c["season"], ("rabi", "kharif", "year"))
+        self.assertEqual([s["upto"] for s in ref["stages"]], sorted(s["upto"] for s in ref["stages"]))
+        self.assertEqual(ref["stages"][-1]["upto"], 1.0)
+        for st in ref["stages"]:
+            self.assertEqual(len(st["tasks"]["en"]), len(st["tasks"]["hi"]), st["id"])
+        covered = set()
+        for d in ref["diseases"]:
+            self.assertTrue(set(d["symptoms"]) <= symptoms, d["id"])
+            covered |= set(d["symptoms"])
+            for part in ("name", "what", "organic", "cultural"):
+                self.assertTrue(d[part]["en"] and d[part]["hi"], (d["id"], part))
+            self.assertEqual(len(d["organic"]["en"]), len(d["organic"]["hi"]), d["id"])
+            for c in d["chemical"]:
+                self.assertTrue(c["dose"]["hi"] and c["freq"]["hi"], d["id"])
+        self.assertEqual(covered, symptoms)  # every symptom a farmer can tick leads somewhere
+        for a in ref["alternatives"]:
+            for part in ("what", "cost", "gain", "time", "scheme"):
+                self.assertTrue(a[part]["en"] and a[part]["hi"], (a["id"], part))
+            self.assertIn(a["effort"], ("easy", "medium"))
+
+    def test_the_landing_page_offers_three_logins_and_each_has_routes(self):
+        app = (FRONT / "js" / "app.js").read_text(encoding="utf-8")
+        for role in ("farmer", "citizen", "authority"):
+            self.assertIn('href="#/login/' + role + '"', app)
+        for route in ("farmer/setup", "farmer/home", "farmer/crops", "farmer/doctor", "farmer/stubble", "farmer/alerts"):
+            self.assertIn('["' + route + '"', app)
+        self.assertLess(app.index('href="#/login/farmer"'), app.index('href="#/login/citizen"'))  # farmer first, as asked
+        self.assertNotIn("farmer/map", app)  # no map, forecast or air quality for farmers
+        self.assertNotIn("farmer/forecast", app)
+        farmer = (FRONT / "js" / "screens-farmer.js").read_text(encoding="utf-8")
+        for word in ("PM.air", "api.stations", "api.spot", "api.forecast", "maps.create"):
+            if word == "maps.create":
+                continue  # the farm location picker draws a small map to tap on
+            self.assertNotIn(word, farmer, word)
 
     def test_demo_contacts_are_obviously_fake(self):
         text = (FRONT / "data" / "registry.js").read_text(encoding="utf-8")

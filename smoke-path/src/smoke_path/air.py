@@ -6,11 +6,15 @@ degrees, and Open-Meteo counts each point as a call against its free limits: 600
 from one day back (for 24 hour averages) to 3 days ahead, and is reused for AQ_TTL_S.
 """
 
+import logging
+import pickle
 import time
 from datetime import timedelta
 
-from . import airquality
+from . import airquality, shared_cache
 from .net import ApiError
+
+log = logging.getLogger(__name__)
 
 REGION_GRID = {"south": 6.0, "west": 67.2, "step": 1.5, "rows": 22, "cols": 22}
 PAST_DAYS = 1
@@ -22,13 +26,31 @@ OUTLOOK_HOURS = 48
 _cache = {}
 
 
+SHARED = ("wind", "cams")  # big grids that also live in S3 (shared_cache) when CACHE_BUCKET is set
+
+
 def cached(key, make, ttl_s, clock=time.monotonic):
-    """make() once per ttl_s for this key (per Lambda instance); errors are not cached."""
+    """make() once per ttl_s for this key (per Lambda instance, and across instances through S3); errors are not cached."""
     now = clock()
     hit = _cache.get(key)
     if hit and hit[0] > now:
         return hit[1]
+    name = shared_cache.object_name(*key) if key and key[0] in SHARED and shared_cache.enabled() else None
+    if name:
+        raw = shared_cache.load(name, ttl_s)
+        if raw is not None:
+            try:
+                value = pickle.loads(raw)  # our own bytes, from our private bucket
+                _cache[key] = (now + ttl_s, value)
+                return value
+            except Exception as err:  # noqa: BLE001
+                log.warning("shared cache copy of %s is not usable: %s", name, err)
     value = make()
+    if name:
+        try:
+            shared_cache.save(name, pickle.dumps(value, protocol=4))
+        except Exception as err:  # noqa: BLE001
+            log.warning("could not keep %s: %s", name, err)
     for k in [k for k, v in _cache.items() if v[0] <= now]:
         del _cache[k]
     _cache[key] = (now + ttl_s, value)

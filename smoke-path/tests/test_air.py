@@ -213,10 +213,10 @@ class StationTests(unittest.TestCase):
         latest["results"].append({"datetime": {"utc": "2018-02-21T20:45:00Z"}, "value": 77.6, "sensorsId": 26})  # too old
         s = stations.parse_latest(latest, locs[0], self.NOW)
         self.assertEqual((s["pm2_5"], s["no2"], s["so2"], s["co"], s["o3"]), (90, 40, 12, 1500, 60))  # CO kept in µg/m³
-        from smoke_path import cpcb
+        from smoke_path import station_air
         from unittest import mock
         with mock.patch.object(stations, "fetch_stations", return_value=[s]):
-            row = cpcb.openaq_fallback("PLACEHOLDER", self.NOW)[0]
+            row = station_air.openaq_fallback("PLACEHOLDER", self.NOW)[0]
         self.assertEqual(row["pollutants"]["co"]["avg"], 1.5)  # CPCB feed shape: CO in mg/m³
         self.assertEqual(row["pollutants"]["no2"]["avg"], 40)
 
@@ -255,30 +255,22 @@ class StationTests(unittest.TestCase):
         self.assertAlmostEqual(f["kg"]["pm2_5"], round(emissions.burned_tonnes(5) * 6.26, 1))
 
 
-class CpcbTests(unittest.TestCase):
+class StationAirTests(unittest.TestCase):
     NOW = datetime(2026, 10, 10, 9, 30, tzinfo=IST)
 
-    def records(self):
-        rec = lambda station, city, pid, avg, lat="30.90", lon="75.85", key="avg_value": {  # noqa: E731
-            "country": "India", "state": "Punjab", "city": city, "station": station, "last_update": "10-10-2026 09:00:00",
-            "latitude": lat, "longitude": lon, "pollutant_id": pid, "min_value": "10", "max_value": "300", key: avg}
-        return [rec("Punjab Agri Univ, Ludhiana - PPCB", "Ludhiana", "PM2.5", "95"),
-                rec("Punjab Agri Univ, Ludhiana - PPCB", "Ludhiana", "PM10", "150"),
-                rec("Punjab Agri Univ, Ludhiana - PPCB", "Ludhiana", "CO", "1.5"),
-                rec("Punjab Agri Univ, Ludhiana - PPCB", "Ludhiana", "OZONE", "NA"),
-                rec("Model Town, Ludhiana - PPCB", "Ludhiana", "PM2.5", "30", "30.89", "75.83", "pollutant_avg"),
-                rec("Model Town, Ludhiana - PPCB", "Ludhiana", "NO2", "20", "30.89", "75.83", "pollutant_avg"),
-                rec("Model Town, Ludhiana - PPCB", "Ludhiana", "NH3", "10", "30.89", "75.83", "pollutant_avg")]
+    def found(self):
+        pol = lambda **kw: {p: {"avg": v, "min": None, "max": None} for p, v in kw.items()}  # noqa: E731
+        t = datetime(2026, 10, 10, 9, 0, tzinfo=IST)
+        return [{"id": "Punjab Agri Univ, Ludhiana - PPCB", "name": "Punjab Agri Univ, Ludhiana - PPCB", "city": "Ludhiana", "state": "Punjab", "lat": 30.90, "lon": 75.85,
+                 "updated": t, "pollutants": pol(pm2_5=95, pm10=150, co=1.5)},
+                {"id": "Model Town, Ludhiana - PPCB", "name": "Model Town, Ludhiana - PPCB", "city": "Ludhiana", "state": "Punjab", "lat": 30.89, "lon": 75.83,
+                 "updated": t, "pollutants": pol(pm2_5=30, no2=20, nh3=10, so2=5)}]
 
     def test_parse_and_aqi(self):
-        from smoke_path import cpcb
+        from smoke_path import station_air
 
-        found = cpcb.parse_records(self.records())
-        self.assertEqual(len(found), 2)
-        pau = [s for s in found if s["name"].startswith("Punjab Agri")][0]
-        self.assertEqual(set(pau["pollutants"]), {"pm2_5", "pm10", "co"})  # "NA" ozone skipped
-        self.assertEqual(pau["updated"], datetime(2026, 10, 10, 9, 0, tzinfo=IST))
-        doc = cpcb.summarise(found, self.NOW, "test")
+        found = self.found()
+        doc = station_air.summarise(found, self.NOW, "test")
         by = {s["name"]: s for s in doc["stations"]}
         self.assertEqual(by["Punjab Agri Univ, Ludhiana - PPCB"]["aqi"], 217)  # PM2.5 95 -> 217
         self.assertEqual(by["Punjab Agri Univ, Ludhiana - PPCB"]["pollutants"]["co"]["sub"], 75)  # 1.5 mg/m³ is halfway from 1.0 (50) to 2.0 (100)
@@ -289,19 +281,19 @@ class CpcbTests(unittest.TestCase):
         self.assertEqual(by["Punjab Agri Univ, Ludhiana - PPCB"]["age_h"], 0.5)
 
     def test_city_from_openaq_name(self):
-        from smoke_path import cpcb
+        from smoke_path import station_air
 
-        self.assertEqual(cpcb.city_from_name("Vikas Sadan, Gurugram - HSPCB"), "Gurugram")
-        self.assertEqual(cpcb.city_from_name("New Delhi"), "New Delhi")
+        self.assertEqual(station_air.city_from_name("Vikas Sadan, Gurugram - HSPCB"), "Gurugram")
+        self.assertEqual(station_air.city_from_name("New Delhi"), "New Delhi")
 
     def test_endpoint_caches(self):
-        from smoke_path import cpcb
+        from smoke_path import station_air
 
         calls = []
 
         def live(now):
             calls.append(1)
-            return cpcb.summarise(cpcb.parse_records(self.records()), self.NOW, "test"), True
+            return station_air.summarise(self.found(), self.NOW, "test"), True
 
         cache = ResponseCache()
         r1 = app.handle_stations(cache, self.NOW, live=live)

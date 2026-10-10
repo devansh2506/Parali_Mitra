@@ -2,9 +2,10 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >-
   Parali Mitra (Feature 6): fires, smoke paths and air quality for India, with alerts and cases for
-  authorities. API Gateway HTTP API + one Lambda (Python 3.12) + DynamoDB. Amazon Cognito sign-in and
-  SNS email are optional and OFF by default (see the parameters). Not deployed by Claude: you run
-  `sam deploy` yourself (see README, "Deploy it yourself").
+  authorities and farmers. S3 + CloudFront serve the web app and forward API calls; API Gateway HTTP API +
+  one Lambda (Python 3.12) do the work; DynamoDB keeps alerts and cases; S3 also keeps a shared copy of the
+  slow results; EventBridge refreshes it every 30 minutes. Amazon Cognito sign-in and SNS email are optional
+  and OFF by default. Deploy with scripts/deploy_aws.sh (see README, "Deploy to AWS").
 
 Parameters:
   FirmsMapKey:
@@ -12,16 +13,11 @@ Parameters:
     NoEcho: true
     Default: ""
     Description: Free NASA FIRMS MAP_KEY (https://firms.modaps.eosdis.nasa.gov/api/map_key/). Leave empty to skip fires.
-  DataGovInApiKey:
-    Type: String
-    NoEcho: true
-    Default: ""
-    Description: Free data.gov.in API key (CPCB real-time air quality). Leave empty to use OpenAQ instead.
   OpenAqApiKey:
     Type: String
     NoEcho: true
     Default: ""
-    Description: Free OpenAQ v3 API key (https://explore.openaq.org/register). Leave empty for no fallback when data.gov.in is down.
+    Description: Free OpenAQ v3 API key (https://explore.openaq.org/register). Leave empty and the measured air tab has no stations.
   WindLevel:
     Type: String
     Default: 120m
@@ -36,7 +32,7 @@ Parameters:
     Default: "false"
     AllowedValues: ["true", "false"]
     Description: >-
-      "true" creates an Amazon Cognito user pool (groups citizen and authority) and makes POST /alerts, GET /activity,
+      "true" creates an Amazon Cognito user pool (groups citizen, farmer and authority) and makes POST /alerts, GET /activity,
       GET /cases and PATCH /cases/{id} require a signed-in authority. "false" (default) leaves those routes OPEN:
       anyone with the URL could send alerts. Use "false" only for a private demo.
   CognitoDomainPrefix:
@@ -97,8 +93,155 @@ Resources:
         MaxAge: 600
       DefaultRouteSettings:
         # Protects the free upstream APIs (and your FIRMS key quota) from floods.
-        ThrottlingBurstLimit: 20
-        ThrottlingRateLimit: 5
+        ThrottlingBurstLimit: 100
+        ThrottlingRateLimit: 40
+
+  # ---- the web app: a private S3 bucket behind CloudFront (which also forwards the API paths to API Gateway) ------
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  SiteOriginAccess:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${AWS::StackName}-site"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCloudFrontRead
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${SiteBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${SiteDistribution}"
+
+  SiteDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: Parali Mitra web app and API
+        DefaultRootObject: index.html
+        HttpVersion: http2and3
+        PriceClass: PriceClass_200
+        Origins:
+          - Id: site
+            DomainName: !GetAtt SiteBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt SiteOriginAccess.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+          - Id: api
+            DomainName: !Sub "${SmokeApi}.execute-api.${AWS::Region}.amazonaws.com"
+            CustomOriginConfig:
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols:
+                - TLSv1.2
+              OriginReadTimeout: 30
+        DefaultCacheBehavior:
+          TargetOriginId: site
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6   # Managed-CachingOptimized
+        CacheBehaviors:
+          - PathPattern: /fires
+            TargetOriginId: api
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad   # Managed-CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac   # Managed-AllViewerExceptHostHeader
+          - PathPattern: /stations
+            TargetOriginId: api
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+          - PathPattern: /forecast
+            TargetOriginId: api
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+          - PathPattern: /air
+            TargetOriginId: api
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+          - PathPattern: /smoke
+            TargetOriginId: api
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+          - PathPattern: /alerts
+            TargetOriginId: api
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+          - PathPattern: /alerts/*
+            TargetOriginId: api
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+          - PathPattern: /activity
+            TargetOriginId: api
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+          - PathPattern: /cases
+            TargetOriginId: api
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+          - PathPattern: /cases/*
+            TargetOriginId: api
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+
+  # ---- a shared copy of the slow results (fires, wind grid, air forecast): every Lambda copy reads it ----------------
+  CacheBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-old-copies
+            Status: Enabled
+            ExpirationInDays: 3
 
   # ---- storage: alerts and cases (on-demand billing, nothing to size) ---------------------------------------
   AlertsTable:
@@ -188,6 +331,14 @@ Resources:
       GroupName: citizen
       Description: People who read alerts
 
+  FarmerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Condition: UseAuth
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: farmer
+      Description: Farmers who read warnings about fires near their farm and acknowledge them
+
   AuthorityGroup:
     Type: AWS::Cognito::UserPoolGroup
     Condition: UseAuth
@@ -220,11 +371,14 @@ Resources:
       Runtime: python3.12
       Architectures:
         - arm64
-      Timeout: 29
-      MemorySize: 256
+      # API Gateway cuts a web request at 29 s; the scheduled refresh below may take longer, so the function may run to 120 s.
+      Timeout: 120
+      MemorySize: 512
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref AlertsTable
+        - S3CrudPolicy:
+            BucketName: !Ref CacheBucket
         - !If
           - UseEmail
           - SNSPublishMessagePolicy:
@@ -236,15 +390,20 @@ Resources:
           FIRMS_MAP_KEY: !Ref FirmsMapKey
           # API key consumed by smoke_path/stations.py (OpenAQ, fallback for live air). From the NoEcho parameter.
           OPENAQ_API_KEY: !Ref OpenAqApiKey
-          # API key consumed by smoke_path/cpcb.py (CPCB live feed on data.gov.in).
-          DATA_GOV_IN_API_KEY: !Ref DataGovInApiKey
           WIND_LEVEL: !Ref WindLevel
           OVERPASS_URL: !Ref OverpassUrl
           ALERTS_TABLE: !Ref AlertsTable
+          CACHE_BUCKET: !Ref CacheBucket
           # "true": the code checks that the caller is in the Cognito group "authority" (API Gateway has verified the token).
           REQUIRE_AUTHORITY: !If [UseAuth, "true", "false"]
           ALERTS_SNS_TOPIC: !If [UseEmail, !Ref AlertsTopic, ""]
       Events:
+        # Every 30 minutes: fetch fires, stations and the air forecast again and save them to S3, so no visitor waits.
+        WarmCache:
+          Type: Schedule
+          Properties:
+            Schedule: rate(30 minutes)
+            Input: '{"warm": true}'
         GetSmoke:
           Type: HttpApi
           Properties:
@@ -317,6 +476,23 @@ Resources:
       AuthorizerId: !Ref JwtAuthorizer
       Target: !Sub integrations/${AuthorityIntegration}
 
+  AckAlertOpen:
+    Type: AWS::ApiGatewayV2::Route
+    Condition: NoAuth
+    Properties:
+      ApiId: !Ref SmokeApi
+      RouteKey: POST /alerts/{alert_id}/ack
+      Target: !Sub integrations/${AuthorityIntegration}
+  AckAlertAuth:
+    Type: AWS::ApiGatewayV2::Route
+    Condition: UseAuth
+    Properties:
+      ApiId: !Ref SmokeApi
+      RouteKey: POST /alerts/{alert_id}/ack
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+      Target: !Sub integrations/${AuthorityIntegration}
+
   GetActivityOpen:
     Type: AWS::ApiGatewayV2::Route
     Condition: NoAuth
@@ -369,6 +545,15 @@ Resources:
       Target: !Sub integrations/${AuthorityIntegration}
 
 Outputs:
+  SiteUrl:
+    Description: The web app. Open this address.
+    Value: !Sub "https://${SiteDistribution.DomainName}"
+  SiteBucketName:
+    Description: S3 bucket holding the web app files (scripts/deploy_aws.sh uploads to it)
+    Value: !Ref SiteBucket
+  DistributionId:
+    Description: CloudFront distribution (scripts/deploy_aws.sh clears its cache after an upload)
+    Value: !Ref SiteDistribution
   ApiBaseUrl:
     Description: The API address. Open the web app with index.html?api=<this URL> (no trailing slash).
     Value: !Sub "https://${SmokeApi}.execute-api.${AWS::Region}.amazonaws.com"

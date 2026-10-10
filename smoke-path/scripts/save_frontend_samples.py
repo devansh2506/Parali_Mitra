@@ -5,7 +5,7 @@
 
 Fires:     fixtures/fire_watch_sample.json (made by scripts/save_fire_watch_sample.py). Each fire gets its stable key and
            its state here, so an older sample works too.
-Stations:  fixtures/stations_sample.json   (live: CPCB via data.gov.in, else OpenAQ)
+Stations:  fixtures/stations_sample.json   (live: OpenAQ)
 Forecast:  fixtures/forecast_sample.json   (live: CAMS through Open-Meteo, ~484 location calls)
 
 Writes frontend/data/sample-fires.js and frontend/data/sample-air.js. They are scripts, not JSON, because a page
@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from _env import load_env  # noqa: E402
 
-from smoke_path import IST, air, cpcb, region  # noqa: E402
+from smoke_path import IST, air, region, station_air  # noqa: E402
 from smoke_path.firewatch import fire_key  # noqa: E402
 from smoke_path.apis import LiveApi  # noqa: E402
 
@@ -66,7 +66,7 @@ def main(argv=None):
     stations_path, forecast_path = FIX / "stations_sample.json", FIX / "forecast_sample.json"
     if not offline:
         try:
-            doc, _ = cpcb.live(now)
+            doc, _ = station_air.live(now)
             stations_path.write_text(dump(doc), encoding="utf-8")
             print(f"stations: {len(doc['stations'])} from {doc['source']}")
         except Exception as err:  # noqa: BLE001 - keep the saved file

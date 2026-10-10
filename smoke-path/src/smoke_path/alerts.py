@@ -14,8 +14,12 @@ Where it is saved:
 How people are told: the in-app inbox always. An email through Amazon SNS is optional (ALERTS_SNS_TOPIC).
 SMS in India needs DLT registration, so it is not used.
 
+Farmers: they read the warnings sent to farmers about fires near their farm and can acknowledge one
+(case: warning_sent -> acknowledged).
+
 Who may act: with REQUIRE_AUTHORITY=true the caller must be in the Cognito group "authority"
-(API Gateway checks the token, this code checks the group). Otherwise anyone may (local demo).
+(API Gateway checks the token, this code checks the group); acknowledging needs "farmer" (or "authority").
+Otherwise anyone may (local demo).
 """
 
 import json
@@ -177,6 +181,18 @@ def require_authority(event, env=None):
     return who
 
 
+def require_group(event, group, env=None):
+    """Raises NotAllowed unless the caller is in `group` or is an authority (only checked when REQUIRE_AUTHORITY is on)."""
+    env = os.environ if env is None else env
+    who = caller(event)
+    if str(env.get("REQUIRE_AUTHORITY", "")).strip().lower() in ("1", "true", "yes"):
+        if not who["signed_in"]:
+            raise NotAllowed(f"Sign in as a {group} to do this.")
+        if group not in who["groups"] and "authority" not in who["groups"]:
+            raise NotAllowed(f"Only a {group} can do this.")
+    return who
+
+
 # ---- checks -----------------------------------------------------------------------------------------
 
 
@@ -325,6 +341,45 @@ def alerts_near(store, lat, lon, radius_km):
         if len(out) >= MAX_ALERTS_RETURNED:
             break
     return out
+
+
+def warnings_near(store, lat, lon, radius_km):
+    """Warnings sent to farmers about a fire within radius_km of (lat, lon), newest first.
+
+    The contact (phone or email) is left out: this list is read by farmers, not only by the person warned.
+    """
+    out = []
+    coslat = math.cos(math.radians(lat))
+    for a in store.list_alerts():
+        fire = a.get("fire") or {}
+        if a["kind"] != "source_warning" or a["target"].get("role") != "farmer" or "lat" not in fire or "lon" not in fire:
+            continue
+        d = math.hypot((fire["lat"] - lat) * KM_PER_DEG, (fire["lon"] - lon) * KM_PER_DEG * coslat)
+        if d <= radius_km:
+            case = store.get_case(a["fire_id"]) or {}
+            out.append({**{k: v for k, v in a.items() if k not in ("sent_by", "delivery", "target")},
+                        "target": {"name": a["target"]["name"], "role": "farmer"},
+                        "distance_km": round(d, 1), "case_status": case.get("status", "warning_sent")})
+        if len(out) >= MAX_ALERTS_RETURNED:
+            break
+    return out
+
+
+def acknowledge(store, alert_id, body, who, now=None):
+    """A farmer confirms they read a warning: the fire's case becomes 'acknowledged'. Returns the case."""
+    if not isinstance(body, dict):
+        raise Invalid("Send a JSON object.")
+    name = _text(body, "name", 100)
+    alert = next((a for a in store.list_alerts() if a["id"] == alert_id and a["kind"] == "source_warning"), None)
+    if alert is None:
+        raise NotFound("That warning was not found.")
+    case = store.get_case(alert["fire_id"]) or _new_case(alert["fire_id"], alert.get("fire") or {}, now)
+    if case["status"] in ("new", "warning_sent"):
+        who_text = who.get("email") or name
+        _push(case, _event(now, "status", f"Status: {case['status']} → acknowledged. Read by {name} (farmer)", who_text))
+        case["status"] = "acknowledged"
+        store.put_case(case)
+    return case
 
 
 def update_case(store, fire_id, body, who, now=None):

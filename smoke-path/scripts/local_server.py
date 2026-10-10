@@ -70,7 +70,7 @@ def route(method, target, headers=None, body=None):
     parts = urlsplit(target)
     path = parts.path or "/"
     accepts_gzip = "gzip" in str((headers or {}).get("Accept-Encoding", "")).lower()
-    if path in API_PATHS or path.startswith("/cases/"):
+    if path in API_PATHS or path.startswith("/cases/") or (path.startswith("/alerts/") and path.endswith("/ack")):
         resp = lambda_handler(make_event(method, path, parts.query, headers, body))
         out = resp["body"]
         data = base64.b64decode(out) if resp.get("isBase64Encoded") else out.encode("utf-8")
@@ -142,7 +142,6 @@ def main():
     print(f"API:         {base}/smoke?lat=30.245&lon=75.844&hours=24")
     print(f"FIRMS key:   {'set' if os.environ.get('FIRMS_MAP_KEY') else 'NOT set (fires will be skipped)'}")
     print(f"OpenAQ key:  {'set' if os.environ.get('OPENAQ_API_KEY') else 'NOT set (no fallback for the live air tabs)'}")
-    print(f"data.gov.in: {'set' if os.environ.get('DATA_GOV_IN_API_KEY') else 'NOT set (live air tabs use OpenAQ instead)'}")
     print("Press Ctrl+C to stop.")
     try:
         server.serve_forever()

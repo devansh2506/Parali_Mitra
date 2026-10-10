@@ -12,6 +12,8 @@ GET /stations                 measured air at monitoring stations (CPCB live fee
 
 POST /alerts                  authority: warn a fire's source, or alert the people on its smoke path
 GET /alerts?lat&lon&radius_km people: public alerts that affect an area (the citizen inbox)
+GET /alerts?...&kind=farmer_warnings  farmers: warnings sent to farmers about fires near a farm
+POST /alerts/<id>/ack         farmers: confirm a warning was read (the case becomes acknowledged)
 GET /activity                 authority: every alert sent
 GET /cases, PATCH /cases/<id> authority: the case of each fire and its status
 
@@ -30,7 +32,7 @@ import urllib.parse
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from . import IST, air, alerts, cpcb, firewatch, landuse
+from . import IST, air, alerts, firewatch, landuse, shared_cache, station_air
 from .apis import LiveApi
 from .net import ApiError
 from .pipeline import SmokeRequest, WindUnavailable, run
@@ -197,7 +199,42 @@ def cache_key(req, level):
     )
 
 
-CACHE = ResponseCache()
+SHARED_KINDS = ("fires", "stations", "forecast")  # the slow answers: also kept in S3 for every Lambda copy
+SHARED_MAX_AGE_S = 2 * 3600  # an S3 copy this old is still better than making a visitor wait ~25 s
+
+
+class SharedCache(ResponseCache):
+    """ResponseCache that also keeps /fires, /stations and /forecast in S3 (when CACHE_BUCKET is set).
+
+    refresh=True ignores what is saved and fetches again (the scheduled warm call), then saves the new copy.
+    """
+
+    def __init__(self, *args, refresh=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.refresh = refresh
+
+    @staticmethod
+    def _name(key):
+        return shared_cache.object_name("resp", *key) if key and key[0] in SHARED_KINDS and shared_cache.enabled() else None
+
+    def get(self, key):
+        if self.refresh:
+            return None
+        value = super().get(key)
+        if value is None and self._name(key):
+            raw = shared_cache.load(self._name(key), SHARED_MAX_AGE_S)
+            if raw is not None:
+                value = raw.decode("utf-8")
+                super().put(key, value)
+        return value
+
+    def put(self, key, value):
+        super().put(key, value)
+        if self._name(key):
+            shared_cache.save(self._name(key), value.encode("utf-8"))
+
+
+CACHE = SharedCache()
 
 
 # ---- responses ------------------------------------------------------------------
@@ -283,10 +320,17 @@ def handle_alerts(event, method, path, params, store, now, notify):
             who = alerts.require_authority(event)
             alert = alerts.create_alert(store, _body(event), who, now, notify if notify is not None else alerts.sns_notifier())
             return _response(201, _dump(alert))
+        if path.endswith("/ack") and "/alerts/" in path and method == "POST":
+            who = alerts.require_group(event, "farmer")
+            alert_id = urllib.parse.unquote(path.rsplit("/alerts/", 1)[1].rsplit("/ack", 1)[0])
+            return _response(200, _dump(alerts.acknowledge(store, alert_id, _body(event), who, now)))
         if path.endswith("/alerts") and method == "GET":
             lat = _number(params, "lat", -90, 90)
             lon = _number(params, "lon", -180, 180)
             radius = _optional(params, "radius_km", 1, 300, 15.0)
+            if params.get("kind") == "farmer_warnings":
+                found = alerts.warnings_near(store, lat, lon, radius)
+                return _response(200, _dump({"lat": lat, "lon": lon, "radius_km": radius, "count": len(found), "alerts": found}))
             found = alerts.alerts_near(store, lat, lon, radius)
             return _response(200, _dump({"lat": lat, "lon": lon, "radius_km": radius, "count": len(found), "alerts": found}))
         if path.endswith("/activity") and method == "GET":
@@ -303,6 +347,8 @@ def handle_alerts(event, method, path, params, store, now, notify):
         return _error(400, str(err))
     except alerts.NotAllowed as err:
         return _error(403, str(err))
+    except alerts.NotFound as err:
+        return _error(404, str(err))
     except Exception:  # noqa: BLE001 - log it, never leak internals
         log.exception("alerts failed")
         return _error(500, "Something went wrong while saving the alert.")
@@ -321,7 +367,7 @@ def handle(event, api=None, cache=None, now=None, sample_path=SAMPLE_PATH, fire_
         return _response(204, "")
     params = event.get("queryStringParameters") or {}
     path = _path(event)
-    if path.endswith(ALERT_PATHS) or "/cases/" in path:
+    if path.endswith(ALERT_PATHS) or "/cases/" in path or ("/alerts/" in path and path.endswith("/ack")):
         reply = handle_alerts(event, method, path, params, store, now, notify)
         return reply if reply is not None else _error(405, "That method is not allowed here.")
     if method != "GET":
@@ -408,7 +454,7 @@ def handle_stations(cache, now, gz=False, live=None):
     if cached is not None:
         return _response(200, cached, gz)
     try:
-        doc, _ = (live or cpcb.live)(now)
+        doc, _ = (live or station_air.live)(now)
     except ApiError as err:
         return _error(502, str(err))
     except Exception:  # noqa: BLE001 - log it, never leak internals
@@ -463,5 +509,25 @@ def handle_forecast(api, cache, now, gz=False):
     return _response(200, body, gz)
 
 
+def warm(now=None):
+    """Fetch /fires, /stations and /forecast again and save them (S3), so visitors get a ready answer.
+
+    Called by the schedule (event {"warm": true}). Returns the status of each, for the logs.
+    """
+    fresh = SharedCache(refresh=True)
+    out = {}
+    for path in ("/forecast", "/stations", "/fires"):  # the air forecast first: it is the cheapest, fires the slowest
+        ev = {"rawPath": path, "requestContext": {"http": {"method": "GET", "path": path}}, "queryStringParameters": {}}
+        try:
+            out[path] = handle(ev, cache=fresh, now=now)["statusCode"]
+        except Exception:  # noqa: BLE001 - one failing source must not stop the others
+            log.exception("warm %s failed", path)
+            out[path] = 500
+    log.info("warm: %s", out)
+    return out
+
+
 def lambda_handler(event, context=None):
+    if isinstance(event, dict) and event.get("warm"):
+        return warm()
     return handle(event)

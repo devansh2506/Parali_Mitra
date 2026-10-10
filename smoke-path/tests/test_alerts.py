@@ -152,6 +152,61 @@ class WhoMayActTests(Api):
         self.assertEqual(alerts._groups({}), [])
 
 
+class FarmerTests(Api):
+    FIRE = {"near": "Rampura", "state": "Punjab", "type": "farm", "lat": 30.20, "lon": 75.80}
+
+    def warn(self, **over):
+        return self.call("POST", "/alerts", source(fire=self.FIRE, **over))[1]
+
+    def test_farmer_sees_warnings_about_fires_near_the_farm_without_the_contact(self):
+        a = self.warn()
+        status, got = self.call("GET", "/alerts", params={"lat": "30.21", "lon": "75.81", "radius_km": "10", "kind": "farmer_warnings"})
+        self.assertEqual((status, got["count"], got["alerts"][0]["id"]), (200, 1, a["id"]))
+        w = got["alerts"][0]
+        self.assertEqual(w["target"], {"name": "Demo Farmer 1", "role": "farmer"})  # no phone number or email
+        self.assertNotIn("+91-00000-00001", json.dumps(w))
+        self.assertEqual((w["case_status"], "sent_by" in w, "delivery" in w), ("warning_sent", False, False))
+        _, far = self.call("GET", "/alerts", params={"lat": "28.6", "lon": "77.2", "kind": "farmer_warnings"})
+        self.assertEqual(far["count"], 0)
+
+    def test_only_warnings_to_farmers_with_a_place_are_listed(self):
+        self.warn(target={**SOURCE, "role": "owner", "name": "Demo Kiln Owner 1"})
+        self.call("POST", "/alerts", source())  # no lat/lon on the fire
+        self.call("POST", "/alerts", public())
+        _, got = self.call("GET", "/alerts", params={"lat": "30.2", "lon": "75.8", "kind": "farmer_warnings"})
+        self.assertEqual(got["count"], 0)
+
+    def test_acknowledging_moves_the_case_and_is_safe_to_repeat(self):
+        a = self.warn()
+        status, case = self.call("POST", f"/alerts/{a['id']}/ack", {"name": "Demo Farmer"})
+        self.assertEqual((status, case["status"]), (200, "acknowledged"))
+        self.assertIn("Demo Farmer", case["timeline"][-1]["text"])
+        n = len(case["timeline"])
+        _, again = self.call("POST", f"/alerts/{a['id']}/ack", {"name": "Demo Farmer"})
+        self.assertEqual((again["status"], len(again["timeline"])), ("acknowledged", n))
+
+    def test_resolved_cases_stay_resolved(self):
+        a = self.warn()
+        self.call("PATCH", f"/cases/{a['fire_id']}", {"status": "resolved"})
+        _, case = self.call("POST", f"/alerts/{a['id']}/ack", {"name": "Demo Farmer"})
+        self.assertEqual(case["status"], "resolved")
+
+    def test_unknown_warning_and_bad_input(self):
+        self.assertEqual(self.call("POST", "/alerts/nope/ack", {"name": "x"})[0], 404)
+        a = self.warn()
+        self.assertEqual(self.call("POST", f"/alerts/{a['id']}/ack", {})[0], 400)
+        p = self.call("POST", "/alerts", public())[1]
+        self.assertEqual(self.call("POST", f"/alerts/{p['id']}/ack", {"name": "x"})[0], 404)  # only warnings can be acknowledged
+
+    def test_group_is_checked_when_the_switch_is_on(self):
+        a = self.warn()
+        path = f"/alerts/{a['id']}/ack"
+        with mock.patch.dict(os.environ, {"REQUIRE_AUTHORITY": "true"}):
+            self.assertEqual(self.call("POST", path, {"name": "x"})[0], 403)  # not signed in
+            self.assertEqual(self.call("POST", path, {"name": "x"}, claims={"email": "c@x", "cognito:groups": "citizen"})[0], 403)
+            self.assertEqual(self.call("POST", path, {"name": "x"}, claims={"email": "f@x", "cognito:groups": "farmer"})[0], 200)
+
+
 class EmailTests(Api):
     def test_email_is_best_effort(self):
         a = alerts.create_alert(self.store, public(), {}, NOW, notify=lambda alert: True)
@@ -198,3 +253,51 @@ class DynamoStoreTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SharedCacheTests(unittest.TestCase):
+    """The S3 copy: shared between Lambda copies, ignored when it is missing or broken."""
+
+    def setUp(self):
+        self.saved = {}
+        patches = [mock.patch.dict(os.environ, {"CACHE_BUCKET": "test-bucket"}),
+                   mock.patch.object(app.shared_cache, "load", side_effect=lambda name, age: self.saved.get(name)),
+                   mock.patch.object(app.shared_cache, "save", side_effect=lambda name, data: self.saved.__setitem__(name, data))]
+        for p in patches:
+            p.start()
+            self.addCleanup(p.stop)
+
+    def test_a_new_lambda_copy_reads_what_another_one_saved(self):
+        first = app.SharedCache()
+        first.put(("fires", 24, "120m"), '{"features": []}')
+        second = app.SharedCache()  # a fresh Lambda copy: nothing in memory
+        self.assertEqual(second.get(("fires", 24, "120m")), '{"features": []}')
+
+    def test_only_the_slow_answers_are_shared(self):
+        c = app.SharedCache()
+        c.put(("air", 30.9, 75.85), "{}")
+        self.assertEqual(self.saved, {})
+        self.assertIsNone(app.SharedCache().get(("air", 30.9, 75.85)))
+
+    def test_refresh_ignores_the_saved_copy_and_replaces_it(self):
+        app.SharedCache().put(("stations",), "old")
+        warm = app.SharedCache(refresh=True)
+        self.assertIsNone(warm.get(("stations",)))
+        warm.put(("stations",), "new")
+        self.assertEqual(app.SharedCache().get(("stations",)), "new")
+
+    def test_warm_fetches_each_source_and_survives_a_failure(self):
+        from helpers import FakeApi
+
+        with mock.patch.object(app, "LiveApi") as live:
+            live.from_env.return_value = FakeApi()
+            with mock.patch.object(app.station_air, "live", side_effect=RuntimeError("boom")):
+                out = app.warm(now=NOW)
+        self.assertEqual(out["/stations"], 500)  # one source failing does not stop the others
+        self.assertIn("/forecast", out)
+        self.assertIn("/fires", out)
+
+    def test_the_schedule_event_runs_warm(self):
+        with mock.patch.object(app, "warm", return_value={"ok": 1}) as w:
+            self.assertEqual(app.lambda_handler({"warm": True}), {"ok": 1})
+        w.assert_called_once()
