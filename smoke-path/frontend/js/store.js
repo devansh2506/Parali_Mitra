@@ -6,8 +6,9 @@
 
   // ---- settings from the address and the config block ----------------------------------------------
   var q = new URLSearchParams(window.location.search);
-  var apiParam = (q.get("api") || "").trim();
   var cfg = window.PM_CONFIG || {};
+  // The server address: ?api= wins, then the default in index.html (PM_CONFIG.api), and ?demo=1 forces the saved sample.
+  var apiParam = q.get("demo") === "1" ? "" : (q.get("api") !== null ? q.get("api") : (cfg.api || "")).trim();
   PM.config = {
     // ?api=/ (this server) or ?api=https://...: live data. No ?api= means saved sample data (works offline).
     api: apiParam.replace(/\/(smoke|fires|air|stations|forecast|alerts|cases|activity)\/?$/, "").replace(/\/$/, ""),

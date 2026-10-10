@@ -15,7 +15,7 @@
   <script>
     /* Sign-in with Amazon Cognito is off until you fill this in AND open the app with ?auth=cognito.
        Values come from the SAM stack outputs (see README). Never put a secret here: these are public identifiers. */
-    window.PM_CONFIG = { cognito: { domain: "", clientId: "", region: "ap-south-1" } };
+    window.PM_CONFIG = { api: "" /* paste the ApiBaseUrl of your AWS stack here to make the site live by default; ?demo=1 still shows the saved sample */, cognito: { domain: "", clientId: "", region: "ap-south-1" } };
   </script>
 </head>
 <body>

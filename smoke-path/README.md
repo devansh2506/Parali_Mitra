@@ -675,3 +675,9 @@ The website in `frontend/` is plain files with no build step, so Vercel can host
 6. Open the `.vercel.app` link. To use it as the production site, make sure `main` is the Production Branch under Settings, Git.
 
 To show live data later, deploy the backend to AWS, then open `https://<your-site>.vercel.app/?api=<ApiBaseUrl>`. Never put the FIRMS, OpenAQ or data.gov.in keys on Vercel or in the website; they belong only in the AWS Lambda environment.
+
+### Making the Vercel site live (after the AWS backend exists)
+
+Put the `ApiBaseUrl` from the stack outputs into `frontend/index.html` (`window.PM_CONFIG = { api: "<ApiBaseUrl>" ... }`),
+commit and push; Vercel redeploys. The site then shows live data by default. `?demo=1` forces the saved sample, and `?api=<url>`
+still overrides the default. The address is public, so it is not a secret; the keys stay in the Lambda.
