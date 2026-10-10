@@ -32,6 +32,8 @@
     var p = U.istParts(Math.round((ms + IST_MS) / step) * step - IST_MS);
     return (p.h % 12 || 12) + ":" + U.pad(p.mi) + " " + (p.h < 12 ? "am" : "pm");
   };
+  /** The half hour a moment falls in, as text: 3:07 -> 3:00 pm, 3:33 -> 3:30 pm. */
+  U.halfHour = function (ms) { return U.clock(ms - 900000, 1800000); };
   U.dayText = function (ms) { var p = U.istParts(ms); return p.d + " " + MONTHS[p.mo]; };
   U.dayKey = function (ms) { var p = U.istParts(ms); return p.y * 10000 + (p.mo + 1) * 100 + p.d; };
   U.when = function (ms, nowMs) { return U.clock(ms) + (U.dayKey(ms) !== U.dayKey(nowMs) ? ", " + U.dayText(ms) : ""); };

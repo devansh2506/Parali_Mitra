@@ -126,7 +126,7 @@
         return PM.t("badge.src_" + n) + ": " + (x.kind === "live" ? PM.t("badge.src_live", { time: when }) : PM.t("badge.src_sample", { time: when })) + (x.why ? " (" + x.why + ")" : "");
       });
       var title = lines.join("\n");
-      if (names.length && live.length === names.length) return { kind: "live", title: title, text: PM.t("badge.live", { time: at ? U.clock(at) : "…" }) };
+      if (names.length && live.length === names.length) return { kind: "live", title: title, text: PM.t("badge.live", { time: U.halfHour(Date.now()) }) };
       if (live.length) return { kind: "mixed", title: title, text: PM.t("badge.mixed") };
       var gen = at || (sample && Date.parse(sample.generated_at)) || null;
       return { kind: "sample", title: title, text: PM.t("badge.sample", { time: gen ? U.when(gen, gen) : "" }) };

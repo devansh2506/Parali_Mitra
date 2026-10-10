@@ -162,7 +162,7 @@
 
   function updateClock() {
     var c = U.$("[data-clock]");
-    if (c) c.textContent = U.dayText(Date.now()) + ", " + U.clock(Date.now() - 30000, 60000) + " IST";  // the real time, whatever data is shown
+    if (c) c.textContent = U.dayText(Date.now()) + ", " + U.halfHour(Date.now()) + " IST";  // the real time, whatever data is shown
   }
   function updateBadge() {
     updateClock();
