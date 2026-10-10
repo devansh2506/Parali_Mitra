@@ -458,3 +458,11 @@ table.t tr.click { cursor: pointer; } table.t tr.click:hover td { background: va
 }
 
 .fc-img { image-rendering: auto; }
+
+.typebar { padding: 6px; gap: 6px; display: flex; flex-wrap: wrap; max-width: min(560px, calc(100% - 24px)); }
+.floatpanel { position: absolute; z-index: var(--z-panel); right: var(--s3); top: var(--s3); bottom: var(--s3); width: 390px; max-width: calc(100% - 24px); box-shadow: var(--shadow-3); }
+@media (max-width: 860px) {
+  .typebar { flex-wrap: nowrap; overflow-x: auto; max-width: calc(100% - 16px); left: var(--s2); top: var(--s2); }
+  .typebar .row { flex-wrap: nowrap; }
+  .floatpanel { position: fixed; right: 0; top: auto; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); width: auto; max-width: none; }
+}

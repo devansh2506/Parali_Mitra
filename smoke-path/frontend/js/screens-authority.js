@@ -66,7 +66,10 @@
   function bindFilters(root, refresh) {
     root.addEventListener("click", function (e) {
       var b = e.target.closest("[data-type]");
-      if (b && root.contains(b)) { F.types[b.getAttribute("data-type")] = !F.types[b.getAttribute("data-type")]; refresh(true); }
+      if (b && root.contains(b)) {
+        F.types[b.getAttribute("data-type")] = !F.types[b.getAttribute("data-type")]; refresh(true);
+        document.querySelectorAll("[data-ftype]").forEach(function (c) { c.setAttribute("aria-pressed", String(!!F.types[c.getAttribute("data-ftype")])); });
+      }
     });
     root.addEventListener("input", function (e) { if (e.target.matches("[data-q]")) { F.q = e.target.value; refresh(false); } });
     root.addEventListener("change", function (e) {
@@ -277,7 +280,7 @@
     return '<div class="stackbar" role="img" aria-label="Land cover">' + keys.map(function (k) { return '<span style="width:' + c[k] + "%;background:" + (COVER_COLORS[k] || "#999") + '" title="' + esc(k + " " + c[k] + "%") + '"></span>'; }).join("") + "</div>" +
       '<div class="row wrap small muted" style="gap:4px 12px;margin-top:6px">' + keys.map(function (k) { return '<span><i class="dot" style="background:' + (COVER_COLORS[k] || "#999") + '"></i> ' + esc(k) + " " + c[k] + "%</span>"; }).join("") + "</div>";
   }
-  function toxBlock(f) {
+  function toxBlock(f, openAll) {
     var e = f.p.emissions;
     if (!e || !e.toxicity) return '<div class="note">' + U.icon("info") + "<span>" + esc(t("auth.tox_none")) + "</span></div>";
     var x = e.toxicity, keys = Object.keys(x.shares);
@@ -290,7 +293,7 @@
     return '<div class="tox-big"><b>' + U.num(x.km3, 1) + '</b><span class="muted">km³ ' + esc(t("auth.of_air")) + '</span></div><div class="row" style="margin:6px 0 10px"><span class="tox ' + U.toxKey(x.level) + '">' + esc(t("tox." + U.toxKey(x.level))) + "</span>" +
       '<span class="small muted">' + esc(t("auth.burn_rate", { t: U.num(e.burned_kg / 1000, 1) })) + "</span></div>" + bar +
       '<div class="stack" style="gap:8px;margin-top:10px">' + rows + "</div>" +
-      '<details style="margin-top:10px"><summary class="small muted" style="cursor:pointer">' + esc(t("auth.per_hour")) + '</summary><dl class="kv" style="margin-top:8px">' + table + "</dl></details>";
+      '<details' + (openAll ? " open" : "") + ' style="margin-top:10px"><summary class="small muted" style="cursor:pointer">' + esc(t("auth.per_hour")) + '</summary><dl class="kv" style="margin-top:8px">' + table + "</dl></details>";
   }
   function timelineHtml(c) {
     if (!c || !c.timeline || !c.timeline.length) return '<p class="small muted">' + esc(t("auth.no_actions")) + "</p>";
@@ -418,8 +421,19 @@
         ctl.smoke = PM.maps.smokeLayer(ctl.mapc.map);
         wrap.insertAdjacentHTML("beforeend", legend(model));
       } else wrap.innerHTML = PM.maps.noMapHtml();
+      var counts = {};
+      model.fires.forEach(function (f) { var k = f.p.fire_type || "unknown"; counts[k] = (counts[k] || 0) + 1; });
+      wrap.insertAdjacentHTML("beforeend", '<div class="float tl glass typebar" role="group" aria-label="' + esc(t("auth.filter_types")) + '">' + U.typeChips(counts, F.types) + "</div>");
+      wrap.addEventListener("click", function (e) {
+        var b = e.target.closest("[data-ftype]");
+        if (!b) return;
+        F.types[b.getAttribute("data-ftype")] = !F.types[b.getAttribute("data-ftype")];
+        wrap.querySelectorAll("[data-ftype]").forEach(function (c) { c.setAttribute("aria-pressed", String(!!F.types[c.getAttribute("data-ftype")])); });
+        if (ctl.fireLayer) ctl.fireLayer.set(applyFilters(model.fires, cm));
+        if (!ctl.selected) paintQueue(true);
+      });
       var notes = (model.doc.notes || []).filter(function (n) { return /not available|missing/i.test(n); });
-      if (notes.length) wrap.insertAdjacentHTML("beforeend", '<div class="float tl glass" style="padding:8px 12px;max-width:min(420px,70%)"><span class="small">' + U.icon("alert", "sm") + " " + esc(notes[0]) + "</span></div>");
+      if (notes.length) wrap.insertAdjacentHTML("beforeend", '<div class="float bl glass" style="padding:8px 12px;max-width:min(420px,70%)"><span class="small">' + U.icon("alert", "sm") + " " + esc(notes[0]) + "</span></div>");
       bindFilters(side, function (rerender) { if (rerender) paintQueue(true); else paintList(); });
       if (ctl.fireLayer) ctl.fireLayer.set(applyFilters(model.fires, cm));
       select(args && args.key);
@@ -601,5 +615,6 @@
     return { destroy: function () { ctl.destroyed = true; off(); } };
   }
 
+  A.toxBlock = toxBlock; A.coverBar = coverBar; A.where = where; A.toxPill = toxPill;
   A.dashboard = dashboard; A.fires = firesPage; A.cases = casesPage; A.activity = activityPage;
 })((window.PM = window.PM || {}));

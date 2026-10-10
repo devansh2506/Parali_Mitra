@@ -23,6 +23,7 @@
     opts = opts || {};
     var map = L.map(el, { preferCanvas: true, zoomControl: false, zoomSnap: 0.5, zoomDelta: 0.5, minZoom: 4, maxZoom: 14, worldCopyJump: false, attributionControl: true });
     L.control.zoom({ position: "bottomright" }).addTo(map);
+    el._pmMap = map;  // lets tests find the map from the page
     if (opts.bounds) map.fitBounds(opts.bounds, { padding: [10, 10] });
     else map.setView(opts.center || [22.5, 79], opts.zoom || 5);
     var base = null, labels = null, theme = opts.theme || "light", fails = 0, fallback = false;
@@ -79,7 +80,7 @@
       var pulseLeft = 24;
       shown.forEach(function (f) {
         var st = style(f);
-        var m = L.circleMarker([f.lat, f.lon], st).addTo(dots);
+        var m = L.circleMarker([f.lat, f.lon], Object.assign({ bubblingMouseEvents: false }, st)).addTo(dots);  // a click on a dot is not a click on the map
         m.bindTooltip(U.esc((f.near ? "Near " + f.near : "Fire " + f.id) + " · " + U.typeName(f.p) + (f.level ? " · " + f.level + " toxicity" : "")), { direction: "top", offset: [0, -6] });
         m.on("click", function () { opts.onPick && opts.onPick(f); });
         markers[f.key] = m;

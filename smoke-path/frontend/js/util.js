@@ -90,6 +90,14 @@
   };
   U.typeName = function (p) { return PM.t("type." + ((p && p.fire_type) || "unknown")); };
 
+  /** Filter chips for the map, one per fire type that exists: counts = {type: n}, on = {type: true}. */
+  U.typeChips = function (counts, on) {
+    return ["farm", "industrial", "waste", "settlement", "forest", "grassland", "unknown"].filter(function (k) { return counts[k]; }).map(function (k) {
+      return '<button type="button" class="chip" data-ftype="' + k + '" aria-pressed="' + !!on[k] + '"><i class="dot" style="background:' + U.FIRE_TYPES[k].color + '"></i>' +
+        U.esc(PM.t("type." + k)) + " " + counts[k] + "</button>";
+    }).join("");
+  };
+
   // ---- icons: small inline SVGs (24 px grid, drawn with strokes) -------------------------------------
   var ICONS = {
     home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
