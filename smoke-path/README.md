@@ -175,7 +175,7 @@ Nothing is added or corrected: the values are CAMS's own.
 
 **Measured (stations).** CPCB's real-time feed on data.gov.in (about 500 stations, hourly, all
 pollutants, each with CPCB's own averages). Without a data.gov.in key, or when it is down, OpenAQ is
-used instead: PM2.5/PM10 only and often ~2 days late, so the AQI is marked indicative and every
+used instead: PM2.5, PM10, NO2, SO2, CO and ozone (no NH3), often ~2 days late, so the AQI is marked indicative and every
 reading shows its age.
 
 **India's AQI (CPCB).** Each pollutant gets a sub-index from CPCB's breakpoints (24 hour averages for
@@ -365,7 +365,7 @@ AQI on the CAMS grid every 3 hours for 48 hours: `south`, `west`, `step`, `rows`
 
 Latest readings and the CPCB AQI at every monitoring station, from CPCB's real-time feed on
 data.gov.in (needs `DATA_GOV_IN_API_KEY`: free, data.gov.in → My Account → Generate API Key). Without
-the key, or when data.gov.in is down, OpenAQ readings are used instead (PM2.5/PM10 only, often ~2 days
+the key, or when data.gov.in is down, OpenAQ readings are used instead (PM2.5, PM10, NO2, SO2, CO, ozone; no NH3; often ~2 days
 late, AQI marked indicative). JSON: `source`, `stations` (name, city, state, lat, lon, updated, age_h,
 aqi, category, dominant, pollutants with avg/min/max/sub-index), `cities` (average AQI of a city's
 stations, worst station), `rankings` (most polluted, cleanest, most polluted in Delhi/Punjab/Haryana/Rajasthan),

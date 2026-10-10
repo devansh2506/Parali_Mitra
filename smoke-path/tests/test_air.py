@@ -192,6 +192,34 @@ class StationTests(unittest.TestCase):
         self.assertEqual((s["pm2_5"], s["pm10"]), (88.5, None))
         self.assertIsNone(stations.parse_latest({"results": []}, loc, self.NOW))
 
+    def test_gases_are_read_and_the_station_with_most_pollutants_wins_its_cell(self):
+        fresh = {"utc": "2026-10-09T12:00:00Z"}
+        data = {"results": [
+            {"id": 1, "name": "PM only", "coordinates": {"latitude": 30.90, "longitude": 75.85}, "datetimeLast": fresh,
+             "sensors": [{"id": 11, "parameter": {"id": 2}}]},
+            {"id": 2, "name": "Full", "coordinates": {"latitude": 30.91, "longitude": 75.86},
+             "datetimeLast": {"utc": "2026-10-09T11:00:00Z"}, "provider": {"name": "CPCB"},  # older, but measures more
+             "sensors": [{"id": 21, "parameter": {"id": 2}}, {"id": 22, "parameter": {"id": 5}}, {"id": 23, "parameter": {"id": 6}},
+                         {"id": 24, "parameter": {"id": 102}}, {"id": 25, "parameter": {"id": 3}},
+                         {"id": 26, "parameter": {"id": 5}}]},  # CO id 102 = CPCB's "ppb" CO (really mg/m³); id 5 = a dead 2018 NO2 sensor
+            {"id": 3, "name": "Gas only", "coordinates": {"latitude": 25.0, "longitude": 70.0}, "datetimeLast": fresh,
+             "sensors": [{"id": 31, "parameter": {"id": 5}}]},  # no particles: no AQI possible
+        ]}
+        locs = stations.pick(stations.parse_locations(data, self.NOW))
+        self.assertEqual([x["name"] for x in locs], ["Full"])
+        t = "2026-10-09T12:00:00Z"
+        latest = {"results": [{"datetime": {"utc": t}, "value": v, "sensorsId": i}
+                              for i, v in ((21, 90), (22, 40), (23, 12), (24, 1.5), (25, 60))]}
+        latest["results"].append({"datetime": {"utc": "2018-02-21T20:45:00Z"}, "value": 77.6, "sensorsId": 26})  # too old
+        s = stations.parse_latest(latest, locs[0], self.NOW)
+        self.assertEqual((s["pm2_5"], s["no2"], s["so2"], s["co"], s["o3"]), (90, 40, 12, 1500, 60))  # CO kept in µg/m³
+        from smoke_path import cpcb
+        from unittest import mock
+        with mock.patch.object(stations, "fetch_stations", return_value=[s]):
+            row = cpcb.openaq_fallback("PLACEHOLDER", self.NOW)[0]
+        self.assertEqual(row["pollutants"]["co"]["avg"], 1.5)  # CPCB feed shape: CO in mg/m³
+        self.assertEqual(row["pollutants"]["no2"]["avg"], 40)
+
     def test_late_readings_up_to_three_days(self):
         loc = stations.parse_locations(self.locations(), self.NOW)[0]
         two_days = {"results": [{"datetime": {"utc": "2026-10-07T12:00:00Z"}, "value": 70, "sensorsId": 11}]}

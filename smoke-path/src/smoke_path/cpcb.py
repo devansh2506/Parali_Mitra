@@ -8,7 +8,7 @@ average value. The average is the one CPCB uses for its AQI (24 h for PM, 8 h fo
 CO is in mg/m³, the rest in µg/m³.
 
 Needs a free key (DATA_GOV_IN_API_KEY). Without it, or when data.gov.in is down, the latest
-OpenAQ readings are used instead (PM2.5 and PM10 only, often ~2 days late; the age is shown).
+OpenAQ readings are used instead (PM2.5, PM10, NO2, SO2, CO and ozone, often ~2 days late; the age is shown).
 """
 
 import logging
@@ -160,14 +160,14 @@ def city_from_name(name):
 
 
 def openaq_fallback(key, now):
-    """OpenAQ readings in the same shape (PM2.5/PM10 only, as raw hourly values)."""
+    """OpenAQ readings in the same shape (PM2.5, PM10, NO2, SO2, CO, O3 as single recent readings; CO in mg/m³)."""
     rows = stations.fetch_stations(INDIA_BOX, key, now)
     out = []
     for r in rows:
         pol = {}
-        for p in ("pm2_5", "pm10"):
+        for p in ("pm2_5", "pm10", "no2", "so2", "co", "o3"):
             if r.get(p) is not None:
-                pol[p] = {"avg": r[p], "min": None, "max": None}
+                pol[p] = {"avg": r[p] / 1000 if p == "co" else r[p], "min": None, "max": None}
         out.append({"id": f"openaq-{r['id']}", "name": r["name"], "city": city_from_name(r["name"]), "state": "", "lat": r["lat"],
                     "lon": r["lon"], "updated": r["time"], "pollutants": pol})
     return out
@@ -196,7 +196,8 @@ def live(now=None):
         raise ApiError("No live station source: add DATA_GOV_IN_API_KEY (or OPENAQ_API_KEY).")
     found = openaq_fallback(oa_key, now)
     doc = summarise(found, now, "OpenAQ (fallback; CPCB readings arrive there about 2 days late)", indicative=True)
-    notes.append("Showing OpenAQ readings instead: PM2.5 and PM10 only, and each reading's age is shown. "
+    notes.append("Showing OpenAQ readings instead (PM2.5, PM10, NO2, SO2, CO and ozone where a station has them; no NH3), "
+                 "and each reading's age is shown. "
                  "AQI from these is indicative (one reading, not CPCB's 24 hour average).")
     doc["notes"] = notes
     return doc, False
