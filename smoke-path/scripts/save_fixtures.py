@@ -23,7 +23,6 @@ Writes:
   fixtures/meta.json             what was requested, and when
   fixtures/sample_response.json  the demo response returned for sample=true
   src/smoke_path/sample_response.json   same file, packaged with the Lambda
-  frontend/map.html              sample embedded so the page works without an API
 """
 
 import argparse
@@ -63,36 +62,7 @@ from smoke_path.wind import OutsideForecast, wind_level  # noqa: E402
 FIXTURES = ROOT / "fixtures"
 NEW_CAPTURE = FIXTURES / "_new"  # a capture is recorded here first, then adopted
 PACKAGE_SAMPLE = ROOT / "src" / "smoke_path" / SAMPLE
-MAP_HTML = ROOT / "frontend" / "map.html"
 DEMO_FIELD = ("30.245", "75.844")
-
-def _block(block_id):
-    return re.compile(r'(<script id="' + block_id + r'" type="application/json">)(.*?)(</script>)', re.DOTALL)
-
-
-SAMPLE_BLOCK = _block("sample-data")  # the "What if I burn?" sample
-FIRE_WATCH_BLOCK = "fire-watch-sample"  # the fire watch sample
-
-
-def json_for_html(doc):
-    """JSON that is safe inside a <script> block (no '<', '>' or '&' characters)."""
-    text = json.dumps(doc, ensure_ascii=False, separators=(",", ":"))
-    return text.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
-
-
-def embed_sample(html, doc, block_id="sample-data"):
-    """Put `doc` inside a sample block of map.html."""
-    pattern = _block(block_id)
-    if not pattern.search(html):
-        raise SystemExit(f'map.html has no <script id="{block_id}" type="application/json"> block')
-    payload = json_for_html(doc)
-    return pattern.sub(lambda m: m.group(1) + payload + m.group(3), html, count=1)
-
-
-def embedded_sample(html, block_id="sample-data"):
-    """The sample currently embedded in map.html (or None)."""
-    m = _block(block_id).search(html)
-    return json.loads(m.group(2)) if m else None
 
 
 def places_complete(folder=FIXTURES):
@@ -259,7 +229,6 @@ def build_sample():
     text = json.dumps(doc, ensure_ascii=False, indent=1) + "\n"
     (FIXTURES / SAMPLE).write_text(text, encoding="utf-8")
     PACKAGE_SAMPLE.write_text(text, encoding="utf-8")
-    MAP_HTML.write_text(embed_sample(MAP_HTML.read_text(encoding="utf-8"), doc), encoding="utf-8")
 
     print("\nSample demo response:")
     for line in doc["summary"]:
@@ -270,7 +239,7 @@ def build_sample():
     for f in doc["features"]:
         kinds[f["properties"]["kind"]] = kinds.get(f["properties"]["kind"], 0) + 1
     print(f"  features: {kinds}")
-    print(f"\nWrote fixtures/{SAMPLE}, src/smoke_path/{SAMPLE} and the sample inside frontend/map.html")
+    print(f"\nWrote fixtures/{SAMPLE} and src/smoke_path/{SAMPLE}")
 
 
 def main():

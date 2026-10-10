@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Parali Mitra</title>
+  <meta name="description" content="Stubble fires and air quality in North India: what is burning, how toxic it is, where the smoke goes, and alerts for the people in its way.">
+  <meta name="theme-color" content="#f3f7f4">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23ea580c'/%3E%3Cpath d='M32 10c2 9 14 14 14 26a14 14 0 01-28 0c0-5 3-8 6-11 0 5 3 8 6 8 0-10-3-15 2-23z' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+  <link rel="stylesheet" href="css/app.css">
+  <script>
+    /* Sign-in with Amazon Cognito is off until you fill this in AND open the app with ?auth=cognito.
+       Values come from the SAM stack outputs (see README). Never put a secret here: these are public identifiers. */
+    window.PM_CONFIG = { cognito: { domain: "", clientId: "", region: "ap-south-1" } };
+  </script>
+</head>
+<body>
+  <div id="app" role="presentation"></div>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <noscript><p style="padding:24px">Parali Mitra needs JavaScript.</p></noscript>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/maps.js"></script>
+  <script src="js/screens-air.js"></script>
+  <script src="js/screens-authority.js"></script>
+  <script src="js/screens-citizen.js"></script>
+  <script src="data/places.js"></script>
+  <script src="data/registry.js"></script>
+  <script src="data/sample-fires.js"></script>
+  <script src="data/sample-air.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

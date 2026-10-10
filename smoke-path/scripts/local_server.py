@@ -89,6 +89,11 @@ def route(method, target, headers=None, body=None):
     return 404, TEXT, b"Not found"
 
 
+class Server(ThreadingHTTPServer):
+    request_queue_size = 128  # the default (5) makes a browser that asks for a dozen files at once get connection resets
+    daemon_threads = True
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "SmokePathLocal/1.0"
 
@@ -130,7 +135,7 @@ def main():
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     load_env()  # FIRMS_MAP_KEY etc. from smoke-path/.env (shell variables win)
-    server = ThreadingHTTPServer((args.host, args.port), Handler)
+    server = Server((args.host, args.port), Handler)
     base = f"http://{args.host}:{args.port}"
     print(f"Live app:    {base}/            (calls the real APIs through this server)")
     print(f"Sample app:  {base}/index.html  (saved sample data, no API calls)")

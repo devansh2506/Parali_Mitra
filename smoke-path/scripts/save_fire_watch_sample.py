@@ -7,7 +7,7 @@ Calls NASA FIRMS (FIRMS_MAP_KEY from smoke-path/.env) and Open-Meteo once, uses 
 places snapshot, and writes:
   fixtures/fire_watch_sample.json
   src/smoke_path/fire_watch_sample.json   (packaged with the Lambda)
-  frontend/map.html                        (fire-watch-sample block)
+  frontend/data/sample-fires.js            (what the web app shows with no server; made by save_frontend_samples.py)
 """
 
 import json
@@ -21,7 +21,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from _env import load_env  # noqa: E402
 
-from save_fixtures import FIRE_WATCH_BLOCK, MAP_HTML, embed_sample  # noqa: E402
+import save_frontend_samples  # noqa: E402
 from smoke_path import firewatch  # noqa: E402
 from smoke_path.apis import LiveApi  # noqa: E402
 
@@ -40,13 +40,13 @@ def main():
     text = json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n"  # compact: 1-2 MB of places
     (ROOT / "fixtures" / NAME).write_text(text, encoding="utf-8")
     (ROOT / "src" / "smoke_path" / NAME).write_text(text, encoding="utf-8")
-    MAP_HTML.write_text(embed_sample(MAP_HTML.read_text(encoding="utf-8"), doc, FIRE_WATCH_BLOCK), encoding="utf-8")
+    save_frontend_samples.main(["--offline"])
     for line in doc["summary"]:
         print("  " + line)
     for note in doc["notes"]:
         print("  note: " + note)
     print(f"  stats: {doc['stats']}")
-    print(f"\nWrote fixtures/{NAME}, src/smoke_path/{NAME} and the sample inside frontend/map.html")
+    print(f"\nWrote fixtures/{NAME}, src/smoke_path/{NAME} and frontend/data/sample-fires.js")
     return 0
 
 

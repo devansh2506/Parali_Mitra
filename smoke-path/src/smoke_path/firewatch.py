@@ -123,6 +123,19 @@ def frp_now(group):
     return round(max(passes.values()), 2) if passes else None
 
 
+def fire_key(lat, lon, seen_at, used):
+    """A name for a fire that stays the same when the list is refreshed (F-numbers shift as fires come and go):
+    where (to 0.01 degree) and the day first seen, e.g. 30.20_75.80_20261010. Two fires that round to the same spot
+    get .2, .3 ... added. `used` is the set of keys already given out (this call adds to it)."""
+    base = f"{lat:.2f}_{lon:.2f}_{datetime.fromisoformat(seen_at).astimezone(IST):%Y%m%d}"
+    key, i = base, 1
+    while key in used:
+        i += 1
+        key = f"{base}.{i}"
+    used.add(key)
+    return key
+
+
 def summarise(group):
     """One fire from its detections: FRP-weighted position, first time seen, strongest values."""
     weights = [max(d.get("frp") or 0.0, 0.0) for d in group]
@@ -224,11 +237,12 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
         notes.append(f"Showing the {MAX_FIRES} strongest of {len(fires)} fires.")
         fires = sorted(fires, key=lambda f: -(f["frp_max"] or 0))[:MAX_FIRES]
         fires.sort(key=lambda f: (f["seen_at"], f["lat"], f["lon"]))
+    keys = set()
     for n, fire in enumerate(fires, 1):
         fire["n"] = n  # ties in arrival time are listed by fire number (F2 before F10)
         fire["id"] = f"F{n}"
         # A key that stays the same when the list is refreshed (F-numbers shift as fires come and go): spot + day first seen.
-        fire["key"] = f"{fire['lat']:.2f}_{fire['lon']:.2f}_{datetime.fromisoformat(fire['seen_at']).astimezone(IST):%Y%m%d}"
+        fire["key"] = fire_key(fire["lat"], fire["lon"], fire["seen_at"], keys)
         fire["state"] = region.state_of(fire["lat"], fire["lon"])
         near = snap.nearest(fire["lat"], fire["lon"]) if snap is not None else None
         fire["near"] = near["name"] if near else ""
