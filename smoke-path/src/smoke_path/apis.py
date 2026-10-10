@@ -18,6 +18,7 @@ from . import airquality, fires, places, snapshot, stations, wind
 from .net import ApiError
 
 FIRE_SOURCES = fires.SOURCES
+WIND_CHUNK = 190  # points per Open-Meteo request (keeps the URL under its length limit)
 
 
 class LiveApi:
@@ -63,8 +64,14 @@ class LiveApi:
 
     # ---- parsed results (shared by every flavour) --------------------------
     def forecast(self, points, days, level, past_days=0, timeout=None):
-        """One WindSeries per point, in the same order. ONE request for all points."""
-        series = wind.decode_forecast(self.forecast_raw(points, days, level, past_days, timeout), level)
+        """One WindSeries per point, in the same order. One request, or one per WIND_CHUNK points (in parallel)."""
+        if len(points) <= WIND_CHUNK:
+            series = wind.decode_forecast(self.forecast_raw(points, days, level, past_days, timeout), level)
+        else:
+            parts = [points[i:i + WIND_CHUNK] for i in range(0, len(points), WIND_CHUNK)]
+            with ThreadPoolExecutor(max_workers=len(parts)) as pool:
+                raws = list(pool.map(lambda c: self.forecast_raw(c, days, level, past_days, timeout), parts))
+            series = [x for raw in raws for x in wind.decode_forecast(raw, level)]
         if len(series) != len(points):
             raise ApiError(f"Open-Meteo sent {len(series)} forecasts for {len(points)} points")
         return series
@@ -74,7 +81,7 @@ class LiveApi:
 
     def places(self, line, timeout):
         """(places, note or None): saved snapshot first, live Overpass only outside it."""
-        return places.find_places(line, timeout, self.places_raw, snapshot.get())
+        return places.find_places(line, timeout, self.places_raw, snapshot.get(towns_path=None))
 
     def fires(self, source, lat, lon):
         text = self.fires_raw(source, lat, lon)

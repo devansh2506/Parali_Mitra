@@ -1,5 +1,6 @@
-"""Fire watch: every fire NASA satellites saw in and around Punjab and Haryana, where its smoke
-is likely going, and which villages, schools and hospitals it will reach.
+"""Fire watch: every fire NASA satellites saw in Delhi, Punjab, Haryana and Rajasthan, where its
+smoke is likely going, and which towns (and, around Punjab and Haryana, villages, schools and
+hospitals) it will reach.
 
 1. NASA FIRMS detections from the three VIIRS satellites in the region, last day.
 2. Detections of the same fire (within 1 km and 3 hours of each other) become one fire.
@@ -21,7 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from . import DISCLAIMER, IST, LABEL, air, emissions, landuse, snapshot
+from . import DISCLAIMER, IST, LABEL, air, emissions, landuse, region, snapshot
 from .apis import FIRE_SOURCES
 from .net import ApiError
 from .pipeline import WindUnavailable
@@ -32,10 +33,11 @@ from .wind import OutsideForecast, forecast_days_needed, past_days_needed, wind_
 
 log = logging.getLogger(__name__)
 
-REGION = "in and around Punjab and Haryana"
-FIRE_BOX = (27.6, 73.8, 32.6, 77.6)  # south, west, north, east
+REGION = "in Delhi, Punjab, Haryana and Rajasthan"
+FIRE_BOX = (24.5, 69.5, 32.6, 78.0)  # south, west, north, east: Rajasthan up to Punjab and Delhi
 GRID = {"south": 24.0, "west": 69.75, "step": 0.75, "rows": 17, "cols": 17}  # 289 wind points
-FIRMS_DAYS = 1
+FIRMS_DAYS = 2  # FIRMS counts whole UTC days: "1" is only today so far, so ask for 2 and keep the last 24 h
+FIRE_WINDOW_H = 24
 CLUSTER_KM = 1.0
 CLUSTER_HOURS = 3
 MAX_FIRES = 2000
@@ -206,6 +208,12 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
         notes.append("Some satellite fire data is missing (" + ", ".join(s for s, _ in failed) + ").")
         cacheable = False
 
+    # Only the last FIRE_WINDOW_H hours (FIRMS returned whole UTC days).
+    since = (now - timedelta(hours=FIRE_WINDOW_H)).isoformat()
+    detections = [d for d in detections if (d.get("seen_at") or "") >= since]
+    outline = region.get()  # leave out fires across the border and in other states
+    detections = [d for d in detections if region.contains(d["lat"], d["lon"], outline)]
+
     # 2. One fire per cluster of detections, numbered by the time first seen.
     fires = []
     for g in cluster(detections):
@@ -288,6 +296,9 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
             fire["places_reached"] = count
         if untraced:
             notes.append(f"{_plural(untraced, 'fire')} could not be traced (outside the wind forecast).")
+        if snap is not None and snap.towns_all_india and any(not snap.detailed_at(f["lat"], f["lon"]) for f in fires):
+            notes.append("Around Punjab and Haryana smoke paths list villages, schools and hospitals; "
+                         "elsewhere (south and west Rajasthan) they list cities and towns only.")
         if snap is None:
             notes.append("Villages, schools and hospitals could not be checked (no saved places).")
         elif leaves_saved_area:

@@ -164,7 +164,7 @@ class FireWatchRunTests(unittest.TestCase):
         self.assertEqual(
             [line for line in self.doc["summary"] if not line.startswith(("What was burning", "While burning", "Most smoke", "Worst air"))],
             [
-                "NASA satellites saw 2 fires in and around Punjab and Haryana in the last day (3 satellite detections).",
+                "NASA satellites saw 2 fires in Delhi, Punjab, Haryana and Rajasthan in the last day (3 satellite detections).",
                 "Their smoke will likely reach 2 villages, 1 town and 1 school or college.",
                 "Shared Village (village): smoke from 2 fires, since about 3:30 pm (9 Oct).",
                 "Big Town (town): smoke from 2 fires, since about 4:30 pm (9 Oct).",
@@ -206,7 +206,7 @@ class SameAnswerAsTheMapTests(unittest.TestCase):
 class FireWatchProblemTests(unittest.TestCase):
     def test_no_fires(self):
         result, api = run(FakeApi(wind=wind(), fires=[]))
-        self.assertEqual(result.report["summary"], ["No fires were seen by NASA satellites in and around Punjab and Haryana in the last day."])
+        self.assertEqual(result.report["summary"], ["No fires were seen by NASA satellites in Delhi, Punjab, Haryana and Rajasthan in the last day."])
         self.assertEqual(api.count("forecast"), 0)  # no wind needed
 
     def test_no_key(self):
@@ -314,6 +314,28 @@ class FiresEndpointTests(unittest.TestCase):
             self.assertIs(json.loads(resp["body"])["sample"], True)
             missing = app.handle(self.event(sample="true"), fire_sample_path=Path(tmp) / "none.json")
             self.assertEqual(missing["statusCode"], 404)
+
+
+
+class WindChunkTests(unittest.TestCase):
+    def test_many_points_go_out_in_parallel_chunks_and_come_back_in_order(self):
+        from unittest import mock
+
+        from smoke_path import apis, wind
+
+        points = [(float(i), 70.0) for i in range(400)]
+        api = apis.LiveApi()
+        sent = []
+
+        def raw(chunk, days, level, past, timeout):
+            sent.append(len(chunk))
+            return json.dumps([c[0] for c in chunk]).encode()
+
+        with mock.patch.object(api, "forecast_raw", side_effect=raw), \
+                mock.patch.object(wind, "decode_forecast", side_effect=lambda body, level: json.loads(body)):
+            out = api.forecast(points, 2, "120m", 1, timeout=5)
+        self.assertEqual(sorted(sent), [20, 190, 190])
+        self.assertEqual(out, [float(i) for i in range(400)])
 
 
 if __name__ == "__main__":

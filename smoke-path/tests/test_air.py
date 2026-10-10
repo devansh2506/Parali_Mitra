@@ -29,6 +29,18 @@ class FireTypeTests(unittest.TestCase):
     def classify(self, lc, ind=None, sta=None, lat=30.0, lon=75.0):
         return landuse.classify(lat, lon, lc=lc, ind=ind or self.none, sta=sta or self.no_static)
 
+    def test_coarse_national_grid_answers_only_where_the_fine_one_does_not(self):
+        fine = self.lc(["5" * 9] * 9)  # built-up around (30, 75)
+        wide = landuse.Landcover({"south": 26.98, "west": 71.98, "north": 27.02, "east": 72.02, "step": 0.004, "rows": 10, "cols": 10},
+                                 bytes([4]) * 100)  # cropland everywhere, 0.004 degree (~450 m) cells around (27, 72)
+        wide_all = landuse.Landcover({"south": 29.98, "west": 74.98, "north": 30.02, "east": 75.02, "step": 0.004, "rows": 10, "cols": 10},
+                                     bytes([4]) * 100)
+        stack = landuse.LandcoverStack([fine, wide, wide_all])
+        self.assertEqual(self.classify(stack)["category"], "settlement")  # the detailed grid wins
+        far = self.classify(stack, lat=27.0, lon=72.0)  # only the national grid knows this spot
+        self.assertEqual((far["category"], far["confidence"]), ("farm", "medium"))  # never 'high' from the coarse map
+        self.assertIn("coarse", far["reason"])
+
     def test_cropland_is_a_farm_fire(self):
         r = self.classify(self.crop)
         self.assertEqual((r["category"], r["kind"], r["confidence"]), ("farm", "crop residue", "high"))

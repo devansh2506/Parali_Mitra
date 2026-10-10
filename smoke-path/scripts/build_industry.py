@@ -1,10 +1,10 @@
-"""Download factories, brick kilns, power plants, industrial areas and landfills around
-Punjab and Haryana from OpenStreetMap once, so a fire on one is labelled industrial.
+"""Download factories, brick kilns, power plants, industrial areas and landfills across
+India from OpenStreetMap once, so a fire on one is labelled industrial.
 
     python3.12 scripts/build_industry.py
 
-Asks Overpass for the fire box in 4 parts (waiting for a free slot and retrying when
-the server is busy), keeps each finished part in .build_cache/industry/, and writes
+Asks Overpass for the fire box in 3 degree tiles (waiting for a free slot and retrying when
+the server is busy), keeps each finished tile in .build_cache/industry/, and writes
 src/smoke_path/data/industry.json.gz. Areas are stored as a centre and a radius
 (the average of half their width and half their height).
 
@@ -33,7 +33,8 @@ from smoke_path.trajectory import KM_PER_DEG  # noqa: E402
 
 CACHE = ROOT / ".build_cache" / "industry"
 SERVER_TIMEOUT_S = 120
-PARTS = 2  # the box is split PARTS x PARTS
+TILE_DEG = 3  # the box is cut into TILE_DEG x TILE_DEG parts (a part that keeps failing is split in 4)
+MIN_AREA_RADIUS_KM = 0.08  # unnamed industrial areas smaller than this are dropped (keeps the file small)
 NOT_BURNING = {"solar", "wind", "hydro", "photovoltaic"}  # power plants that cannot be a fire
 
 
@@ -52,9 +53,21 @@ def query(s, w, n, e):
 
 def parts():
     s, w, n, e = FIRE_BOX
-    dl, dw = (n - s) / PARTS, (e - w) / PARTS
-    return [(round(s + a * dl, 3), round(w + b * dw, 3), round(s + (a + 1) * dl, 3), round(w + (b + 1) * dw, 3))
-            for a in range(PARTS) for b in range(PARTS)]
+    out = []
+    lat = s
+    while lat < n:
+        lon = w
+        while lon < e:
+            out.append((round(lat, 3), round(lon, 3), round(min(lat + TILE_DEG, n), 3), round(min(lon + TILE_DEG, e), 3)))
+            lon += TILE_DEG
+        lat += TILE_DEG
+    return out
+
+
+def quarters(box):
+    s, w, n, e = box
+    m, c = (s + n) / 2, (w + e) / 2
+    return [(s, w, m, c), (s, c, m, e), (m, w, n, c), (m, c, n, e)]
 
 
 def fetch(box):
@@ -104,35 +117,54 @@ def feature(el):
         r_km = (half_h + half_w) / 2
     if lat is None:
         return None
-    return {"kind": kind, "name": tags.get("name:en") or tags.get("name") or "", "lat": round(lat, 5),
+    name = tags.get("name:en") or tags.get("name") or ""
+    if kind == "industrial" and not name and r_km < MIN_AREA_RADIUS_KM:
+        return None
+    return {"kind": kind, "name": name, "lat": round(lat, 5),
             "lon": round(lon, 5), "r_km": round(r_km, 3), "osm": f"{el['type'][0]}{el['id']}"}
+
+
+def part_file(box):
+    return CACHE / ("part_" + "_".join(f"{x:.3f}" for x in box) + ".json")
+
+
+def get_part(box, depth=0):
+    """Elements of one part from the cache or Overpass. A part that keeps failing is fetched as 4 quarters."""
+    path = part_file(box)
+    if path.exists():
+        return json.loads(path.read_bytes())["elements"]
+    for attempt, wait in enumerate((0,) + WAITS_S):
+        if wait:
+            print(f"    busy, waiting {wait} s ...", flush=True)
+            time.sleep(wait)
+        wait_for_slot()
+        if attempt >= 2 and depth < 2:
+            print(f"  {box}: as 4 quarters", flush=True)
+            els = {}
+            for q in quarters(box):
+                for el in get_part(q, depth + 1):
+                    els[(el["type"], el["id"])] = el
+            return list(els.values())
+        try:
+            raw = fetch(box)
+        except (ApiError, ValueError) as err:
+            print(f"  {box}: {err}", flush=True)
+            continue
+        path.with_suffix(".part").write_bytes(raw)
+        path.with_suffix(".part").replace(path)
+        return json.loads(raw)["elements"]
+    raise SystemExit(f"{box} kept failing; run again later to continue")
 
 
 def main():
     CACHE.mkdir(parents=True, exist_ok=True)
     elements = {}
-    for n, box in enumerate(parts(), 1):
-        path = CACHE / ("part_" + "_".join(f"{x:.3f}" for x in box) + ".json")
-        if not path.exists():
-            for wait in (0,) + WAITS_S:
-                if wait:
-                    print(f"    busy, waiting {wait} s ...", flush=True)
-                    time.sleep(wait)
-                wait_for_slot()
-                try:
-                    raw = fetch(box)
-                except (ApiError, ValueError) as err:
-                    print(f"  part {n}: {err}", flush=True)
-                    continue
-                path.with_suffix(".part").write_bytes(raw)
-                path.with_suffix(".part").replace(path)
-                break
-            else:
-                raise SystemExit(f"part {n} kept failing; run again later to continue")
-        data = json.loads(path.read_bytes())
-        for el in data["elements"]:
+    todo = parts()
+    for n, box in enumerate(todo, 1):
+        els = get_part(box)
+        for el in els:
             elements[(el["type"], el["id"])] = el
-        print(f"  part {n}/{len(parts())}: {len(data['elements'])} elements", flush=True)
+        print(f"  part {n}/{len(todo)} {box}: {len(els)} elements", flush=True)
     features = sorted((f for f in map(feature, elements.values()) if f), key=lambda f: (f["lat"], f["lon"]))
     doc = {"format": 1, "box": list(FIRE_BOX),
            "attribution": "© OpenStreetMap contributors, ODbL 1.0 (https://www.openstreetmap.org/copyright)",

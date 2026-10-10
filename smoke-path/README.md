@@ -2,7 +2,7 @@
 
 The website has two tabs.
 
-**1. Fires.** Every fire NASA satellites saw in and around Punjab and Haryana in the last day:
+**1. Fires.** Every fire NASA satellites saw in Delhi, Punjab, Haryana and Rajasthan (India only, by state outline) in the last day:
 
 * **what was burning:** farm, industrial / brick kiln, landfill, built-up area, forest or grass;
 * **its toxicity:** what it gives off per hour while burning (PM2.5, total particles, black carbon,
@@ -16,8 +16,8 @@ toxicity; the table lists every fire, most toxic first.
 **2. Air quality**, straight from the APIs (nothing added by us):
 
 * **Now, measured:** the latest readings at monitoring stations (CPCB's live feed on data.gov.in;
-  OpenAQ as a fallback), each station's AQI, rankings (most polluted, cleanest, Punjab / Haryana /
-  Delhi) and a city table.
+  OpenAQ as a fallback), each station's AQI, rankings (most polluted, cleanest, Delhi / Punjab / Haryana /
+  Rajasthan) and a city table, for the whole of India.
 * **Forecast, next 48 hours:** the CAMS air-quality forecast (ECMWF, via Open-Meteo) as an AQI map
   with a time slider; tap the map for a spot's hourly AQI and pollutants.
 
@@ -38,7 +38,9 @@ smoke-path/
     trajectory.py   15-minute RK2 path tracing, refine sites, cone band (puffs)
     ensemble.py     optional ensemble band (ICON-EPS members)
     places.py       snapshot-first place lookup, Overpass query, closest point, arrival times
-    snapshot.py     the saved copy of OpenStreetMap places around Punjab and Haryana
+    snapshot.py     the saved copy of OpenStreetMap places (villages, schools, hospitals around Punjab and
+                    Haryana; cities and towns for all of India from data/towns_india.json.gz)
+    region.py       is a point inside Delhi, Punjab, Haryana, Rajasthan or Chandigarh
     data/places_snapshot.json.gz   that saved copy (made by build_places_snapshot.py)
     fires.py        NASA FIRMS fetch + CSV parsing
     landuse.py      what was burning: land cover, mapped industry, all-year heat sources
@@ -101,8 +103,10 @@ smoke-path/
 
 ### Fire watch
 
-1. NASA FIRMS detections from the three VIIRS satellites in the box lat 27.6-32.6, lon 73.8-77.6
-   (Punjab, Haryana and the edges of Rajasthan, Himachal, Delhi, Uttar Pradesh and Pakistan Punjab).
+1. NASA FIRMS detections from the three VIIRS satellites in the box lat 24.5-32.6, lon 69.5-78, kept
+   when they are inside Delhi, Punjab, Haryana, Rajasthan or Chandigarh (`data/region.json.gz`, state
+   outlines from OpenStreetMap, `scripts/build_region.py`); fires in Pakistan or other states are dropped.
+   FIRMS counts whole UTC days, so two days are fetched and only the last 24 hours kept.
 2. Detections within 1 km and 3 hours of each other are one fire (several satellites, or several
    pixels of one field). Its position is the FRP-weighted centre; its start time is when it was first seen.
 3. ONE Open-Meteo request gives the 120 m wind on a 0.75° grid (17 × 17 points, lat 24-36,
@@ -164,8 +168,9 @@ Example: a 5 MW farm fire burns ~6.6 t of straw an hour and gives off ~41 kg PM2
 ### Air quality
 
 **Forecast (CAMS).** Open-Meteo serves the CAMS global forecast free and without a key: PM2.5, PM10,
-CO, NO2, SO2, ozone and dust, hourly, 0.4° (~45 km). We fetch it for a 22 × 25 grid (lat 26-34.4,
-lon 70.4-80) from one day back to three days ahead, in 3 parallel requests, and reuse it for 3 hours.
+CO, NO2, SO2, ozone and dust, hourly, 0.4° (~45 km). We fetch it for all of India on a 1.2° (~130 km) grid of 27 × 27 points (lat 6-37.2,
+lon 67.2-98.4; Open-Meteo counts each point as a call against its 10,000 a day) from one day back to three days
+ahead, in 4 parallel requests, and reuse it for 3 hours.
 Nothing is added or corrected: the values are CAMS's own.
 
 **Measured (stations).** CPCB's real-time feed on data.gov.in (about 500 stations, hourly, all
@@ -363,7 +368,7 @@ data.gov.in (needs `DATA_GOV_IN_API_KEY`: free, data.gov.in → My Account → G
 the key, or when data.gov.in is down, OpenAQ readings are used instead (PM2.5/PM10 only, often ~2 days
 late, AQI marked indicative). JSON: `source`, `stations` (name, city, state, lat, lon, updated, age_h,
 aqi, category, dominant, pollutants with avg/min/max/sub-index), `cities` (average AQI of a city's
-stations, worst station), `rankings` (most polluted, cleanest, most polluted in Punjab/Haryana/Delhi),
+stations, worst station), `rankings` (most polluted, cleanest, most polluted in Delhi/Punjab/Haryana/Rajasthan),
 `notes`. Cached 30 minutes. Used by the "Live air" tabs.
 
 ### `GET /smoke` (one smoke path)
@@ -451,3 +456,13 @@ Settings (Lambda environment variables): `FIRMS_MAP_KEY` (from the `FirmsMapKey`
 * Emission factors: GFED4.1 table (van der Werf et al. 2017; Akagi et al. 2011); combustion rate:
   Wooster et al. 2005; AQI: CPCB National Air Quality Index.
 * Map tiles: OpenStreetMap (attribution shown on the map).
+
+## Where data covers what
+
+| Data | Area |
+|---|---|
+| Measured air quality (CPCB / OpenAQ), forecast map | all of India |
+| Fires, what was burning, toxicity, smoke paths | Delhi, Punjab, Haryana, Rajasthan |
+| Land cover for "what was burning" | 100 m around Punjab and Haryana, 450 m for all of India (`landcover_india.bin.gz`, `build_landcover.py --national`) |
+| Factories, kilns, all-year heat sources | Punjab and Haryana only (the all-India versions were not built); elsewhere a fire is labelled from land cover alone |
+| Villages, schools, hospitals on a smoke path | around Punjab and Haryana; cities and towns elsewhere |

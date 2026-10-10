@@ -1,7 +1,8 @@
 """Predicted air quality: the CAMS forecast exactly as Open-Meteo serves it, as India's AQI.
 
 No model of our own is added: no fire plumes, no station correction. The grid covers
-Punjab, Haryana, Delhi and north Rajasthan (lat 26-34.4, lon 70.4-80) at CAMS's own 0.4 degrees,
+all of India (lat 6-37.2, lon 67.2-98.4) every 1.2 degrees (729 points; CAMS itself is 0.4
+degrees, and Open-Meteo counts each point as a call against its free daily limit),
 from one day back (for 24 hour averages) to 3 days ahead, and is reused for AQ_TTL_S.
 """
 
@@ -11,7 +12,7 @@ from datetime import timedelta
 from . import airquality
 from .net import ApiError
 
-REGION_GRID = {"south": 26.0, "west": 70.4, "step": 0.4, "rows": 22, "cols": 25}
+REGION_GRID = {"south": 6.0, "west": 67.2, "step": 1.2, "rows": 27, "cols": 27}
 PAST_DAYS = 1
 FORECAST_DAYS = 3
 AQ_TTL_S = 3 * 3600  # CAMS updates twice a day; Open-Meteo counts each grid point as a call

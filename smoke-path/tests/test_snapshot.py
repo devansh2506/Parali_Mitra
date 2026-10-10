@@ -272,7 +272,7 @@ class BuildScriptTests(unittest.TestCase):
         self.assertEqual(sorted(r[5] for r in rows), ["n60151", "n61151", "w42"])  # the shared way once
         unnamed = next(r for r in rows if r[5] == "w42")
         self.assertEqual(unnamed[3], "")
-        snap = Snapshot.load(self.out)
+        snap = Snapshot.load(self.out, towns_path=None)
         self.assertEqual(snap.tiles, {(60, 151), (61, 151)})
         self.assertEqual(snap.osm_base, "2026-10-09T01:00:00Z")
         first = self.out.read_bytes()
@@ -281,6 +281,33 @@ class BuildScriptTests(unittest.TestCase):
             created_again = json.load(fh)["created"]
         self.assertTrue(first.startswith(b"\x1f\x8b"))
         self.assertTrue(created_again)
+
+
+class TownsMergeTests(unittest.TestCase):
+    def doc(self, tiles, places):
+        return {"format": 1, "tile_deg": 0.5, "tiles": tiles, "osm_base": "x", "places": places}
+
+    def write(self, tmp, name, doc):
+        path = Path(tmp) / name
+        with gzip.open(path, "wt") as fh:
+            json.dump(doc, fh)
+        return path
+
+    def test_towns_outside_the_detailed_tiles_are_added_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            detail = self.write(tmp, "d.json.gz", self.doc([[60, 151]], [[30.2, 75.7, "village", "Rampura", "", "n1"]]))
+            towns = self.write(tmp, "t.json.gz", self.doc([[60, 151], [40, 140]], [
+                [30.3, 75.8, "town", "Dupe", "", "n2"],  # inside a detailed tile: already covered there
+                [20.2, 70.3, "town", "Veraval", "", "n3"]]))
+            snap = Snapshot.load(detail, towns)
+        self.assertEqual(sorted(r[3] for r in snap.rows), ["Rampura", "Veraval"])
+        self.assertTrue(snap.towns_all_india)
+        self.assertTrue(snap.detailed_at(30.2, 75.7))
+        self.assertFalse(snap.detailed_at(20.2, 70.3))
+        self.assertTrue(snap.covers(20.2, 70.3))  # towns are checked there
+        with tempfile.TemporaryDirectory() as tmp:
+            only = Snapshot.load(self.write(tmp, "d.json.gz", self.doc([[60, 151]], [])), towns_path=None)
+        self.assertFalse(only.covers(20.2, 70.3))
 
 
 if __name__ == "__main__":

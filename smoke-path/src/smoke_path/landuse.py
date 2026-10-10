@@ -3,7 +3,10 @@
 Three saved files (built once by the scripts in scripts/, shipped with the Lambda):
 
   data/landcover.bin.gz        ESA WorldCover 2021 (10 m satellite land cover), as the most
-                               common class in each ~100 m cell (scripts/build_landcover.py)
+                               common class in each ~100 m cell, Punjab and Haryana
+                               (scripts/build_landcover.py)
+  data/landcover_india.bin.gz  the same for all of India, in ~450 m cells (used where the
+                               detailed file has nothing; --national)
   data/industry.json.gz        factories, brick kilns, power plants, industrial areas and
                                landfills from OpenStreetMap (scripts/build_industry.py)
   data/static_sources.json.gz  spots NASA saw burning outside the crop-burning seasons, or
@@ -30,8 +33,10 @@ DATA = Path(__file__).with_name("data")
 LANDCOVER_PATH = DATA / "landcover.bin.gz"
 INDUSTRY_PATH = DATA / "industry.json.gz"
 STATIC_PATH = DATA / "static_sources.json.gz"
+LANDCOVER_INDIA_PATH = DATA / "landcover_india.bin.gz"
 
-LANDCOVER_STEP = 0.001  # degrees (~100 m)
+LANDCOVER_STEP = 0.001  # degrees (~100 m) around Punjab and Haryana
+LANDCOVER_INDIA_STEP = 0.004  # degrees (~450 m) for the rest of India
 LOOK_KM = 0.4  # what is on the ground within this distance of the fire
 POINT_REACH_KM = 0.4  # a mapped kiln/factory point this close counts
 AREA_MARGIN_KM = 0.2  # ... and an industrial area's outline (approximated by a circle) plus this
@@ -155,15 +160,43 @@ def _read_json_gz(path):
         return json.load(f)
 
 
-@lru_cache(maxsize=1)
-def landcover():
+class LandcoverStack:
+    """Several land-cover grids, finest first: the first one that covers the point answers."""
+
+    def __init__(self, grids):
+        self.grids = grids
+
+    def covers(self, lat, lon):
+        return any(g.covers(lat, lon) for g in self.grids)
+
+    def fractions(self, lat, lon, km=LOOK_KM):
+        for g in self.grids:
+            fr = g.fractions(lat, lon, km)
+            if fr:
+                return fr
+        return None
+
+    def coarse_only(self, lat, lon):
+        """True when only the coarse (national) grid knows this spot."""
+        return len(self.grids) > 1 and not self.grids[0].covers(lat, lon)
+
+
+def _load_landcover(path):
     try:
-        with gzip.open(LANDCOVER_PATH, "rb") as f:
+        with gzip.open(path, "rb") as f:
             header = json.loads(f.readline())
             return Landcover(header, f.read())
-    except (OSError, ValueError, KeyError) as err:
-        log.warning("land cover not available: %s", err)
+    except FileNotFoundError:
         return None
+    except (OSError, ValueError, KeyError) as err:
+        log.warning("land cover %s not available: %s", path.name, err)
+        return None
+
+
+@lru_cache(maxsize=1)
+def landcover():
+    grids = [g for g in (_load_landcover(LANDCOVER_PATH), _load_landcover(LANDCOVER_INDIA_PATH)) if g]
+    return LandcoverStack(grids) if grids else None
 
 
 @lru_cache(maxsize=1)
@@ -203,6 +236,7 @@ def classify(lat, lon, lc=None, ind=None, sta=None):
     ind = industry() if ind is None else ind
     sta = static_sources() if sta is None else sta
     fr = lc.fractions(lat, lon) if lc else None
+    coarse = bool(fr) and getattr(lc, "coarse_only", lambda *a: False)(lat, lon)
     cover = _top(fr) if fr else {}
     crop = fr.get("cropland", 0) if fr else 0
 
@@ -210,7 +244,8 @@ def classify(lat, lon, lc=None, ind=None, sta=None):
     if hit:
         r, _ = hit
         why = ("NASA marks this spot as a static industrial heat source" if r.get("type2")
-               else f"NASA saw fire here on {r['days']} days outside the crop-burning seasons in {r['period']}")
+               else (f"NASA saw fire here on {r['days']} different days in {r['months']} months ({r['period']})" if "months" in r
+                else f"NASA saw fire here on {r['days']} days outside the crop-burning seasons in {r['period']}"))
         return _result("industrial", "fixed heat source (kiln / factory)", "high", why, cover)
 
     near = ind.near(lat, lon) if ind else None
@@ -232,6 +267,10 @@ def classify(lat, lon, lc=None, ind=None, sta=None):
     if not fr:
         return _result("unknown", None, "low", "outside the saved land-cover area", cover)
 
+    return _cap(_from_cover(fr, cover, crop), coarse)
+
+
+def _from_cover(fr, cover, crop):
     trees = fr.get("trees", 0) + fr.get("shrubs", 0) + fr.get("mangroves", 0)
     built = fr.get("built-up", 0)
     grass = fr.get("grass", 0)
@@ -251,6 +290,14 @@ def classify(lat, lon, lc=None, ind=None, sta=None):
         return _result("unknown", None, "low", f"mixed ground: {', '.join(f'{k} {v}%' for k, v in cover.items())}", cover)
     kind = {"farm": "crop residue", "settlement": "waste or building fire", "forest": "trees / shrubs", "grassland": "grass"}[category]
     return _result(category, kind, "low", f"mixed ground, mostly {next(iter(cover))} ({_pct(share)}%){src}", cover)
+
+
+def _cap(result, coarse):
+    """The national grid is ~450 m wide, so its labels are never 'high' confidence."""
+    if coarse and result["confidence"] == "high" and result["category"] not in ("industrial", "waste"):
+        result["confidence"] = "medium"
+        result["reason"] += " (coarse 450 m map)"
+    return result
 
 
 def classify_cluster(points, **data):

@@ -23,6 +23,7 @@ from .trajectory import KM_PER_DEG
 log = logging.getLogger(__name__)
 
 SNAPSHOT_PATH = Path(__file__).with_name("data") / "places_snapshot.json.gz"
+TOWNS_PATH = Path(__file__).with_name("data") / "towns_india.json.gz"  # cities and towns, all of India
 FORMAT = 1
 GRID_DEG = 0.1  # lookup grid (finer than the download tiles)
 
@@ -76,6 +77,8 @@ class Snapshot:
             raise ValueError(f"places snapshot format {doc.get('format')!r} is not {FORMAT}")
         self.tile_deg = float(doc["tile_deg"])
         self.tiles = {tuple(t) for t in doc["tiles"]}
+        self.detail_tiles = {tuple(t) for t in doc.get("detail_tiles", doc["tiles"])}
+        self.towns_all_india = bool(doc.get("towns_all_india"))
         self.osm_base = doc.get("osm_base")
         self.created = doc.get("created")
         self.rows = [tuple(r) for r in doc["places"]]  # (lat, lon, type, name, name_local, osm)
@@ -91,9 +94,31 @@ class Snapshot:
             self.grids.setdefault(radius, {}).setdefault(key, []).append(i)
 
     @classmethod
-    def load(cls, path=SNAPSHOT_PATH):
+    def load(cls, path=SNAPSHOT_PATH, towns_path=TOWNS_PATH):
+        """The detailed snapshot, plus (if the file exists) cities and towns for all of India.
+
+        Towns inside the detailed tiles are already in it, so only the others are added."""
         with gzip.open(path, "rt", encoding="utf-8") as fh:
-            return cls(json.load(fh))
+            doc = json.load(fh)
+        doc["detail_tiles"] = [list(t) for t in doc["tiles"]]
+        if towns_path is None:
+            return cls(doc)
+        try:
+            with gzip.open(towns_path, "rt", encoding="utf-8") as fh:
+                towns = json.load(fh)
+        except FileNotFoundError:
+            return cls(doc)
+        if towns.get("format") == FORMAT and float(towns["tile_deg"]) == float(doc["tile_deg"]):
+            have = {tuple(t) for t in doc["tiles"]}
+            td = float(doc["tile_deg"])
+            doc["places"] = doc["places"] + [r for r in towns["places"] if tile_of(r[0], r[1], td) not in have]
+            doc["tiles"] = sorted({tuple(t) for t in doc["tiles"]} | {tuple(t) for t in towns["tiles"]})
+            doc["towns_all_india"] = True
+        return cls(doc)
+
+    def detailed_at(self, lat, lon):
+        """True where villages, schools and hospitals are saved too (not just cities and towns)."""
+        return tile_of(lat, lon, self.tile_deg) in self.detail_tiles
 
     def covers(self, lat, lon, margin_km=MAX_RADIUS_KM):
         """True if every saved tile within `margin_km` of the point is present."""
@@ -170,12 +195,12 @@ class Snapshot:
 _cache = {}
 
 
-def get(path=SNAPSHOT_PATH):
+def get(path=SNAPSHOT_PATH, towns_path=TOWNS_PATH):
     """The shipped snapshot (loaded once per warm Lambda), or None if there is none."""
-    key = str(path)
+    key = (str(path), str(towns_path))
     if key not in _cache:
         try:
-            _cache[key] = Snapshot.load(path)
+            _cache[key] = Snapshot.load(path, towns_path)
         except FileNotFoundError:
             _cache[key] = None
         except (OSError, ValueError, KeyError, TypeError) as err:

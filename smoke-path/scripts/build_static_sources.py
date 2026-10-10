@@ -5,16 +5,16 @@ VIIRS archive data, so a fire there is labelled industrial rather than a farm fi
     python3.12 scripts/build_static_sources.py --start 2025-07-01 --end 2026-06-30
 
 Uses FIRMS_MAP_KEY from smoke-path/.env. Asks NASA FIRMS for the standard-processing
-(archive) VIIRS data of Suomi NPP and NOAA-20 over the fire box, 5 days per request
+(archive) VIIRS data of Suomi NPP and NOAA-20 over all of India, 5 days per request
 (~150 requests, far below the 5000 per 10 minutes limit), caching each answer in
 .build_cache/firms_sp/ so a stopped run continues where it left off.
 
 A ~400 m cell is kept when either
   - NASA classified a detection there as type 2, "other static land source"
     (industrial heat: kilns, plants, flares), or
-  - fire was seen there on at least MIN_OFF_SEASON_DAYS different days outside the
-    crop-burning seasons (wheat: Apr 1 - Jun 15, paddy: Sep 15 - Dec 15). Fields burn
-    once or twice a year in season; kilns and factories burn month after month.
+  - fire was seen there on at least MIN_DAYS different days in at least MIN_MONTHS
+    calendar months. Fields and forests burn for a few weeks a year; kilns and factories
+    burn month after month.
 
 Writes src/smoke_path/data/static_sources.json.gz.
 """
@@ -44,14 +44,10 @@ SOURCES = ("VIIRS_SNPP_SP", "VIIRS_NOAA20_SP")
 URL = "https://firms.modaps.eosdis.nasa.gov/api/area/csv/{key}/{source}/{area}/{days}/{day}"
 AVAILABILITY_URL = "https://firms.modaps.eosdis.nasa.gov/api/data_availability/csv/{key}/ALL"
 CHUNK_DAYS = 5  # the most FIRMS gives per request
-CACHE = ROOT / ".build_cache" / "firms_sp"
-MIN_OFF_SEASON_DAYS = 3
+CACHE = ROOT / ".build_cache" / "firms_sp_india"
+MIN_DAYS = 12  # different days with fire in a ~400 m cell ...
+MIN_MONTHS = 5  # ... in at least this many calendar months
 PAUSE_S = 1
-
-
-def in_crop_season(d):
-    md = (d.month, d.day)
-    return (4, 1) <= md <= (6, 15) or (9, 15) <= md <= (12, 15)
 
 
 def fetch(url, key, name, fire_csv=True):
@@ -90,32 +86,33 @@ def chunk_text(source, day, key):
     return text
 
 
-def cells_from(rows):
-    cells = {}
+def add_rows(rows, start, days, type2):
+    """Add one chunk of detections to `days` {cell: bitmask of days since `start`} and `type2` (cells)."""
     for r in rows:
         try:
             lat, lon = float(r["latitude"]), float(r["longitude"])
-            day = date.fromisoformat(r["acq_date"])
+            day = (date.fromisoformat(r["acq_date"]) - start).days
         except (KeyError, ValueError):
             continue
         k = (round(lat / STATIC_CELL_DEG), round(lon / STATIC_CELL_DEG))
-        c = cells.setdefault(k, {"lat": 0.0, "lon": 0.0, "n": 0, "off_days": set(), "type2": False})
-        c["lat"] += lat
-        c["lon"] += lon
-        c["n"] += 1
-        if not in_crop_season(day):
-            c["off_days"].add(day)
+        days[k] = days.get(k, 0) | (1 << day)
         if (r.get("type") or "").strip() == "2":
-            c["type2"] = True
-    return cells
+            type2.add(k)
 
 
-def keep(cells, period):
+def keep(days, type2, start, period):
+    """A cell is a fixed heat source when NASA says so (type 2) or when it burned on at least
+    MIN_DAYS different days spread over at least MIN_MONTHS calendar months (a field or a forest
+    burns for a few weeks; a plant or a kiln keeps going)."""
     out = []
-    for c in cells.values():
-        if c["type2"] or len(c["off_days"]) >= MIN_OFF_SEASON_DAYS:
-            out.append({"lat": round(c["lat"] / c["n"], 5), "lon": round(c["lon"] / c["n"], 5),
-                        "days": len(c["off_days"]), "detections": c["n"], "type2": c["type2"], "period": period})
+    for k, mask in days.items():
+        n = bin(mask).count("1")
+        if k not in type2 and n < MIN_DAYS:
+            continue
+        months = {(start + timedelta(days=i)).month for i in range(mask.bit_length()) if mask >> i & 1}
+        if k in type2 or len(months) >= MIN_MONTHS:
+            out.append({"lat": round(k[0] * STATIC_CELL_DEG, 5), "lon": round(k[1] * STATIC_CELL_DEG, 5),
+                        "days": n, "months": len(months), "type2": k in type2, "period": period})
     out.sort(key=lambda r: (r["lat"], r["lon"]))
     return out
 
@@ -132,21 +129,23 @@ def main(argv=None):
     end = args.end or last_archive_day(key)
     start = args.start or (end - timedelta(days=364))
     print(f"VIIRS archive {start} to {end} over {FIRE_BOX}")
-    rows = []
+    days, type2, total = {}, set(), 0
     for source in SOURCES:
         day = start
         while day <= end:
             text = chunk_text(source, day, key)
-            rows.extend(csv.DictReader(io.StringIO(text.lstrip("﻿"))))
-            print(f"  {source} {day}: {len(rows)} detections so far", end="\r", flush=True)
+            rows = list(csv.DictReader(io.StringIO(text.lstrip("﻿"))))
+            total += len(rows)
+            add_rows(rows, start, days, type2)
+            print(f"  {source} {day}: {total} detections so far", end="\r", flush=True)
             day += timedelta(days=CHUNK_DAYS)
         print()
     period = f"{start:%b %Y} to {end:%b %Y}"
-    cells = cells_from(rows)
-    kept = keep(cells, period)
+    cells, rows = days, range(total)
+    kept = keep(days, type2, start, period)
     doc = {"format": 1, "source": "NASA FIRMS VIIRS standard processing (" + ", ".join(SOURCES) + ")",
            "period": period, "box": list(FIRE_BOX), "cell_deg": STATIC_CELL_DEG,
-           "min_off_season_days": MIN_OFF_SEASON_DAYS, "cells": kept}
+           "min_days": MIN_DAYS, "min_months": MIN_MONTHS, "cells": kept}
     STATIC_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(STATIC_PATH, "wb") as raw:
         with gzip.GzipFile(fileobj=raw, mode="wb", compresslevel=9, mtime=0) as gz:

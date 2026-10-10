@@ -1,7 +1,8 @@
 """Save what covers the ground around Punjab and Haryana (farm, town, trees ...) as a
 small grid, so each satellite fire can be labelled by what was burning.
 
-    .venv-build/bin/python scripts/build_landcover.py
+    .venv-build/bin/python scripts/build_landcover.py              # Punjab and Haryana, 100 m
+    .venv-build/bin/python scripts/build_landcover.py --national   # all India, 450 m
 
 Source: ESA WorldCover 2021 v200, 10 m land cover from Sentinel-1/2, free and public
 on AWS (s3://esa-worldcover). © ESA WorldCover project 2021 / Contains modified
@@ -33,20 +34,23 @@ from rasterio.windows import from_bounds
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from smoke_path.firewatch import FIRE_BOX  # noqa: E402
-from smoke_path.landuse import LANDCOVER_PATH, LANDCOVER_STEP  # noqa: E402
+from smoke_path.landuse import LANDCOVER_INDIA_PATH, LANDCOVER_INDIA_STEP, LANDCOVER_PATH, LANDCOVER_STEP  # noqa: E402
+
+REGION_BOX = (27.6, 73.8, 32.6, 77.6)  # the detailed file: Punjab and Haryana
+INDIA_BOX = (6.0, 67.0, 37.5, 98.0)  # the national file (edges aligned to its 0.004 degree cells)
 
 URL = ("/vsicurl/https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/"
        "ESA_WorldCover_10m_2021_v200_{name}_Map.tif")
 PAD_DEG = 0.01  # so a 400 m look-around at the edge of the fire box still has data
 OVERVIEW = 0  # first overview: 2x coarser (~18 m), 36 samples per 100 m cell
+NATIONAL_OVERVIEW = 3  # 16x coarser (~150 m): all of India is a few hundred MB instead of tens of GB
 STRIP_ROWS = 100  # output rows handled at a time (keeps memory small)
 CLASSES = 11
 
 
-def box():
-    s, w, n, e = FIRE_BOX
-    return (round(s - PAD_DEG, 3), round(w - PAD_DEG, 3), round(n + PAD_DEG, 3), round(e + PAD_DEG, 3))
+def box(base=REGION_BOX, pad=PAD_DEG):
+    s, w, n, e = base
+    return (round(s - pad, 3), round(w - pad, 3), round(n + pad, 3), round(e + pad, 3))
 
 
 def tile_names(s, w, n, e):
@@ -69,8 +73,10 @@ def majority(block_codes, factor):
 
 
 def main():
-    s, w, n, e = box()
-    step = LANDCOVER_STEP
+    national = "--national" in sys.argv
+    s, w, n, e = box(INDIA_BOX, 0) if national else box()
+    step, overview = (LANDCOVER_INDIA_STEP, NATIONAL_OVERVIEW) if national else (LANDCOVER_STEP, OVERVIEW)
+    out_path = LANDCOVER_INDIA_PATH if national else LANDCOVER_PATH
     rows, cols = round((n - s) / step), round((e - w) / step)
     grid = np.zeros((rows, cols), dtype=np.uint8)
     env = rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", GDAL_HTTP_MAX_RETRY="5", GDAL_HTTP_RETRY_DELAY="3")
@@ -81,7 +87,12 @@ def main():
             if ts >= tn or tw >= te:
                 continue
             print(f"{name}: lat {ts}-{tn}, lon {tw}-{te}", flush=True)
-            with rasterio.open(URL.format(name=name), overview_level=OVERVIEW) as src:
+            try:
+                src = rasterio.open(URL.format(name=name), overview_level=overview)
+            except rasterio.errors.RasterioIOError:
+                print("  no tile (open sea)")
+                continue
+            with src:
                 px = src.res[0]
                 factor = round(step / px)
                 if abs(factor * px - step) > 1e-9:
@@ -105,15 +116,15 @@ def main():
                 print()
     header = {"format": 1, "source": "ESA WorldCover 2021 v200", "south": s, "west": w, "north": n,
               "east": e, "step": step, "rows": rows, "cols": cols}
-    LANDCOVER_PATH.parent.mkdir(parents=True, exist_ok=True)
-    part = LANDCOVER_PATH.with_suffix(".part")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    part = out_path.with_suffix(".part")
     with open(part, "wb") as raw:
         with gzip.GzipFile(fileobj=raw, mode="wb", compresslevel=9, mtime=0) as gz:
             gz.write((json.dumps(header) + "\n").encode())
             gz.write(grid.tobytes())
-    part.replace(LANDCOVER_PATH)
+    part.replace(out_path)
     shares = {c: round(float((grid == c).mean()) * 100, 1) for c in range(CLASSES + 1) if (grid == c).any()}
-    print(f"Wrote {LANDCOVER_PATH} ({LANDCOVER_PATH.stat().st_size / 1e6:.1f} MB), {rows}x{cols}; % by class {shares}")
+    print(f"Wrote {out_path} ({out_path.stat().st_size / 1e6:.1f} MB), {rows}x{cols}; % by class {shares}")
 
 
 if __name__ == "__main__":

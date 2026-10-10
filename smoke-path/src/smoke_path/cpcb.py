@@ -27,8 +27,8 @@ PAGE = 1000
 MAX_PAGES = 8
 TIMEOUT_S = 12
 POLLUTANT_IDS = {"PM2.5": "pm2_5", "PM10": "pm10", "NO2": "no2", "SO2": "so2", "CO": "co", "OZONE": "o3", "NH3": "nh3"}
-FOCUS_STATES = ("Punjab", "Haryana", "Delhi", "Chandigarh")
-FOCUS_BOX = (27.4, 73.8, 32.6, 77.9)  # the same area by location (OpenAQ readings have no state)
+FOCUS_STATES = ("Punjab", "Haryana", "Delhi", "Chandigarh", "Rajasthan")
+FOCUS_BOX = (24.5, 69.5, 32.6, 78.0)  # the same area by location (OpenAQ readings have no state)
 INDIA_BOX = (6.5, 68.0, 37.5, 97.5)  # for the OpenAQ fallback
 
 
