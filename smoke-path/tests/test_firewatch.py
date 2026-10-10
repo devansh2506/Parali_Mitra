@@ -160,6 +160,15 @@ class FireWatchRunTests(unittest.TestCase):
         fires = {f["properties"]["id"]: f["properties"] for f in kind(self.doc, "fire")}
         self.assertEqual((fires["F1"]["places_reached"], fires["F2"]["places_reached"]), (3, 3))
 
+    def test_every_fire_has_a_stable_key_and_a_state(self):
+        for f in self.doc["features"]:
+            if f["properties"]["kind"] == "fire":
+                p = f["properties"]
+                lon, lat = f["geometry"]["coordinates"]
+                self.assertRegex(p["key"], r"^\d+\.\d\d_\d+\.\d\d_2026\d{4}$")  # lat_lon_day first seen
+                self.assertEqual(p["key"].split("_")[0], f"{lat:.2f}")
+                self.assertIn("state", p)
+
     def test_summary(self):
         self.assertEqual(
             [line for line in self.doc["summary"] if not line.startswith(("What was burning", "While burning", "Most smoke", "Worst air"))],

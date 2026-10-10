@@ -24,10 +24,10 @@ class LocalServerTests(unittest.TestCase):
     def test_root_redirects_to_live_map(self):
         status, headers, _ = local_server.route("GET", "/")
         self.assertEqual(status, 302)
-        self.assertEqual(headers["Location"], "/map.html?api=/smoke")
+        self.assertEqual(headers["Location"], "/index.html?api=/")
 
     def test_map_is_served(self):
-        status, headers, body = local_server.route("GET", "/map.html?api=/smoke")
+        status, headers, body = local_server.route("GET", "/index.html?api=/")
         self.assertEqual(status, 200)
         self.assertIn("text/html", headers["Content-Type"])
         self.assertIn(b'id="sample-data"', body)

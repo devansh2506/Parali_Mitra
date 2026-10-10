@@ -1,8 +1,7 @@
-"""AWS Lambda handler for GET /smoke, /fires and /air (API Gateway HTTP API, payload v2).
+"""AWS Lambda handler (API Gateway HTTP API, payload v2).
 
-GET /fires?hours=24   Fire watch: every fire NASA saw in and around Punjab and Haryana,
-                      what was burning, what it gives off and how toxic, its smoke path and
-                      the villages, schools and hospitals it reaches.
+GET /fires?hours=24   Fire watch: every fire NASA saw in India, what was burning, what it gives
+                      off and how toxic, its smoke path and the places it reaches.
 
 GET /smoke?lat=30.245&lon=75.844&start=2026-10-10T14:00&hours=24&uncertainty=cone&acres=5
 GET /smoke?lat=30.605&lon=74.999&start=2026-10-09T12:37&origin=fire&frp=6.2&fire_type=farm
@@ -10,6 +9,11 @@ GET /smoke?lat=30.605&lon=74.999&start=2026-10-09T12:37&origin=fire&frp=6.2&fire
 GET /air?lat=30.9&lon=75.85   48-hour CAMS forecast at one spot, as India's AQI (JSON)
 GET /forecast                 CAMS AQI on the region grid every 3 hours (JSON, map layer)
 GET /stations                 measured air at monitoring stations (CPCB live feed, JSON)
+
+POST /alerts                  authority: warn a fire's source, or alert the people on its smoke path
+GET /alerts?lat&lon&radius_km people: public alerts that affect an area (the citizen inbox)
+GET /activity                 authority: every alert sent
+GET /cases, PATCH /cases/<id> authority: the case of each fire and its status
 
 Returns a GeoJSON FeatureCollection. 400 for bad input or a start time
 outside the forecast, 502 only if the wind forecast itself fails.
@@ -22,10 +26,11 @@ import logging
 import math
 import threading
 import time
+import urllib.parse
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from . import IST, air, cpcb, firewatch, landuse
+from . import IST, air, alerts, cpcb, firewatch, landuse
 from .apis import LiveApi
 from .net import ApiError
 from .pipeline import SmokeRequest, WindUnavailable, run
@@ -42,8 +47,8 @@ FIRE_SAMPLE_PATH = Path(__file__).with_name("fire_watch_sample.json")
 HEADERS = {
     "Content-Type": "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
 }
 
 
@@ -256,15 +261,71 @@ def _path(event):
     return (event.get("rawPath") or http.get("path") or event.get("path") or "/smoke").rstrip("/")
 
 
-def handle(event, api=None, cache=None, now=None, sample_path=SAMPLE_PATH, fire_sample_path=FIRE_SAMPLE_PATH):
-    """The real handler, with hooks for tests (fake API, own cache, fixed clock)."""
+def _body(event):
+    raw = event.get("body")
+    if raw is None or str(raw).strip() == "":
+        raise alerts.Invalid("Send a JSON body.")
+    if event.get("isBase64Encoded"):
+        raw = base64.b64decode(raw).decode("utf-8")
+    if len(raw) > 200_000:
+        raise alerts.Invalid("The request is too big.")
+    try:
+        return json.loads(raw)
+    except ValueError:
+        raise alerts.Invalid("The body is not valid JSON.") from None
+
+
+def handle_alerts(event, method, path, params, store, now, notify):
+    """POST /alerts, GET /alerts, GET /activity, GET /cases, PATCH /cases/<id>. None when the path is not one of them."""
+    store = store or alerts.get_store()
+    try:
+        if path.endswith("/alerts") and method == "POST":
+            who = alerts.require_authority(event)
+            alert = alerts.create_alert(store, _body(event), who, now, notify if notify is not None else alerts.sns_notifier())
+            return _response(201, _dump(alert))
+        if path.endswith("/alerts") and method == "GET":
+            lat = _number(params, "lat", -90, 90)
+            lon = _number(params, "lon", -180, 180)
+            radius = _optional(params, "radius_km", 1, 300, 15.0)
+            found = alerts.alerts_near(store, lat, lon, radius)
+            return _response(200, _dump({"lat": lat, "lon": lon, "radius_km": radius, "count": len(found), "alerts": found}))
+        if path.endswith("/activity") and method == "GET":
+            alerts.require_authority(event)
+            return _response(200, _dump({"alerts": store.list_alerts()}))
+        if path.endswith("/cases") and method == "GET":
+            alerts.require_authority(event)
+            return _response(200, _dump({"cases": store.list_cases()}))
+        if "/cases/" in path and method == "PATCH":
+            who = alerts.require_authority(event)
+            fire_id = urllib.parse.unquote(path.rsplit("/cases/", 1)[1])
+            return _response(200, _dump(alerts.update_case(store, fire_id, _body(event), who, now)))
+    except (alerts.Invalid, BadRequest) as err:
+        return _error(400, str(err))
+    except alerts.NotAllowed as err:
+        return _error(403, str(err))
+    except Exception:  # noqa: BLE001 - log it, never leak internals
+        log.exception("alerts failed")
+        return _error(500, "Something went wrong while saving the alert.")
+    return None
+
+
+ALERT_PATHS = ("/alerts", "/activity", "/cases")
+
+
+def handle(event, api=None, cache=None, now=None, sample_path=SAMPLE_PATH, fire_sample_path=FIRE_SAMPLE_PATH,
+           store=None, notify=None):
+    """The real handler, with hooks for tests (fake API, own cache, fixed clock, own store)."""
     cache = CACHE if cache is None else cache
     method = _method(event)
     if method == "OPTIONS":
         return _response(204, "")
+    params = event.get("queryStringParameters") or {}
+    path = _path(event)
+    if path.endswith(ALERT_PATHS) or "/cases/" in path:
+        reply = handle_alerts(event, method, path, params, store, now, notify)
+        return reply if reply is not None else _error(405, "That method is not allowed here.")
     if method != "GET":
         return _error(405, "Use GET.")
-    params = event.get("queryStringParameters") or {}
     gz = _accepts_gzip(event)
     if _path(event).endswith("/fires"):
         return handle_fires(params, api, cache, now, fire_sample_path, gz)

@@ -14,6 +14,7 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 REGION_PATH = Path(__file__).with_name("data") / "region.json.gz"
+STATES_PATH = Path(__file__).with_name("data") / "states.json.gz"  # one outline per state (scripts/build_states.py)
 AREAS = ("India",)
 
 
@@ -61,3 +62,33 @@ def get():
 def contains(lat, lon, region=None):
     region = get() if region is None else region
     return True if region is None else region.contains(lat, lon)
+
+
+@lru_cache(maxsize=1)
+def _states():
+    try:
+        with gzip.open(STATES_PATH, "rt", encoding="utf-8") as fh:
+            doc = json.load(fh)
+        return {name: Region(polys) for name, polys in doc["states"].items()}
+    except (OSError, ValueError, KeyError) as err:
+        log.warning("state outlines not available: %s", err)
+        return None
+
+
+def state_of(lat, lon):
+    """The state or union territory a point is in ('' when unknown). The outlines are simplified, so a point
+    a few km off the coast or border falls back to the state with the nearest outline point."""
+    states = _states()
+    if not states:
+        return ""
+    for name, r in states.items():
+        if r.contains(lat, lon):
+            return name
+    best, best_d = "", 0.5  # degrees (~55 km): further than that it is not near any state
+    for name, r in states.items():
+        for _, outer, _ in r.polygons:
+            for x, y in outer[::3]:
+                d = abs(x - lon) + abs(y - lat)
+                if d < best_d:
+                    best, best_d = name, d
+    return best

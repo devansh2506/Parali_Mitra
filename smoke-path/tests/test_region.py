@@ -26,5 +26,16 @@ class RegionTests(unittest.TestCase):
         self.assertTrue(region.contains(26.92, 70.90, r))  # Jaisalmer
 
 
+class StateTests(unittest.TestCase):
+    def test_states_of_known_cities(self):
+        for name, lat, lon, state in [("Amritsar", 31.63, 74.87, "Punjab"), ("Karnal", 29.69, 76.99, "Haryana"),
+                                      ("Jaipur", 26.91, 75.79, "Rajasthan"), ("Delhi", 28.61, 77.21, "Delhi"),
+                                      ("Lucknow", 26.85, 80.95, "Uttar Pradesh"), ("Chennai", 13.08, 80.27, "Tamil Nadu")]:
+            self.assertEqual(region.state_of(lat, lon), state, name)
+
+    def test_far_from_everything_has_no_state(self):
+        self.assertEqual(region.state_of(0.0, 0.0), "")
+
+
 if __name__ == "__main__":
     unittest.main()

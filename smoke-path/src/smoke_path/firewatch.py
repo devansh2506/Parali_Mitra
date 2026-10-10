@@ -227,6 +227,9 @@ def run(req, api, *, level=None, now=None, snap=SHIPPED, budget_s=BUDGET_S, cloc
     for n, fire in enumerate(fires, 1):
         fire["n"] = n  # ties in arrival time are listed by fire number (F2 before F10)
         fire["id"] = f"F{n}"
+        # A key that stays the same when the list is refreshed (F-numbers shift as fires come and go): spot + day first seen.
+        fire["key"] = f"{fire['lat']:.2f}_{fire['lon']:.2f}_{datetime.fromisoformat(fire['seen_at']).astimezone(IST):%Y%m%d}"
+        fire["state"] = region.state_of(fire["lat"], fire["lon"])
         near = snap.nearest(fire["lat"], fire["lon"]) if snap is not None else None
         fire["near"] = near["name"] if near else ""
         label = landuse.classify_cluster([(fire["lat"], fire["lon"])] + fire.pop("_points"))
