@@ -205,23 +205,62 @@
     });
     return { pins: pins, destroy: function () { group.remove(); } };
   };
-  /** The forecast as squares. setIndex(i) paints the i-th time. */
+  /**
+   * The forecast as one smooth picture: every pixel is blended from the four nearest forecast points
+   * (bilinear) and coloured along the CPCB colours, so there are no squares. setIndex(i) paints the i-th time.
+   */
+  var STOPS = [[25, "good"], [75, "satisfactory"], [150, "moderate"], [250, "poor"], [350, "very_poor"], [450, "severe"]];
+  function rgb(hex) { var h = hex.replace("#", ""); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
+  function mercY(lat) { return Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360)); }
+  function mercLat(y) { return ((2 * Math.atan(Math.exp(y)) - Math.PI / 2) * 180) / Math.PI; }
   M.forecastLayer = function (map, grid) {
-    var group = L.layerGroup().addTo(map), rects = [], half = grid.step / 2;
-    for (var r = 0; r < grid.rows; r++) for (var c = 0; c < grid.cols; c++) {
-      var lat = grid.south + r * grid.step, lon = grid.west + c * grid.step;
-      rects.push(L.rectangle([[lat - half, lon - half], [lat + half, lon + half]], { stroke: false, fillOpacity: 0, interactive: false }).addTo(group));
+    var half = grid.step / 2, CELL = 10;
+    var latS = grid.south - half, latN = grid.south + (grid.rows - 1) * grid.step + half;
+    var lonW = grid.west - half, lonE = grid.west + (grid.cols - 1) * grid.step + half;
+    var W = grid.cols * CELL, mS = mercY(latS), mN = mercY(latN);
+    var H = Math.round((W * (mN - mS)) / (((lonE - lonW) * Math.PI) / 180));
+    var canvas = document.createElement("canvas"); canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext("2d"), cache = {}, colors = null;
+    function ramp() {
+      colors = STOPS.map(function (s) { return [s[0], rgb(U.aqiColor(s[1]))]; });
     }
+    function colorAt(v) {
+      if (v <= colors[0][0]) return colors[0][1];
+      for (var i = 1; i < colors.length; i++) if (v <= colors[i][0]) {
+        var a = colors[i - 1], b = colors[i], f = (v - a[0]) / (b[0] - a[0]);
+        return [a[1][0] + f * (b[1][0] - a[1][0]), a[1][1] + f * (b[1][1] - a[1][1]), a[1][2] + f * (b[1][2] - a[1][2])];
+      }
+      return colors[colors.length - 1][1];
+    }
+    function render(i) {
+      var row = grid.aqi[i] || [], img = ctx.createImageData(W, H), d = img.data;
+      for (var y = 0; y < H; y++) {
+        var lat = mercLat(mN - ((y + 0.5) / H) * (mN - mS));
+        var fr = Math.max(0, Math.min(grid.rows - 1, (lat - grid.south) / grid.step)), r0 = Math.floor(fr), r1 = Math.min(grid.rows - 1, r0 + 1), dr = fr - r0;
+        for (var x = 0; x < W; x++) {
+          var fc = Math.max(0, Math.min(grid.cols - 1, ((lonW + ((x + 0.5) / W) * (lonE - lonW)) - grid.west) / grid.step)), c0 = Math.floor(fc), c1 = Math.min(grid.cols - 1, c0 + 1), dc = fc - c0;
+          var v00 = row[r0 * grid.cols + c0], v01 = row[r0 * grid.cols + c1], v10 = row[r1 * grid.cols + c0], v11 = row[r1 * grid.cols + c1];
+          var w00 = (1 - dr) * (1 - dc), w01 = (1 - dr) * dc, w10 = dr * (1 - dc), w11 = dr * dc, w = 0, sum = 0;
+          if (v00 != null) { w += w00; sum += w00 * v00; } if (v01 != null) { w += w01; sum += w01 * v01; }
+          if (v10 != null) { w += w10; sum += w10 * v10; } if (v11 != null) { w += w11; sum += w11 * v11; }
+          var o = (y * W + x) * 4;
+          if (w < 0.01) { d[o + 3] = 0; continue; }
+          var col = colorAt(sum / w);
+          d[o] = col[0]; d[o + 1] = col[1]; d[o + 2] = col[2]; d[o + 3] = Math.round(255 * Math.min(1, w * 1.2));
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      return canvas.toDataURL("image/png");
+    }
+    var overlay = null;
     return {
       setIndex: function (i) {
-        var row = grid.aqi[i] || [];
-        rects.forEach(function (rc, n) {
-          var v = row[n];
-          if (v == null) rc.setStyle({ fillOpacity: 0 });
-          else rc.setStyle({ fillColor: U.aqiColor(U.aqiKey(v)), fillOpacity: 0.42 });
-        });
+        if (!colors) ramp();
+        var url = cache[i] || (cache[i] = render(i));
+        if (!overlay) overlay = L.imageOverlay(url, [[latS, lonW], [latN, lonE]], { opacity: 0.6, interactive: false, className: "fc-img" }).addTo(map);
+        else overlay.setUrl(url);
       },
-      destroy: function () { group.remove(); },
+      destroy: function () { if (overlay) overlay.remove(); },
     };
   };
   /** The citizen's home: a pin and a ring (the "your area" ring). */

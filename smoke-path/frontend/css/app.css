@@ -456,3 +456,5 @@ table.t tr.click { cursor: pointer; } table.t tr.click:hover td { background: va
 @media (max-width: 860px) {
   .toasts { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 12px); }
 }
+
+.fc-img { image-rendering: auto; }

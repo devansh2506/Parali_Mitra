@@ -74,7 +74,7 @@
     "air.now": "Now · measured", "air.forecast": "Forecast · 48 h", "air.legend": "India AQI (CPCB)", "air.stations": "Stations", "air.search": "Search station, city or state", "air.none": "Nothing found.",
     "air.most_polluted": "Most polluted now", "air.cleanest": "Cleanest now", "air.focus": "Most polluted: Delhi, Punjab, Haryana, Rajasthan", "air.cities": "Cities", "air.station": "Monitoring station",
     "air.main_pollutant": "Main pollutant: {p}", "air.reading_age": "Reading from {when} ({h} h old)", "air.pollutants": "Pollutants", "air.indicative": "This AQI is indicative: it uses the latest reading, not CPCB's 24-hour average.",
-    "air.updated": "updated {time}", "air.time": "Forecast time", "air.coarse": "Squares are about 165 km wide: use this for the big picture.", "air.picked_spot": "Spot you tapped", "air.spot": "Forecast for", "air.expected_now": "expected now",
+    "air.updated": "updated {time}", "air.time": "Forecast time", "air.coarse": "Smoothed between forecast points about 165 km apart: use this for the big picture.", "air.picked_spot": "Spot you tapped", "air.spot": "Forecast for", "air.expected_now": "expected now",
     "air.next48": "Next 48 hours", "air.now_label": "Now", "air.worst_at": "Worst expected: AQI {aqi} ({cat}) around {when}.", "air.sample_note": "Saved sample: one value every 3 hours.", "air.forecast_note": "CAMS forecast (ECMWF) through Open-Meteo, shown as India's AQI. It can miss smoke from small fires.", "air.no_data": "No forecast for this spot.", "air.strip_label": "Forecast air quality bars",
 
     // citizen
