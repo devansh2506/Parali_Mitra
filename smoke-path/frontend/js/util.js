@@ -92,10 +92,19 @@
 
   /** Filter chips for the map, one per fire type that exists: counts = {type: n}, on = {type: true}. */
   U.typeChips = function (counts, on) {
-    return ["farm", "industrial", "waste", "settlement", "forest", "grassland", "unknown"].filter(function (k) { return counts[k]; }).map(function (k) {
+    var any = Object.keys(on).some(function (k) { return on[k]; }), total = Object.keys(counts).reduce(function (n, k) { return n + counts[k]; }, 0);
+    var all = '<button type="button" class="chip" data-ftype="all" aria-pressed="' + !any + '">' + U.esc(PM.t("filter.all")) + " " + total + "</button>";
+    return all + ["farm", "industrial", "waste", "settlement", "forest", "grassland", "unknown"].filter(function (k) { return counts[k]; }).map(function (k) {
       return '<button type="button" class="chip" data-ftype="' + k + '" aria-pressed="' + !!on[k] + '"><i class="dot" style="background:' + U.FIRE_TYPES[k].color + '"></i>' +
         U.esc(PM.t("type." + k)) + " " + counts[k] + "</button>";
     }).join("");
+  };
+  /** Turn a chip click into the new choice: {type: true} for that type only, or {} for all. */
+  U.toggleType = function (on, key) {
+    // One type at a time, so a chip shows only the fires it stands for. Click it again (or "All fires") to go back.
+    var wasOn = !!on[key];
+    Object.keys(on).forEach(function (k) { on[k] = false; });
+    if (key !== "all" && !wasOn) on[key] = true;
   };
 
   // ---- icons: small inline SVGs (24 px grid, drawn with strokes) -------------------------------------

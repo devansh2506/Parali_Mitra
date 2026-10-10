@@ -64,13 +64,13 @@
    */
   M.fireLayer = function (map, opts) {
     var dots = L.layerGroup().addTo(map), pulses = L.layerGroup().addTo(map), ring = L.layerGroup().addTo(map);
-    var fires = [], selected = opts.selectedKey || null, markers = {};
-    var MAX_FAR = 90;
+    var fires = [], selected = opts.selectedKey || null, markers = {}, byType = false;
+    var MAX_FAR = 500;  // far out, only the strongest are drawn (matters only with thousands of fires)
 
     function style(f) {
       var level = f.level, none = !f.tox;
-      var color = none ? U.css("--tox-none") : U.toxColor(level);
-      return { radius: U.toxRadius(level), color: U.css("--surface"), weight: 1.5, fillColor: color, fillOpacity: none ? 0.35 : 0.88, opacity: 1 };
+      var color = byType ? U.typeOf(f.p).color : none ? U.css("--tox-none") : U.toxColor(level);  // while a type filter is on, dots wear the type colour
+      return { radius: U.toxRadius(level), color: U.css("--surface"), weight: 1.5, fillColor: color, fillOpacity: none && !byType ? 0.35 : 0.88, opacity: 1 };
     }
     function draw() {
       dots.clearLayers(); pulses.clearLayers(); ring.clearLayers(); markers = {};
@@ -95,11 +95,14 @@
       }
     }
     map.on("zoomend", draw);
-    return {
-      set: function (list) { fires = list; draw(); },
+    var self = {
+      count: function () { return Object.keys(markers).length; },
+      set: function (list, typeColours) { fires = list; byType = !!typeColours; draw(); },
       select: function (key) { selected = key; draw(); },
       destroy: function () { map.off("zoomend", draw); dots.remove(); pulses.remove(); ring.remove(); },
     };
+    map._pmFires = self;  // lets tests count the dots
+    return self;
   };
 
   // ---- the smoke path ------------------------------------------------------------------------------------------

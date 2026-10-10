@@ -213,8 +213,11 @@
         smoke.show(f, { ticks: "clock", fit: false }); smoke.play();
         showFire(f);
       } });
+      layers.fires.set(filteredFires(), Object.keys(types).some(function (k) { return types[k]; }));
+    }
+    function filteredFires() {
       var active = Object.keys(types).filter(function (k) { return types[k]; });
-      layers.fires.set(model.fires.filter(function (f) { return !active.length || active.indexOf(f.p.fire_type || "unknown") >= 0; }));
+      return model.fires.filter(function (f) { return !active.length || active.indexOf(f.p.fire_type || "unknown") >= 0; });
     }
     function paintChips() {
       var counts = {};
@@ -233,7 +236,13 @@
     PM.api.stations().then(function (s) { if (!ctl.destroyed) { stations = s; paintAir(); } }).catch(function () {});
     root.addEventListener("click", function (e) {
       var ft = e.target.closest("[data-ftype]");
-      if (ft) { var k0 = ft.getAttribute("data-ftype"); types[k0] = !types[k0]; ft.setAttribute("aria-pressed", String(!!types[k0])); on.fires = true; paintFires(); return; }
+      if (ft) {
+        U.toggleType(types, ft.getAttribute("data-ftype")); on.fires = true;
+        paintChips(); paintFires();
+        var list = filteredFires();
+        if (list.length && Object.keys(types).some(function (k) { return types[k]; })) mapc.map.fitBounds(L.latLngBounds(list.map(function (f) { return [f.lat, f.lon]; }).concat([[home.lat, home.lon]])).pad(0.2), { maxZoom: 8, animate: true });
+        return;
+      }
       if (e.target.closest("[data-fclose]")) { root.querySelector("[data-fire]").hidden = true; smoke.clear(); return; }
       var b = e.target.closest("[data-layer]");
       if (!b) return;

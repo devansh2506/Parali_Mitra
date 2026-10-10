@@ -22,6 +22,16 @@
   }
   function sourceRole(f) { var ty = f.p.fire_type; return ty === "farm" ? "farmer" : ty === "industrial" ? "owner" : ty === "waste" ? "municipal" : "other"; }
 
+  /** Keep the chips on the map in step with the ones in the panel. */
+  function syncMapChips() {
+    var any = Object.keys(F.types).some(function (k) { return F.types[k]; });
+    document.querySelectorAll("[data-ftype]").forEach(function (c) {
+      var k = c.getAttribute("data-ftype");
+      c.setAttribute("aria-pressed", String(k === "all" ? !any : !!F.types[k]));
+    });
+  }
+  function typeFilterOn() { return Object.keys(F.types).some(function (k) { return F.types[k]; }); }
+
   function applyFilters(fires, cm) {
     var q = F.q.trim().toLowerCase(), types = Object.keys(F.types).filter(function (k) { return F.types[k]; });
     var out = fires.filter(function (f) {
@@ -45,7 +55,8 @@
     model.fires.forEach(function (f) { var k = f.p.fire_type || "unknown"; counts[k] = (counts[k] || 0) + 1; });
     var states = {};
     model.fires.forEach(function (f) { if (f.state) states[f.state] = (states[f.state] || 0) + 1; });
-    var chips = TYPE_ORDER.filter(function (k) { return counts[k]; }).map(function (k) {
+    var anyOn = TYPE_ORDER.some(function (k) { return F.types[k]; });
+    var chips = '<button class="chip" data-type="all" aria-pressed="' + !anyOn + '">' + esc(t("filter.all")) + " " + model.fires.length + "</button>" + TYPE_ORDER.filter(function (k) { return counts[k]; }).map(function (k) {
       return '<button class="chip" data-type="' + k + '" aria-pressed="' + !!F.types[k] + '"><i class="dot" style="background:' + U.FIRE_TYPES[k].color + '"></i>' +
         esc(t("type." + k)) + " " + counts[k] + "</button>";
     }).join("");
@@ -67,8 +78,8 @@
     root.addEventListener("click", function (e) {
       var b = e.target.closest("[data-type]");
       if (b && root.contains(b)) {
-        F.types[b.getAttribute("data-type")] = !F.types[b.getAttribute("data-type")]; refresh(true);
-        document.querySelectorAll("[data-ftype]").forEach(function (c) { c.setAttribute("aria-pressed", String(!!F.types[c.getAttribute("data-ftype")])); });
+        U.toggleType(F.types, b.getAttribute("data-type")); refresh(true);
+        syncMapChips();
       }
     });
     root.addEventListener("input", function (e) { if (e.target.matches("[data-q]")) { F.q = e.target.value; refresh(false); } });
@@ -427,24 +438,36 @@
       wrap.addEventListener("click", function (e) {
         var b = e.target.closest("[data-ftype]");
         if (!b) return;
-        F.types[b.getAttribute("data-ftype")] = !F.types[b.getAttribute("data-ftype")];
-        wrap.querySelectorAll("[data-ftype]").forEach(function (c) { c.setAttribute("aria-pressed", String(!!F.types[c.getAttribute("data-ftype")])); });
-        if (ctl.fireLayer) ctl.fireLayer.set(applyFilters(model.fires, cm));
+        U.toggleType(F.types, b.getAttribute("data-ftype"));
+        syncMapChips();
+        refreshDots(true);
         if (!ctl.selected) paintQueue(true);
       });
       var notes = (model.doc.notes || []).filter(function (n) { return /not available|missing/i.test(n); });
       if (notes.length) wrap.insertAdjacentHTML("beforeend", '<div class="float bl glass" style="padding:8px 12px;max-width:min(420px,70%)"><span class="small">' + U.icon("alert", "sm") + " " + esc(notes[0]) + "</span></div>");
-      bindFilters(side, function (rerender) { if (rerender) paintQueue(true); else paintList(); });
-      if (ctl.fireLayer) ctl.fireLayer.set(applyFilters(model.fires, cm));
+      bindFilters(side, function (rerender) { if (rerender) { paintQueue(true); refreshDots(true); } else paintList(); });
+      if (ctl.fireLayer) ctl.fireLayer.set(applyFilters(model.fires, cm), typeFilterOn());
       select(args && args.key);
     }
 
     function legend() {
-      return '<div class="float bl glass legend"><div class="eyebrow" style="margin-bottom:4px">' + esc(t("auth.legend")) + '</div><div class="row" style="gap:10px;flex-wrap:wrap">' +
+      return '<div class="float bl glass legend" data-legend><div data-legend-type hidden><div class="eyebrow" style="margin-bottom:4px">' + esc(t("auth.legend_type")) + '</div><div class="small muted legend-note">' + esc(t("auth.legend_type_note")) + '</div></div><div data-legend-tox><div class="eyebrow" style="margin-bottom:4px">' + esc(t("auth.legend")) + '</div><div class="row" style="gap:10px;flex-wrap:wrap">' +
         ["low", "moderate", "high", "very_high"].map(function (k) { return '<span class="row" style="gap:5px"><i class="dot" style="background:var(--tox-' + k + ')"></i>' + esc(t("tox." + k)) + "</span>"; }).join("") + "</div>" +
-        '<div class="small muted legend-note" style="margin-top:4px">' + esc(t("auth.legend_note")) + "</div></div>";
+        '<div class="small muted legend-note" style="margin-top:4px">' + esc(t("auth.legend_note")) + "</div></div></div>";
     }
 
+    /** Redraw the dots for the current filters; with a filter on, zoom the map to them. */
+    function refreshDots(fit) {
+      if (!ctl.fireLayer) return;
+      var list = applyFilters(model.fires, cm);
+      ctl.fireLayer.set(list, typeFilterOn());
+      var lt = root.querySelector("[data-legend-type]"), lx = root.querySelector("[data-legend-tox]");
+      if (lt && lx) { lt.hidden = !typeFilterOn(); lx.hidden = typeFilterOn(); }
+      if (fit && !ctl.selected && ctl.mapc) {
+        if (typeFilterOn() && list.length) ctl.mapc.map.fitBounds(L.latLngBounds(list.map(function (f) { return [f.lat, f.lon]; })).pad(0.2), { maxZoom: 8, animate: true });
+        else if (!typeFilterOn()) ctl.mapc.map.fitBounds(PM.maps.INDIA, { animate: true });
+      }
+    }
     function paintQueue(full) {
       side.className = "panel";
       side.innerHTML = '<div class="panel-head"><div class="row spread"><h3>' + esc(t("auth.queue")) + ' <span class="muted small" data-count></span></h3></div>' + filterControls(model, cm) + '</div><div class="panel-body" data-list></div>';
@@ -454,7 +477,7 @@
       var list = applyFilters(model.fires, cm), box = side.querySelector("[data-list]");
       if (!box) return;
       side.querySelector("[data-count]").textContent = list.length + " / " + model.fires.length;
-      if (ctl.fireLayer) ctl.fireLayer.set(list);
+      if (ctl.fireLayer) ctl.fireLayer.set(list, typeFilterOn());
       if (!list.length) { box.innerHTML = '<div class="empty">' + U.icon("check") + "<p>" + esc(t("auth.none_match")) + "</p></div>"; return; }
       box.innerHTML = list.slice(0, 300).map(function (f) {
         return '<button class="queue-item" data-key="' + esc(f.key) + '" aria-current="' + (f.key === ctl.selected) + '">' + U.typeBadge(f.p) +
